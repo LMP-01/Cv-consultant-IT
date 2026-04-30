@@ -1,4 +1,8 @@
-"""ATS CV builder for Theo Manso Pinto - Assistant Chef de Projet IA."""
+"""ATS CV builder for Theo Manso Pinto - Assistant Chef de Projet IA.
+
+Design: <JobStep.io> style - single column, Times serif, navy headings with rules,
+date column on the left, two-page layout.
+"""
 from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
@@ -8,6 +12,7 @@ from reportlab.platypus import (BaseDocTemplate, Frame, HRFlowable,
                                 KeepTogether, PageTemplate, Paragraph,
                                 Table, TableStyle)
 
+# ----- Palette -----
 NAVY = HexColor("#1B3F8B")
 INK = HexColor("#1F1F1F")
 GREY = HexColor("#666B72")
@@ -15,6 +20,7 @@ LINE = HexColor("#C9CDD3")
 S = getSampleStyleSheet()
 
 
+# ----- Style helpers -----
 def st(name, font="Times-Roman", size=10, lead=13, color=INK, align=0,
        indent=0, spb=0, spa=0):
     return ParagraphStyle(name, parent=S["Normal"], fontName=font,
@@ -35,12 +41,15 @@ LBL = st("lb", "Times-Roman", 9.8, 12, GREY)
 VAL = st("vl", "Times-Roman", 9.8, 12, INK)
 
 
+# ----- Reusable building blocks -----
 def head(label):
+    """Section heading: navy uppercase + thin rule below."""
     return [Paragraph(label.upper(), SECTION),
             HRFlowable(width="100%", thickness=0.6, color=LINE, spaceAfter=4)]
 
 
 def dated(date, title, bullets, meta=None):
+    """Two-col block: date on the left, bold title + bullets on the right."""
     th = f'<b>{title}</b>'
     if meta:
         th += f'<br/><i><font color="#666B72">{meta}</font></i>'
@@ -56,6 +65,7 @@ def dated(date, title, bullets, meta=None):
 
 
 def kvtable(rows, widths):
+    """Two-column key/value table for skills, formation, etc."""
     data = [[Paragraph(a, LBL) if isinstance(a, str) else a,
              Paragraph(b, VAL) if isinstance(b, str) else b] for a, b in rows]
     t = Table(data, colWidths=widths)
@@ -67,6 +77,7 @@ def kvtable(rows, widths):
     return t
 
 
+# ----- Document builder -----
 def build():
     doc = BaseDocTemplate("CV_Theo_Manso_Pinto_Consultant_IT.pdf",
                           pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
@@ -77,6 +88,8 @@ def build():
               leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     doc.addPageTemplates([PageTemplate(id="full", frames=[f])])
     s = []
+
+    # ----- Header (centered) -----
     s.append(Paragraph("Théo Manso Pinto", NAME))
     s.append(Paragraph(
         "Assistant Chef de Projet IA &middot; Data &middot; Agents IA &middot; "
@@ -91,6 +104,7 @@ def build():
                '&nbsp;&bull;&nbsp; <font color="#1B3F8B"><u>track-record-lem.netlify.app</u></font>')
     s.append(Paragraph(contact, CONTACT))
 
+    # ----- Profil -----
     s += head("Profil")
     s.append(Paragraph(
         "<b>Assistant Chef de Projet IA &middot; Data Engineer &middot; AI Agents Engineer.</b> "
@@ -105,6 +119,7 @@ def build():
         "(RAG, BYOK, HITL) &mdash; mobilisable en régie ou au forfait, en France "
         "et à l'international.", BODY))
 
+    # ----- Missions cibles -----
     s += head("Missions cibles")
     for b in [
         "<b>Pilotage projet IA :</b> cadrage, PRD, roadmap, discovery, "
@@ -118,6 +133,7 @@ def build():
         "conformité RGPD &amp; sécurité (AES-256-GCM, OTP, CSRF)."]:
         s.append(Paragraph("&bull; " + b, BULLET))
 
+    # ----- Compétences -----
     s += head("Compétences")
     s.append(kvtable([
         ("IA &amp; Agents",
@@ -141,6 +157,7 @@ def build():
          "Fusion Invest &middot; Morningstar Direct"),
     ], [40 * mm, None]))
 
+    # ----- Langues (2x2 compact table) -----
     s += head("Langues")
     langs = [("Français", "Langue maternelle"), ("Anglais", "Courant"),
              ("Espagnol", "Intermédiaire"), ("Portugais", "Notions")]
@@ -158,6 +175,7 @@ def build():
                            ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     s.append(t)
 
+    # ----- Expérience professionnelle -----
     s += head("Expérience professionnelle")
     s.append(dated(
         "07/2025 -<br/>présent<br/><i>(en poste)</i>",
@@ -186,6 +204,7 @@ def build():
          "Outils métier : CRM Salesforce, Finastra Fusion Invest, "
          "Morningstar Direct."]))
 
+    # ----- Entrepreneuriat & projets -----
     s += head("Entrepreneuriat &amp; projets")
     s.append(dated(
         "04/2026 -<br/>présent<br/><i>(en cours)</i>",
@@ -222,6 +241,7 @@ def build():
         ["Sites HTML déployés sur Netlify &mdash; contenu financier "
          "pédagogique et suivi public des performances de trading."]))
 
+    # ----- Certifications -----
     s += head("Certifications")
     certs = [
         ("2026 (en cours)", "CFA Level 1 candidate",
@@ -246,6 +266,7 @@ def build():
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5)]))
     s.append(ct)
 
+    # ----- Formation -----
     s += head("Formation")
     s.append(kvtable([(Paragraph("2024", DATE),
                        Paragraph("<b>BTS Banque</b> &mdash; alternance, "
@@ -254,6 +275,7 @@ def build():
                        Paragraph("<b>Baccalauréat Général</b>", VAL))],
                      [32 * mm, None]))
 
+    # ----- Centres d'intérêt -----
     s += head("Centres d'intérêt")
     for b in [
         "<b>Trading &amp; finance personnelle :</b> track record public "
