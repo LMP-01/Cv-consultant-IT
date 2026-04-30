@@ -1,9 +1,10 @@
-name: Build CV PDF
+name: Build CV PDFs
 on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/build_cv.py"
+      - "build_cv.py"
+      - "build_cv_en.py"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 permissions:
@@ -18,11 +19,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install reportlab==4.5.0
-      - run: python .github/workflows/build_cv.py
-      - name: Commit PDF
+      - run: python build_cv.py
+      - run: python build_cv_en.py
+      - name: Commit PDFs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CV_Theo_Manso_Pinto_Consultant_IT.pdf
-          git diff --cached --quiet || git commit -m "Build CV PDF [skip ci]"
+          git add CV_Theo_Manso_Pinto_FR.pdf CV_Theo_Manso_Pinto_EN.pdf
+          git diff --cached --quiet || git commit -m "Build CV PDFs [skip ci]"
           git push
