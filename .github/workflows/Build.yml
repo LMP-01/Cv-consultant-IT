@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - "build_cv.py"
-      - ".github/workflows/build.yml"
+      - ".github/workflows/Build.yml"
   workflow_dispatch:
 permissions:
   contents: write
