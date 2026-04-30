@@ -148,7 +148,9 @@ def build():
         ("Data &amp; Analyse",
          "<b>Python</b> &middot; <b>Power BI (Expert)</b> &middot; "
          "<b>DAX (Expert)</b> &middot; SQL &middot; Looker Studio "
-         "&middot; Bloomberg Terminal &middot; ETL / ELT"),
+         "&middot; Bloomberg Terminal &middot; ETL / ELT &middot; "
+         "<b>data cleaning</b> &middot; normalisation &middot; "
+         "intégration d'APIs financières (FRED, FMI, TIINGO)"),
         ("Cloud &amp; Dev",
          "<b>GitHub Actions / YAML</b> &middot; Cloudflare Workers / D1 "
          "&middot; Drizzle ORM &middot; Protobuf &middot; VBA &middot; C++"),
@@ -159,13 +161,17 @@ def build():
         ("Gestion projet &amp; métier",
          "Cadrage / PRD &middot; roadmap &middot; discovery &middot; "
          "stakeholder management &middot; OKR &middot; MVP &middot; Agile "
-         "&middot; Salesforce &middot; Avaloq &middot; Finastra Fusion "
-         "Invest &middot; Morningstar Direct"),
+         "&middot; <b>benchmarking fournisseurs</b> &middot; "
+         "<b>arbitrage qualité / coût (TCO)</b> &middot; Salesforce "
+         "&middot; Avaloq &middot; Finastra Fusion Invest &middot; "
+         "Morningstar Direct"),
     ], [40 * mm, None]))
 
     s += head("Langues")
-    langs = [("Français", "Langue maternelle"), ("Anglais", "Courant"),
-             ("Espagnol", "Intermédiaire"), ("Portugais", "Notions")]
+    langs = [("Français", "Langue maternelle"),
+             ("Anglais", "C1 (Avancé) - EF SET 72/100"),
+             ("Espagnol", "B1 (Intermédiaire) - Instituto Cervantes (AVE)"),
+             ("Portugais", "Notions")]
     rows = []
     for i in range(0, len(langs), 2):
         l, r = langs[i], langs[i + 1]
@@ -217,13 +223,21 @@ def build():
          "roadmap, delivery, mise en production, opérations.",
          "Plateforme data financière B2B type Bloomberg : "
          "<b>IA RAG + système BYOK</b> pour la gestion de news.",
+         "<b>Data engineering &amp; nettoyage</b> (posture data analyst) : "
+         "20+ pipelines Python automatisés via GitHub Actions / YAML cron "
+         "jobs, alimentés par 3 APIs financières spécialisées &mdash; "
+         "<b>FRED</b> (Réserve fédérale américaine, séries macro), "
+         "<b>FMI</b> (Fonds monétaire international, données macro globales) "
+         "et <b>TIINGO</b> (cours d'actions historiques depuis l'IPO, "
+         "fournisseur open source) &mdash; avec déduplication, "
+         "normalisation et gestion des valeurs manquantes.",
+         "<b>Benchmarking fournisseurs &amp; arbitrage qualité / coût</b> : "
+         "sélection rationnelle des services cloud, APIs et briques tierces "
+         "pour maximiser la qualité technique tout en optimisant le TCO.",
          "Architecture <b>100 % serverless edge</b> (Cloudflare Workers / D1) "
          "avec <b>7+ mécanismes de sécurité</b> intégrés : AES-256-GCM, OTP, "
          "CSRF, Turnstile, rotation de sessions, rate limiting, conformité "
-         "RGPD &mdash; gérée en autonomie totale.",
-         "<b>20+ pipelines Python</b> automatisés via GitHub Actions / YAML "
-         "cron jobs, alimentés par <b>3+ APIs financières</b> (FRED, TIINGO, "
-         "FMI) et sources open data."],
+         "RGPD &mdash; gérée en autonomie totale."],
         meta=link("<https://www.epta5.com>", "<www.epta5.com>")))
     s.append(dated(
         "2024 - 2025",
