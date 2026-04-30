@@ -150,7 +150,7 @@ def build():
          "<b>DAX (Expert)</b> &middot; SQL &middot; Looker Studio "
          "&middot; Bloomberg Terminal &middot; ETL / ELT &middot; "
          "<b>data cleaning</b> &middot; normalisation &middot; "
-         "intégration d'APIs financières (FRED, FMI, TIINGO)"),
+         "intégration d'APIs financières externes"),
         ("Cloud &amp; Dev",
          "<b>GitHub Actions / YAML</b> &middot; Cloudflare Workers / D1 "
          "&middot; Drizzle ORM &middot; Protobuf &middot; VBA &middot; C++"),
@@ -225,12 +225,10 @@ def build():
          "<b>IA RAG + système BYOK</b> pour la gestion de news.",
          "<b>Data engineering &amp; nettoyage</b> (posture data analyst) : "
          "20+ pipelines Python automatisés via GitHub Actions / YAML cron "
-         "jobs, alimentés par 3 APIs financières spécialisées &mdash; "
-         "<b>FRED</b> (Réserve fédérale américaine, séries macro), "
-         "<b>FMI</b> (Fonds monétaire international, données macro globales) "
-         "et <b>TIINGO</b> (cours d'actions historiques depuis l'IPO, "
-         "fournisseur open source) &mdash; avec déduplication, "
-         "normalisation et gestion des valeurs manquantes.",
+         "jobs, alimentés par plusieurs APIs financières externes "
+         "(données macroéconomiques, séries temporelles, cours d'actions "
+         "historiques) &mdash; avec déduplication, normalisation et "
+         "gestion des valeurs manquantes.",
          "<b>Benchmarking fournisseurs &amp; arbitrage qualité / coût</b> : "
          "sélection rationnelle des services cloud, APIs et briques tierces "
          "pour maximiser la qualité technique tout en optimisant le TCO.",
