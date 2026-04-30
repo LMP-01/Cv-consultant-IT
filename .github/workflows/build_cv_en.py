@@ -148,7 +148,9 @@ def build():
         ("Data &amp; Analytics",
          "<b>Python</b> &middot; <b>Power BI (Expert)</b> &middot; "
          "<b>DAX (Expert)</b> &middot; SQL &middot; Looker Studio "
-         "&middot; Bloomberg Terminal &middot; ETL / ELT"),
+         "&middot; Bloomberg Terminal &middot; ETL / ELT &middot; "
+         "<b>data cleaning</b> &middot; data wrangling &middot; "
+         "external financial APIs integration"),
         ("Cloud &amp; Dev",
          "<b>GitHub Actions / YAML</b> &middot; Cloudflare Workers / D1 "
          "&middot; Drizzle ORM &middot; Protobuf &middot; VBA &middot; C++"),
@@ -159,13 +161,17 @@ def build():
         ("Project &amp; Domain",
          "Scoping / PRD &middot; roadmap &middot; discovery &middot; "
          "stakeholder management &middot; OKRs &middot; MVP &middot; "
-         "Agile &middot; Salesforce &middot; Avaloq &middot; Finastra "
-         "Fusion Invest &middot; Morningstar Direct"),
+         "Agile &middot; <b>vendor benchmarking</b> &middot; "
+         "<b>cost / quality trade-off (TCO)</b> &middot; Salesforce "
+         "&middot; Avaloq &middot; Finastra Fusion Invest &middot; "
+         "Morningstar Direct"),
     ], [40 * mm, None]))
 
     s += head("Languages")
-    langs = [("French", "Native"), ("English", "Fluent"),
-             ("Spanish", "Intermediate"), ("Portuguese", "Basic")]
+    langs = [("French", "Native"),
+             ("English", "C1 (Advanced) - EF SET 72/100"),
+             ("Spanish", "B1 (Intermediate) - Instituto Cervantes (AVE)"),
+             ("Portuguese", "Basic")]
     rows = []
     for i in range(0, len(langs), 2):
         l, r = langs[i], langs[i + 1]
@@ -220,13 +226,18 @@ def build():
          "B2B financial data platform (Bloomberg-style): "
          "<b>RAG-based AI + BYOK system</b> for news ingestion and "
          "Q&amp;A.",
+         "<b>Data engineering &amp; cleaning</b> (data analyst stance): "
+         "20+ Python pipelines automated via GitHub Actions / YAML cron "
+         "jobs, fed by multiple external financial APIs (macroeconomic "
+         "data, time series, historical equity prices) &mdash; with "
+         "deduplication, normalization and missing-value handling.",
+         "<b>Vendor benchmarking &amp; cost / quality trade-off</b>: "
+         "rational selection of cloud services, APIs and third-party "
+         "components to maximize technical quality while minimizing TCO.",
          "<b>100 % serverless edge architecture</b> (Cloudflare Workers / D1) "
          "with <b>7+ integrated security mechanisms</b>: AES-256-GCM, OTP, "
          "CSRF, Turnstile, session rotation, rate limiting, GDPR "
-         "compliance &mdash; operated solo.",
-         "<b>20+ Python pipelines</b> automated via GitHub Actions / YAML "
-         "cron jobs, fed by <b>3+ external financial APIs</b> (FRED, "
-         "TIINGO, FMI) and open data sources."],
+         "compliance &mdash; operated solo."],
         meta=link("<https://www.epta5.com>", "<www.epta5.com>")))
     s.append(dated(
         "2024 - 2025",
