@@ -159,8 +159,10 @@ def build():
          "&middot; session rotation &middot; rate limiting &middot; "
          "GDPR compliance"),
         ("Project &amp; Domain",
-         "Scoping &middot; roadmap &middot; MVP &middot; "
-         "<b>vendor benchmarking</b> &middot; "
+         "Scoping &middot; <b>PRD</b> &middot; roadmap &middot; <b>OKRs</b> "
+         "&middot; <b>stakeholder management</b> &middot; <b>discovery</b> "
+         "&middot; <b>agile delivery coordination</b> &middot; MVP "
+         "&middot; <b>vendor benchmarking</b> &middot; "
          "<b>cost / quality trade-off (TCO)</b> &middot; Salesforce "
          "&middot; Avaloq &middot; Finastra Fusion Invest &middot; "
          "Morningstar Direct"),
@@ -278,7 +280,9 @@ def build():
          "French Financial Markets Authority &mdash; passed independently, "
          "national certification."),
         ("06/2025", "Google Data Analytics Professional Certificate",
-         "Power BI, SQL, Looker Studio &mdash; issued 28/06/2025."),
+         "Power BI, SQL, Looker Studio + PM frameworks (PRD, OKRs, "
+         "stakeholder management) covered and applied &mdash; issued "
+         "28/06/2025."),
         ("06/2025", "Financial Markets Certification - Yale University",
          "Official audit &mdash; markets, valuation, behavioral finance.")]
     cert_data = [[Paragraph(d, DATE),
