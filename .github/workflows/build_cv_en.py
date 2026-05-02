@@ -129,7 +129,7 @@ def build():
         "<b>AI Agent Design:</b> multi-agent architecture, RAG, BYOK, HITL "
         "(human-in-the-loop), tool use, function calling, guardrails, "
         "evals, observability, production deployment.",
-        "<b>Data Engineering:</b> Python ETL / ELT, GitHub Actions "
+        "<b>Data Engineering:</b> Python, GitHub Actions "
         "automation (20+ pipelines), data modeling, Power BI / Looker "
         "dashboards.",
         "<b>Business &harr; Tech bridge:</b> business need &rarr; spec "
@@ -145,25 +145,27 @@ def build():
          "function calling &middot; guardrails &middot; evals &middot; "
          "observability &middot; LLMOps"),
         ("Data &amp; Analytics",
-         "Python &middot; Power BI (Junior) &middot; "
-         "DAX (Junior) &middot; <b>SQL (Intermediate)</b> &middot; "
+         "<b>SQL (Intermediate)</b> &middot; Python &middot; "
+         "Power BI (Junior) &middot; DAX (Junior) &middot; "
          "Looker Studio &middot; Bloomberg Terminal &middot; "
          "data cleaning &middot; data wrangling &middot; "
          "external financial APIs integration"),
         ("Frontend &amp; Dev",
-         "HTML &middot; React &middot; Angular &middot; JSX / TSX &middot; "
-         "<b>GitHub Actions / YAML</b> &middot; Cloudflare Workers / D1 "
-         "&middot; Drizzle ORM &middot; Protobuf &middot; VBA &middot; C++"),
+         "<b>GitHub Actions / YAML</b> &middot; HTML &middot; React "
+         "&middot; Angular &middot; JSX / TSX &middot; "
+         "Cloudflare Workers / D1 &middot; Drizzle ORM &middot; Protobuf "
+         "&middot; VBA &middot; C++"),
         ("Security &amp; compliance",
          "AES-256-GCM &middot; OTP / CSRF &middot; Cloudflare Turnstile "
          "&middot; session rotation &middot; rate limiting &middot; "
          "GDPR compliance"),
         ("Project &amp; Domain",
-         "Scoping &middot; <b>PRD</b> &middot; roadmap &middot; <b>OKRs</b> "
-         "&middot; <b>stakeholder management</b> &middot; <b>discovery</b> "
-         "&middot; <b>agile delivery coordination</b> &middot; MVP "
-         "&middot; <b>vendor benchmarking</b> &middot; "
-         "<b>cost / quality trade-off (TCO)</b> &middot; Salesforce "
+         "<b>PRD</b> &middot; <b>OKRs</b> &middot; "
+         "<b>stakeholder management</b> &middot; <b>discovery</b> "
+         "&middot; <b>agile delivery coordination</b> &middot; "
+         "<b>vendor benchmarking</b> &middot; "
+         "<b>cost / quality trade-off (TCO)</b> &middot; Scoping "
+         "&middot; roadmap &middot; MVP &middot; Salesforce "
          "&middot; Avaloq &middot; Finastra Fusion Invest &middot; "
          "Morningstar Direct"),
     ], [40 * mm, None]))
