@@ -55,18 +55,17 @@ def build():
     s.append(Paragraph("Développement personnel", TITLE))
     s.append(Paragraph("Pistes d'entretien — Théo Manso Pinto", SUBTITLE))
     s.append(Paragraph(
-        "Sujets retirés volontairement du CV pour rester honnête sur le "
-        "niveau actuel, mais à travailler en parallèle pour gagner en "
-        "crédibilité auprès des recruteurs de postes Assistant Chef de "
-        "Projet IA / AI PM. Pour chaque sujet : <b>ce que c'est</b>, "
-        "<b>pourquoi ça booste la crédibilité</b>, <b>les tâches/skills "
-        "concrètes que ça débloque</b>, <b>comment l'apprendre</b>.", BODY))
+        "Sujets à approfondir pour gagner en crédibilité auprès des "
+        "recruteurs de postes Assistant Chef de Projet IA / AI PM. Pour "
+        "chaque sujet : <b>ce que c'est</b>, <b>pourquoi ça booste la "
+        "crédibilité</b>, <b>les tâches/skills concrètes que ça "
+        "débloque</b>, <b>comment l'apprendre</b>.", BODY))
     s.append(Spacer(1, 6))
 
     sections = [
         ("1. PRD (Product Requirements Document)",
-         "Document de référence d'un produit ou d'une feature : problème à "
-         "résoudre, utilisateurs cibles, objectifs métier, périmètre, "
+         "Document de référence d'un produit ou d'une feature : problème "
+         "à résoudre, utilisateurs cibles, objectifs métier, périmètre, "
          "success metrics, contraintes, risques, dépendances. C'est le "
          "contrat entre PM, design, tech et stakeholders.",
          ["Signale en entretien que tu sais structurer un projet avant de coder.",
@@ -74,9 +73,9 @@ def build():
           "C'est l'attendu n°1 d'un AI PM dans une scale-up ou un cabinet de conseil."],
          ["Animer un kickoff, formaliser le besoin métier en 1 doc partagé.",
           "Aligner Engineering, Design, Data et Business sur un seul document.",
-          "Tracer les arbitrages (scope cuts, trade-offs) pour éviter les disputes ultérieures."],
+          "Tracer les arbitrages (scope cuts, trade-offs)."],
          ["Templates publics : Lenny's Newsletter, Reforge, Marty Cagan.",
-          "S'entraîner : rédiger un PRD pour une feature d'EPTA5 (ex. \"ajouter un agent de résumé de news\") avec problème, hypothèses, success metrics."]),
+          "S'entraîner : rédiger un PRD pour une feature d'EPTA5."]),
 
         ("2. OKR (Objectives and Key Results)",
          "Cadre d'alignement utilisé par Google, Intel, LinkedIn. Un "
@@ -85,30 +84,31 @@ def build():
          ["Signale que tu sais aligner un projet IA avec la stratégie de l'entreprise.",
           "Permet de répondre à \"comment tu mesures le succès de ton produit ?\".",
           "Très demandé dans les boîtes tech / scale-up et cabinets type BCG / Accenture."],
-         ["Traduire une vision (ex. \"devenir le Bloomberg de l'IA fintech\") en KRs mesurables (MAU, NRR, latence p95, taux d'adoption).",
+         ["Traduire une vision en KRs mesurables (MAU, NRR, latence p95, taux d'adoption).",
           "Animer un <i>quarterly review</i> avec les stakeholders.",
           "Prioriser le backlog en fonction du KR le plus en retard."],
          ["Livre : <i>Measure What Matters</i> de John Doerr.",
           "S'entraîner : poser 1 Objective + 3 KRs sur EPTA5 pour le trimestre."]),
 
         ("3. Stakeholder management",
-         "Identifier, hiérarchiser, communiquer et gérer les attentes de "
-         "tous les acteurs touchés par le projet : sponsor, utilisateurs, "
-         "équipe tech, finance, juridique, commerciaux, top management.",
+         "Identifier, hiérarchiser, communiquer et gérer les attentes "
+         "de tous les acteurs touchés par le projet : sponsor, "
+         "utilisateurs, équipe tech, finance, juridique, commerciaux, "
+         "top management.",
          ["C'est LA compétence qui distingue un assistant chef de projet d'un dev.",
           "Permet de répondre à \"raconte-moi un conflit géré entre métier et tech\".",
           "Critique dans les missions de conseil IT (ESN, cabinets)."],
          ["Cartographier les stakeholders (matrice Pouvoir / Intérêt — RACI).",
-          "Adapter ton discours : pitch exec (1 slide), spec ingé (Notion détaillée), demo client (3 minutes).",
+          "Adapter ton discours : pitch exec, spec ingé, demo client.",
           "Désamorcer les blocages politiques (priorisation, budget, scope creep)."],
          ["Livre : <i>Crucial Conversations</i> (Patterson, Grenny).",
           "Méthodes : RACI, matrice Pouvoir / Intérêt, communication plan.",
-          "S'entraîner : sur EPTA5, lister tes \"stakeholders\" fictifs (sponsor = toi, utilisateurs B2B, fournisseur API) et écrire un plan de com par persona."]),
+          "S'entraîner : sur EPTA5, lister tes \"stakeholders\" fictifs et écrire un plan de com par persona."]),
 
         ("4. Méthodes Agile / Scrum",
          "Framework de delivery itératif. Sprints (1 à 4 semaines), "
-         "backlog, daily stand-up, sprint review, retrospective. Variantes : "
-         "Scrum, Kanban, SAFe (pour les grands comptes).",
+         "backlog, daily stand-up, sprint review, retrospective. "
+         "Variantes : Scrum, Kanban, SAFe.",
          ["Quasi-systématique dans les offres \"AI PM\", \"Project Manager IT\", ESN.",
           "Permet de répondre à \"raconte un sprint où ça s'est mal passé\".",
           "Une certification PSM I (Scrum.org) est un signal fort."],
@@ -118,7 +118,7 @@ def build():
           "Estimer en story points (planning poker)."],
          ["Certif : Scrum.org PSM I (test à 200 $, prep gratuite).",
           "Livre : <i>Scrum: The Art of Doing Twice the Work in Half the Time</i> (Jeff Sutherland).",
-          "S'entraîner : organiser le développement EPTA5 en sprints d'1 semaine avec un Notion / GitHub Projects."]),
+          "S'entraîner : organiser EPTA5 en sprints d'1 semaine avec un Notion / GitHub Projects."]),
 
         ("5. Coordination delivery agile / Discovery",
          None,
@@ -129,7 +129,49 @@ def build():
           "Tracker les blockers en daily et escalader proprement."],
          ["Livre : <i>Continuous Discovery Habits</i> (Teresa Torres).",
           "Cours : Reforge \"Product Discovery\", ProductPlan blog.",
-          "S'entraîner : sur EPTA5, interviewer 3 utilisateurs cibles potentiels (gérants de patrimoine, analystes) et formaliser un opportunity tree."]),
+          "S'entraîner : sur EPTA5, interviewer 3 utilisateurs cibles potentiels et formaliser un opportunity tree."]),
+
+        ("6. ETL / ELT (Extract-Transform-Load)",
+         "Patterns d'ingestion de données. <b>ETL</b> = on transforme "
+         "avant de charger dans le data warehouse. <b>ELT</b> = on "
+         "charge brut, on transforme dans la DWH (plus moderne, "
+         "BigQuery / Snowflake / Databricks).",
+         ["Compétence centrale d'un Data Engineer / AI PM data-aware.",
+          "Permet de répondre à \"comment tu construis un pipeline data fiable et observable ?\".",
+          "Différencie un AI PM qui fait du prompt engineering d'un AI PM qui sait livrer en prod."],
+         ["Cadrer la fréquence (batch / streaming), le SLA, les contrats de schéma.",
+          "Mettre en place idempotence, retries, dead letter queue, monitoring.",
+          "Documenter le data lineage (source &rarr; transformations &rarr; consommateurs).",
+          "Choisir entre orchestrateurs : Airflow, Prefect, Dagster."],
+         ["Cours gratuit : <i>Data Engineering Zoomcamp</i> (DataTalks Club, ~50h).",
+          "Lecture : <i>Fundamentals of Data Engineering</i> (Reis &amp; Housley, O'Reilly).",
+          "S'entraîner : ajouter un test d'intégrité (Great Expectations / Soda) sur un pipeline EPTA5 existant.",
+          "Certif rapide (~10h) : <b>Astronomer Airflow Fundamentals</b> (gratuit, badge officiel)."]),
+
+        ("7. SQL — passer en intermédiaire confirmé",
+         "SQL est déjà sur ton CV en niveau intermédiaire. Pour passer "
+         "un cap rapide et avoir un signal certifié face aux "
+         "recruteurs, il existe des certifications courtes (&lt; 15h) "
+         "reconnues.",
+         ["SQL est demandé sur 90 % des offres Data / AI PM.",
+          "Permet de répondre proprement aux tests techniques live coding.",
+          "Atout différenciant face à un profil PM purement business."],
+         ["Maîtriser JOIN (INNER / LEFT / RIGHT / FULL), GROUP BY, HAVING, sous-requêtes.",
+          "Window functions (OVER, PARTITION BY, ROW_NUMBER, RANK, LAG / LEAD).",
+          "CTE (WITH ...), CTE récursives.",
+          "Optimisation : EXPLAIN, indexes, éviter SELECT *.",
+          "Modélisation : star / snowflake schema, formes normales."],
+         ["<b>Reco n°1 (gratuite, ~12h) : HackerRank SQL Skills "
+          "Certification Advanced.</b> 10-12h de prep sur HackerRank + 1h "
+          "de test, certificat shareable LinkedIn. <i>Le meilleur ratio "
+          "temps / signal pour ton profil.</i>",
+          "<b>Reco n°2 : DataCamp SQL Associate Certification</b> "
+          "(~12-15h, abonnement ~30 €/mois, signal recrutement plus fort).",
+          "<b>Reco n°3 : Microsoft DP-900 Azure Data Fundamentals</b> "
+          "(~10h, test ~100 €, signal Azure).",
+          "Plan de prep 12h : SQLZoo (3h) + StrataScratch Easy/Medium "
+          "(5h) + HackerRank Advanced (3h) + test (1h). Bonus : 5 requêtes "
+          "analytiques sur la D1 EPTA5."]),
     ]
 
     for title, ce_que, credi, taches, apprendre in sections:
@@ -138,8 +180,9 @@ def build():
         if ce_que:
             s.append(Paragraph(ce_que, BODY))
         else:
-            for b in ["<b>Discovery</b> : phase amont où on valide le problème (interviews users, market research, prototypes jetables).",
-                      "<b>Coordination delivery</b> : faire avancer les sprints en levant les blocages cross-équipes."]:
+            for b in [
+                "<b>Discovery</b> : phase amont où on valide le problème (interviews users, market research, prototypes jetables).",
+                "<b>Coordination delivery</b> : faire avancer les sprints en levant les blocages cross-équipes."]:
                 s.append(bullet(b))
         s.append(Paragraph("<b>Pourquoi ça booste la crédibilité</b>", H3))
         for b in credi:
@@ -151,12 +194,17 @@ def build():
         for b in apprendre:
             s.append(bullet(b))
 
-    s += head("Plan d'attaque suggéré (3 mois)")
+    s += head("Plan d'attaque suggéré (4 mois)")
     plan_data = [
         ["<b>Mois</b>", "<b>Focus</b>", "<b>Livrable concret</b>"],
-        ["1", "PRD + OKR", "Rédiger un PRD complet + OKR Q1 pour EPTA5"],
-        ["2", "Discovery + Stakeholder mgmt", "5 user interviews + carte des stakeholders"],
-        ["3", "Agile / Scrum (PSM I)", "Passer la certif + animer 4 sprints sur EPTA5"]]
+        ["1", "<b>SQL Advanced</b> (quick win)",
+         "Certif HackerRank SQL Advanced (~12h) + 5 requêtes EPTA5"],
+        ["2", "PRD + OKR + Stakeholder mgmt",
+         "Rédiger un PRD complet + OKR Q1 + carte stakeholders EPTA5"],
+        ["3", "Discovery + ETL / ELT",
+         "5 user interviews + Astronomer Airflow Fundamentals"],
+        ["4", "Agile / Scrum (PSM I)",
+         "Passer la certif PSM I + animer 4 sprints sur EPTA5"]]
     plan_data = [[Paragraph(c, BODY) for c in row] for row in plan_data]
     plan = Table(plan_data, colWidths=[15 * mm, 55 * mm, None])
     plan.setStyle(TableStyle([
@@ -172,9 +220,8 @@ def build():
     s.append(plan)
     s.append(Spacer(1, 8))
     s.append(Paragraph(
-        "Une fois les livrables produits, tu peux <b>réintégrer ces termes "
-        "au CV</b> en toute légitimité — et les défendre en entretien avec "
-        "un projet concret à l'appui.", BODY))
+        "Une fois les livrables produits, tu peux <b>défendre ces "
+        "compétences en entretien</b> avec un projet concret à l'appui.", BODY))
 
     doc.build(s)
     print("Developpement personnel PDF built")
