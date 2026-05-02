@@ -94,15 +94,15 @@ def build():
         '+33 6 30 80 85 75 &nbsp;&bull;&nbsp; '
         + link("mailto:theo.mansopro@gmail.com", "theo.mansopro@gmail.com")
         + ' &nbsp;&bull;&nbsp; '
-        + link("<https://www.linkedin.com/in/théo-manso-pinto>",
-               "<linkedin.com/in/théo-manso-pinto>")
+        + link("https://www.linkedin.com/in/théo-manso-pinto",
+               "linkedin.com/in/théo-manso-pinto")
         + ' &nbsp;&bull;&nbsp; '
-        + link("<https://www.epta5.com>", "<www.epta5.com>")
+        + link("https://www.epta5.com", "www.epta5.com")
         + ' &nbsp;&bull;&nbsp; '
-        + link("<https://seissix-newsletter.netlify.app>",
+        + link("https://seissix-newsletter.netlify.app",
                "seissix-newsletter.netlify.app")
         + ' &nbsp;&bull;&nbsp; '
-        + link("<https://track-record-lem.netlify.app>",
+        + link("https://track-record-lem.netlify.app",
                "track-record-lem.netlify.app"))
     s.append(Paragraph(contact, CONTACT))
 
@@ -111,7 +111,7 @@ def build():
         "<b>AI Project Manager Assistant &middot; Data Engineer &middot; "
         "AI Agents Engineer.</b> "
         "Hybrid finance / tech profile, AMF-certified (French market regulator), "
-        "able to scope (PRD, roadmap, discovery), prototype and ship "
+        "able to scope, prototype and ship "
         "agentic AI projects end-to-end &mdash; from business need to "
         "production. Founder of EPTA5 Inc (SAS), a B2B financial data "
         "platform (Bloomberg-style) with RAG-based AI, Cloudflare edge "
@@ -124,9 +124,8 @@ def build():
 
     s += head("Target Roles")
     for b in [
-        "<b>AI Project Management:</b> scoping, PRD, roadmap, discovery, "
-        "stakeholder management, OKRs, MVP, business workshops &mdash; "
-        "agile delivery coordination.",
+        "<b>AI Project Management:</b> scoping, roadmap, MVP, "
+        "business workshops.",
         "<b>AI Agent Design:</b> multi-agent architecture, RAG, BYOK, HITL "
         "(human-in-the-loop), tool use, function calling, guardrails, "
         "evals, observability, production deployment.",
@@ -146,12 +145,13 @@ def build():
          "function calling &middot; guardrails &middot; evals &middot; "
          "observability &middot; LLMOps"),
         ("Data &amp; Analytics",
-         "<b>Python</b> &middot; <b>Power BI (Expert)</b> &middot; "
-         "<b>DAX (Expert)</b> &middot; SQL &middot; Looker Studio "
-         "&middot; Bloomberg Terminal &middot; ETL / ELT &middot; "
-         "<b>data cleaning</b> &middot; data wrangling &middot; "
+         "Python &middot; Power BI (Junior) &middot; "
+         "DAX (Junior) &middot; <b>SQL (Intermediate)</b> &middot; "
+         "Looker Studio &middot; Bloomberg Terminal &middot; "
+         "data cleaning &middot; data wrangling &middot; "
          "external financial APIs integration"),
-        ("Cloud &amp; Dev",
+        ("Frontend &amp; Dev",
+         "HTML &middot; React &middot; Angular &middot; JSX / TSX &middot; "
          "<b>GitHub Actions / YAML</b> &middot; Cloudflare Workers / D1 "
          "&middot; Drizzle ORM &middot; Protobuf &middot; VBA &middot; C++"),
         ("Security &amp; compliance",
@@ -159,9 +159,8 @@ def build():
          "&middot; session rotation &middot; rate limiting &middot; "
          "GDPR compliance"),
         ("Project &amp; Domain",
-         "Scoping / PRD &middot; roadmap &middot; discovery &middot; "
-         "stakeholder management &middot; OKRs &middot; MVP &middot; "
-         "Agile &middot; <b>vendor benchmarking</b> &middot; "
+         "Scoping &middot; roadmap &middot; MVP &middot; "
+         "<b>vendor benchmarking</b> &middot; "
          "<b>cost / quality trade-off (TCO)</b> &middot; Salesforce "
          "&middot; Avaloq &middot; Finastra Fusion Invest &middot; "
          "Morningstar Direct"),
@@ -169,8 +168,8 @@ def build():
 
     s += head("Languages")
     langs = [("French", "Native"),
-             ("English", "C1 (Advanced) - EF SET 72/100"),
-             ("Spanish", "B1 (Intermediate) - Instituto Cervantes (AVE)"),
+             ("English", "B1 (Intermediate)"),
+             ("Spanish", "A2 (Elementary) - Instituto Cervantes (AVE)"),
              ("Portuguese", "Basic")]
     rows = []
     for i in range(0, len(langs), 2):
@@ -191,20 +190,24 @@ def build():
         "07/2025 -<br/>present<br/><i>(current role)</i>",
         "Financial Advisor - Permanent (CDI) &middot; Caisse d'Épargne "
         "&middot; Île-de-France, France",
-        ["Advise and sell <b>complex structured products</b> (autocallable "
-         "notes, barrier and memory-feature instruments) to a wealth "
-         "management client base.",
-         "Design wealth strategies across <b>3 tax-efficient envelopes</b> "
+        ["Manages a client portfolio (wealth-management, retail and "
+         "business clients) &mdash; administrative handling and case "
+         "follow-up.",
+         "<b>Multi-product sales</b>: insurance, credit, investments, "
+         "banking onboarding, liquid savings.",
+         "Advises on <b>complex structured products</b> (autocallable "
+         "notes, barrier and memory-feature instruments).",
+         "Designs wealth strategies across <b>3 tax-efficient envelopes</b> "
          "(PEA stock plan, Life Insurance, Retirement Savings) &mdash; "
          "client tax optimization."]))
     s.append(dated(
         "11/2024 -<br/>04/2025",
         "Banking Account Manager &middot; Société Générale &middot; "
         "Saint-Maur (94), France",
-        ["Managed a <b>Premium &amp; BPAT (private banking) portfolio</b> "
-         "&mdash; proactive follow-up on banking and wealth needs.",
-         "<b>Achieved 150 % of insurance sales targets</b> in 1 month "
-         "&mdash; <b>top branch performer</b>."]))
+        ["Managed a portfolio of <b>1,500 Premium &amp; BPAT clients</b> "
+         "&mdash; multi-product sales, proactive follow-up on banking "
+         "and wealth needs.",
+         "<b>Achieved 150 % of insurance sales targets</b> in 1 month."]))
     s.append(dated(
         "10/2023 -<br/>04/2024",
         "Brokerage Assistant - Apprenticeship (BTS Banking degree) "
@@ -221,7 +224,7 @@ def build():
     s.append(dated(
         "04/2026 -<br/>present<br/><i>(in progress)</i>",
         "EPTA5 Inc (SAS) - Founder, Project Owner &amp; Developer",
-        ["<b>Solo end-to-end project owner</b> &mdash; scoping, PRD, "
+        ["<b>Solo end-to-end project owner</b> &mdash; scoping, "
          "roadmap, delivery, production rollout, operations.",
          "B2B financial data platform (Bloomberg-style): "
          "<b>RAG-based AI + BYOK system</b> for news ingestion and "
@@ -238,7 +241,7 @@ def build():
          "with <b>7+ integrated security mechanisms</b>: AES-256-GCM, OTP, "
          "CSRF, Turnstile, session rotation, rate limiting, GDPR "
          "compliance &mdash; operated solo."],
-        meta=link("<https://www.epta5.com>", "<www.epta5.com>")))
+        meta=link("https://www.epta5.com", "www.epta5.com")))
     s.append(dated(
         "2024 - 2025",
         "Power BI Backtesting Engine - Personal project",
@@ -260,7 +263,7 @@ def build():
         ["HTML sites deployed on Netlify &mdash; educational financial "
          "content and public tracking of trading performance "
          "(2022-2025)."],
-        meta=link("<https://seissix-newsletter.netlify.app>",
+        meta=link("https://seissix-newsletter.netlify.app",
                   "seissix-newsletter.netlify.app")))
 
     s += head("Certifications")
