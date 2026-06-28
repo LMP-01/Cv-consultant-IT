@@ -85,35 +85,36 @@ function computeObjectives(gameTime, events) {
     if (e.EventName === 'DragonKill') lastDragon = e.EventTime;
     else if (e.EventName === 'BaronKill') lastBaron = e.EventTime;
     else if (e.EventName === 'HeraldKill') heraldDead = true;
+    // Les Voidgrubs (« Horde » en interne) n'ont pas de respawn une fois pris.
+    else if (e.EventName === 'HordeKill' || e.EventName === 'VoidgrubKill') grubsDone = true;
   }
 
   const objectives = [];
+  // `spawnAt` = instant (temps de jeu) où l'objectif (re)devient disponible :
+  // sert à n'annoncer « disponible » que peu après l'apparition (anti-spam).
+  const add = (name, icon, spawnAt) =>
+    objectives.push({ name, icon, spawnAt, etaSeconds: Math.max(0, Math.round(spawnAt - gameTime)) });
 
-  // Dragon
-  let dragonEta;
-  if (lastDragon != null) dragonEta = lastDragon + OBJ.DRAGON_RESPAWN - gameTime;
-  else dragonEta = OBJ.DRAGON_FIRST - gameTime;
-  objectives.push({ name: 'Dragon', icon: '🐉', etaSeconds: Math.max(0, dragonEta) });
+  // Dragon (respawn 5:00 après un kill).
+  add('Dragon', '🐉', lastDragon != null ? lastDragon + OBJ.DRAGON_RESPAWN : OBJ.DRAGON_FIRST);
 
-  // Voidgrubs (avant 14:45, une à deux apparitions)
-  if (gameTime < 885 && !grubsDone) {
-    objectives.push({ name: 'Voidgrubs', icon: '🪲', etaSeconds: Math.max(0, OBJ.VOIDGRUBS_SPAWN - gameTime) });
+  // Voidgrubs : apparition 6:00, pas de respawn. Affiché jusqu'à un peu après
+  // l'apparition (ou jusqu'à ce qu'ils soient pris), pas pendant tout l'early.
+  if (!grubsDone && gameTime < OBJ.VOIDGRUBS_SPAWN + 90) {
+    add('Voidgrubs', '🪲', OBJ.VOIDGRUBS_SPAWN);
   }
 
-  // Rift Herald (15:00, sans respawn, despawn ~19:45)
+  // Rift Herald (15:00, sans respawn, despawn ~19:45).
   if (!heraldDead && gameTime < 1185) {
-    objectives.push({ name: 'Héraut', icon: '👁️', etaSeconds: Math.max(0, OBJ.HERALD_SPAWN - gameTime) });
+    add('Héraut', '👁️', OBJ.HERALD_SPAWN);
   }
 
-  // Baron Nashor
-  let baronEta;
-  if (lastBaron != null) baronEta = lastBaron + OBJ.BARON_RESPAWN - gameTime;
-  else baronEta = OBJ.BARON_SPAWN - gameTime;
-  if (gameTime >= OBJ.HERALD_SPAWN - 120 || baronEta <= 180) {
-    objectives.push({ name: 'Baron', icon: '🟣', etaSeconds: Math.max(0, baronEta) });
+  // Baron Nashor (20:00, respawn 6:00).
+  const baronSpawnAt = lastBaron != null ? lastBaron + OBJ.BARON_RESPAWN : OBJ.BARON_SPAWN;
+  if (gameTime >= OBJ.HERALD_SPAWN - 120 || baronSpawnAt - gameTime <= 180) {
+    add('Baron', '🟣', baronSpawnAt);
   }
 
-  for (const o of objectives) o.etaSeconds = Math.max(0, Math.round(o.etaSeconds));
   return objectives;
 }
 
@@ -153,7 +154,10 @@ function analyzeInGame(data, ddragon) {
 
   // 2. Objectifs imminents / disponibles
   for (const obj of objectives) {
-    if (obj.etaSeconds === 0) {
+    // On n'annonce « disponible » que dans la fenêtre suivant l'apparition,
+    // pour ne pas répéter le conseil tant que l'objectif reste up.
+    const freshlyAvailable = obj.spawnAt == null || gameTime - obj.spawnAt <= 75;
+    if (obj.etaSeconds === 0 && freshlyAvailable) {
       advice.push({
         id: `obj-now-${obj.name}`,
         priority: obj.name === 'Baron' || obj.name === 'Dragon' ? 'high' : 'medium',
@@ -161,7 +165,7 @@ function analyzeInGame(data, ddragon) {
         title: `${obj.icon} ${obj.name} disponible`,
         message: `${obj.name} est apparu — prends la vision autour et regroupe pour le contester.`,
       });
-    } else if (obj.etaSeconds <= 45) {
+    } else if (obj.etaSeconds > 0 && obj.etaSeconds <= 45) {
       advice.push({
         id: `obj-soon-${obj.name}`,
         priority: 'medium',

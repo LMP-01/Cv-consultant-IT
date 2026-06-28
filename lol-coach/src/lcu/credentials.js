@@ -13,10 +13,10 @@ function candidateLockfilePaths() {
     paths.push(path.join(config.leaguePath, 'lockfile'));
   }
   if (process.platform === 'win32') {
-    paths.push('C:\\Riot Games\\League of Legends\\lockfile');
-    paths.push('D:\\Riot Games\\League of Legends\\lockfile');
-    if (process.env.LOCALAPPDATA) {
-      paths.push(path.join(process.env.LOCALAPPDATA, 'Riot Games', 'League of Legends', 'lockfile'));
+    // Emplacements d'installation courants (le scan de process couvre les
+    // installations sur un autre disque/dossier).
+    for (const drive of ['C', 'D', 'E']) {
+      paths.push(`${drive}:\\Riot Games\\League of Legends\\lockfile`);
     }
   } else if (process.platform === 'darwin') {
     paths.push('/Applications/League of Legends.app/Contents/LoL/lockfile');
@@ -73,7 +73,8 @@ async function fromProcess() {
       out = await exec('wmic', ['PROCESS', 'WHERE', "name='LeagueClientUx.exe'", 'GET', 'commandline']);
     }
   } else {
-    out = await exec('sh', ['-c', "ps x -o args 2>/dev/null | grep -i LeagueClientUx | grep -v grep"]);
+    // -Ao args= : tous les process, ligne de commande complète, portable macOS/Linux.
+    out = await exec('sh', ['-c', "ps -Ao args= 2>/dev/null | grep -i LeagueClientUx | grep -v grep"]);
   }
   if (!out) return null;
 
