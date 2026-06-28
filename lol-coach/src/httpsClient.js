@@ -37,6 +37,7 @@ function localJson(opts) {
       { host, port, path, method, headers, agent: localAgent },
       (res) => {
         const chunks = [];
+        res.on('error', reject); // erreurs du flux de réponse (socket coupé, etc.)
         res.on('data', (c) => chunks.push(c));
         res.on('end', () => {
           const body = Buffer.concat(chunks).toString('utf8');

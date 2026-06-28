@@ -87,11 +87,19 @@ function addFeedItems(feed) {
 
   for (let i = newItems.length - 1; i >= 0; i--) {
     const a = newItems[i];
-    renderedKeys.add(a.id + '-' + a.at);
-    container.prepend(buildAdviceEl(a));
+    const key = a.id + '-' + a.at;
+    renderedKeys.add(key);
+    const el = buildAdviceEl(a);
+    el.dataset.key = key;
+    container.prepend(el);
   }
-  // Limite le DOM
-  while (container.children.length > 40) container.lastChild.remove();
+  // Limite le DOM et purge les clés des éléments évincés (évite une fuite mémoire
+  // sur une session longue couvrant plusieurs parties).
+  while (container.children.length > 40) {
+    const removed = container.lastChild;
+    if (removed && removed.dataset && removed.dataset.key) renderedKeys.delete(removed.dataset.key);
+    container.removeChild(removed);
+  }
 }
 
 function buildAdviceEl(a) {
