@@ -1,0 +1,79 @@
+{
+  "_comment": "Dataset éditable. Les clés de champions sont les identifiants Data Dragon (ex: 'MonkeyKing' = Wukong, 'Chogath' = Cho'Gath, 'KaiSa', 'KhaZix', 'Belveth'). 'damageOverride' corrige la classification AD/AP/MIXED/TRUE quand les tags Data Dragon induisent en erreur. 'counters[X]' = champions forts CONTRE X (counter-picks). 'rolePicks' = pool de picks solides/sûrs par rôle.",
+
+  "damageOverride": {
+    "Akali": "AP", "Diana": "AP", "Ekko": "AP", "Fizz": "AP", "Katarina": "AP",
+    "Kennen": "AP", "Gragas": "AP", "Mordekaiser": "AP", "Singed": "AP", "Rumble": "AP",
+    "Teemo": "AP", "Vladimir": "AP", "Cassiopeia": "AP", "Lillia": "AP", "Elise": "AP",
+    "Evelynn": "AP", "Nidalee": "AP", "Gwen": "AP", "Sylas": "AP", "Vex": "AP",
+    "Swain": "AP", "Heimerdinger": "AP", "Karthus": "AP", "Yorick": "AD", "Jax": "MIXED",
+    "Kayle": "MIXED", "KaiSa": "MIXED", "Corki": "MIXED", "KogMaw": "MIXED", "Ezreal": "AD",
+    "Vayne": "TRUE", "FiddleSticks": "AP", "Shaco": "AD", "Zac": "AP", "Skarner": "AD",
+    "Rammus": "AD", "Malphite": "AP", "Amumu": "AP", "Sejuani": "AP", "Maokai": "AP",
+    "Galio": "AP", "Volibear": "MIXED", "Nautilus": "AP", "Belveth": "AD", "Smolder": "AD"
+  },
+
+  "ccHeavy": [
+    "Leona", "Nautilus", "Morgana", "Lux", "Ashe", "Sejuani", "Amumu", "Maokai",
+    "Rell", "Thresh", "Blitzcrank", "Jarvaniv", "JarvanIV", "Lissandra", "Veigar",
+    "Skarner", "Malzahar", "Warwick", "Zilean", "Ornn", "Galio", "Neeko", "Vi",
+    "Rakan", "Camille", "Hecarim", "Sett", "Diana", "Cassiopeia"
+  ],
+
+  "burstThreats": [
+    "Zed", "Talon", "KhaZix", "Rengar", "Akali", "Fizz", "LeBlanc", "Syndra",
+    "Veigar", "Katarina", "Ekko", "Kassadin", "Pyke", "Qiyana", "Naafiri",
+    "Nocturne", "Evelynn", "Diana", "Vex", "Annie", "Brand"
+  ],
+
+  "counters": {
+    "Darius": ["Quinn", "Gnar", "Vayne", "Kayle", "Fiora"],
+    "Garen": ["Vayne", "Quinn", "Teemo", "Kennen", "Cassiopeia"],
+    "Sett": ["Vayne", "Gnar", "Quinn", "Gwen"],
+    "Aatrox": ["Garen", "Renekton", "Riven", "Mordekaiser"],
+    "Fiora": ["Vladimir", "Quinn", "Malphite", "Pantheon", "Renekton"],
+    "Camille": ["Wukong", "Malphite", "Tahmkench", "Jax"],
+    "Mordekaiser": ["Vayne", "Quinn", "Kayle", "Fiora"],
+    "Teemo": ["Malphite", "Singed", "Yorick", "Cho'Gath", "Vladimir"],
+    "Riven": ["Renekton", "Malphite", "Pantheon", "Garen"],
+    "Yasuo": ["Malphite", "Renekton", "Pantheon", "Annie", "Diana"],
+    "Yone": ["Pantheon", "Renekton", "Malphite", "Annie"],
+    "Zed": ["Malzahar", "Lissandra", "Kayle", "Diana", "Pantheon"],
+    "Talon": ["Malzahar", "Galio", "Pantheon", "Lissandra"],
+    "Katarina": ["Galio", "Diana", "Pantheon", "Kassadin"],
+    "Akali": ["Galio", "Pantheon", "Renekton", "Annie"],
+    "LeBlanc": ["Kassadin", "Galio", "Malzahar", "Vladimir"],
+    "Syndra": ["Kassadin", "Fizz", "Talon", "Galio"],
+    "Veigar": ["Kassadin", "Fizz", "Zed", "Talon"],
+    "Ahri": ["Kassadin", "Fizz", "Talon", "Kassadin"],
+    "Kassadin": ["Talon", "Pantheon", "Zed", "Annie"],
+    "Vladimir": ["Talon", "Zed", "Pantheon", "Fizz"],
+    "Lux": ["Galio", "Talon", "Kassadin", "Fizz"],
+    "Vayne": ["Caitlyn", "Draven", "Ashe", "Cho'Gath"],
+    "Caitlyn": ["Lucian", "Draven", "Tristana", "Kalista"],
+    "Jinx": ["Draven", "Caitlyn", "Lucian", "Tristana"],
+    "Ezreal": ["Caitlyn", "Draven", "MissFortune"],
+    "Kaisa": ["Caitlyn", "Draven", "Ashe"],
+    "Jhin": ["Lucian", "Draven", "Tristana"],
+    "MissFortune": ["Caitlyn", "Tristana", "Lucian"],
+    "Aphelios": ["Draven", "Caitlyn", "Tristana"],
+    "Thresh": ["Morgana", "Nautilus", "Janna"],
+    "Blitzcrank": ["Morgana", "Janna", "Nautilus"],
+    "Leona": ["Morgana", "Janna", "Lulu"],
+    "Pyke": ["Morgana", "Janna", "Alistar"],
+    "LeeSin": ["Jarvaniv", "Nocturne", "Warwick"],
+    "Kha'Zix": ["Warwick", "JarvanIV", "Vi"],
+    "Graves": ["Nocturne", "Warwick", "Kha'Zix"],
+    "Elise": ["Warwick", "Vi", "Xin Zhao"],
+    "MasterYi": ["Rammus", "Jax", "Pantheon", "Lissandra", "Trundle"]
+  },
+
+  "rolePicks": {
+    "TOP": ["Garen", "Malphite", "Sett", "Renekton", "Darius", "Ornn", "Shen", "Mordekaiser"],
+    "JUNGLE": ["WarWick", "Warwick", "Nocturne", "JarvanIV", "Vi", "Sejuani", "Kha'Zix", "MasterYi", "Amumu"],
+    "MIDDLE": ["Annie", "Pantheon", "Galio", "Malzahar", "Lux", "Diana", "Kassadin", "Ahri"],
+    "BOTTOM": ["Caitlyn", "MissFortune", "Ashe", "Jinx", "Lucian", "Tristana"],
+    "UTILITY": ["Morgana", "Leona", "Nautilus", "Lux", "Janna", "Lulu", "Soraka"],
+    "SUPPORT": ["Morgana", "Leona", "Nautilus", "Lux", "Janna", "Lulu", "Soraka"]
+  }
+}

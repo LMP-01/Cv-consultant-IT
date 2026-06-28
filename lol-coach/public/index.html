@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoL Coach IA — temps réel</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">🐉</span>
+        <div>
+          <h1>LoL Coach IA</h1>
+          <p class="tagline">Coaching, picks &amp; builds en temps réel</p>
+        </div>
+      </div>
+      <div class="status-row" id="statusRow">
+        <span class="badge" id="phaseBadge">Connexion…</span>
+        <span class="badge dim" id="liveBadge">Client de jeu</span>
+        <span class="badge dim" id="lcuBadge">Client League</span>
+        <span class="badge dim" id="aiBadge">IA</span>
+        <span class="badge dim" id="wsBadge">Serveur</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Colonne flux de coaching -->
+      <section class="panel feed-panel">
+        <h2 class="panel-title">💬 Conseils en direct</h2>
+        <div id="feed" class="feed">
+          <div class="empty" id="feedEmpty">
+            En attente d’une partie ou d’un champ select…
+          </div>
+        </div>
+      </section>
+
+      <!-- Colonne contexte -->
+      <section class="context">
+        <!-- État inactif -->
+        <div id="idleCard" class="panel">
+          <h2 class="panel-title">👋 Bienvenue</h2>
+          <div class="idle-body" id="idleBody">
+            <p>Lance ce coach <strong>sur ton PC de jeu</strong>, à côté de League of Legends.</p>
+            <ul>
+              <li>En <strong>champ select</strong> : suggestions de pick &amp; build contre la team adverse.</li>
+              <li>En <strong>partie</strong> : conseils de jeu, timings d’objectifs et tableau de bord.</li>
+            </ul>
+            <p class="hint">Astuce : lance <code>npm run mock</code> pour une démo sans partie.</p>
+          </div>
+        </div>
+
+        <!-- Champ select -->
+        <div id="champSelect" class="panel hidden">
+          <h2 class="panel-title">🧩 Champ Select — <span id="myRole"></span></h2>
+          <div id="laneOpponent" class="lane-opponent"></div>
+
+          <h3 class="sub">Picks conseillés</h3>
+          <div id="pickSuggestions" class="pick-grid"></div>
+
+          <h3 class="sub">Composition adverse</h3>
+          <div id="enemyChamps" class="champ-row"></div>
+          <div id="enemyProfile" class="profile-line"></div>
+
+          <h3 class="sub">Build conseillé</h3>
+          <ul id="buildSuggestions" class="build-list"></ul>
+
+          <div id="runeHints" class="rune-hints"></div>
+        </div>
+
+        <!-- In game -->
+        <div id="inGame" class="hidden">
+          <div class="panel">
+            <h2 class="panel-title">⏱️ Objectifs</h2>
+            <div id="objectives" class="objectives"></div>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel-title">📊 Tableau de bord — <span id="gameTime"></span></h2>
+            <div id="myStats" class="my-stats"></div>
+            <div class="scoreboard">
+              <div class="team team-allies">
+                <h3 class="sub">Ton équipe</h3>
+                <div id="allies"></div>
+              </div>
+              <div class="team team-enemies">
+                <h3 class="sub">Adversaires</h3>
+                <div id="enemies"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="footStatus">Coach local — aucune donnée n’est envoyée ailleurs que vers les API locales de Riot et, si configuré, l’API Claude.</span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

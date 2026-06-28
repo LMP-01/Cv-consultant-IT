@@ -1,0 +1,171 @@
+# 🐉 LoL Coach IA — coaching League of Legends en temps réel
+
+Un agent qui **surveille tes parties de League of Legends en direct** et te donne, dans une **appli web locale (HTML + Node.js)** :
+
+- 💬 des **conseils de jeu en temps réel** (macro, objectifs, timings, recall, survie…) pendant la partie ;
+- 🧩 des **suggestions de pick et de build** adaptées à la composition adverse pendant le **champ select** ;
+- 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats).
+
+Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
+
+---
+
+## ⚠️ À lire en premier
+
+Cette appli s’appuie sur les **API locales du client Riot**, qui ne sont accessibles **que sur la machine où tourne League of Legends** (`127.0.0.1`). 
+
+➡️ **Tu dois donc lancer ce coach sur ton PC de jeu, à côté de League.** Il ne peut pas surveiller une partie à distance.
+
+Aucune donnée n’est envoyée ailleurs : tout reste en local, sauf — si tu actives l’option — les instantanés d’état de jeu envoyés à l’API Claude pour générer des conseils.
+
+C’est conforme à l’esprit des outils tiers de Riot : on **lit** uniquement les API officielles locales (`Live Client Data API`, `LCU`), on n’**automatise aucune action** et on n’injecte aucune entrée dans le jeu.
+
+---
+
+## ✨ Fonctionnalités
+
+### En champ select
+- Détecte ton **rôle** et ton **adversaire de lane**.
+- Suggère des **picks** qui counterent la team adverse (dataset de matchups embarqué).
+- Analyse le **profil de dégâts adverse** (AD / AP / mixte), le **CC** et le **burst**.
+- Propose un **build défensif** et des **runes/sorts** adaptés (plaques d’acier vs AD, Mercure vs AP, Zhonya vs burst, anti-CC…).
+
+### En partie
+- **Timers d’objectifs** : Dragon (5:00, respawn 5:00), Voidgrubs (6:00), Héraut (15:00), Baron (20:00, respawn 6:00) — valeurs patch 26.13.
+- **Conseils contextuels** : objectif imminent/disponible, PV bas, recall sur spike d’or, CS/min, mortalité, niveau 6, réponse à un objectif adverse, build défensif.
+- **Tableau de bord** : ton KDA / CS / or / PV, et le **scoreboard** des deux équipes.
+- Optionnel : **conseils générés par Claude** en complément, priorisés et concis.
+
+---
+
+## 🛠️ Prérequis
+
+- **Node.js ≥ 18** (testé sur Node 22).
+- **League of Legends** installé (pour le mode réel).
+- Une connexion Internet au premier lancement (pour récupérer les données Data Dragon des champions/objets ; ensuite mises en cache). Un **fallback embarqué** prend le relais si Data Dragon est injoignable.
+
+---
+
+## 🚀 Installation
+
+```bash
+cd lol-coach
+npm install
+cp .env.example .env   # optionnel : pour configurer la clé Claude, la langue, etc.
+```
+
+## ▶️ Utilisation
+
+### Démo (sans League, pour découvrir l’interface)
+
+```bash
+npm run mock
+```
+
+Puis ouvre **http://localhost:3000**. La démo joue ~30 s de champ select puis bascule sur une partie simulée avec des timers qui défilent.
+
+### Mode réel (sur ton PC de jeu)
+
+```bash
+npm start
+```
+
+Lance ensuite League of Legends. L’appli détecte automatiquement le **champ select** puis la **partie**, et met à jour les conseils en direct dans le navigateur (**http://localhost:3000**).
+
+---
+
+## ⚙️ Configuration (`.env`)
+
+Toutes les variables sont optionnelles (voir `.env.example`) :
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `PORT` | Port de l’interface web | `3000` |
+| `LANG` | Langue (`fr` / `en`) | `fr` |
+| `ANTHROPIC_API_KEY` | Active les conseils Claude (sinon : règles locales) | — |
+| `CLAUDE_MODEL` | Modèle Claude | `claude-opus-4-8` |
+| `AI_MIN_INTERVAL_SECONDS` | Intervalle min. entre 2 appels IA en jeu | `12` |
+| `RIOT_API_KEY` | (Optionnel) enrichissement Riot API | — |
+| `DDRAGON_LOCALE` | Locale des noms (`fr_FR`, `en_US`…) | `fr_FR` |
+| `LEAGUE_PATH` | Chemin d’install de League (sinon autodétection) | — |
+| `MOCK_CHAMPSELECT_SECONDS` | Durée du champ select en mode démo | `30` |
+
+> 💡 Pour des conseils IA plus **rapides** en jeu, tu peux mettre `CLAUDE_MODEL=claude-haiku-4-5`.
+
+---
+
+## 🧠 Comment ça marche
+
+```
+        ┌──────────────── Ton PC de jeu ────────────────┐
+        │                                               │
+ League │  LCU API (port aléatoire) ──► champ select    │
+ client │  Live Client Data API (:2999) ──► état en jeu │
+        │                 │                             │
+        │                 ▼                             │
+        │   Node.js  ──►  Moteur de règles + Claude     │
+        │     │            (heuristiques, pick/build)   │
+        │     ▼                                         │
+        │  Serveur web local ──WebSocket──► Navigateur  │
+        └───────────────────────────────────────────────┘
+```
+
+- **LCU API** (`/lol-champ-select/v1/session`, `/lol-gameflow/v1/gameflow-phase`) : lue via le `lockfile` du client (ou la ligne de commande du process `LeagueClientUx`), authentification Basic `riot:<token>` en HTTPS auto-signé.
+- **Live Client Data API** (`https://127.0.0.1:2999/liveclientdata/allgamedata`) : état de la partie en cours (joueurs, scores, or, événements, temps de jeu).
+- **Data Dragon** : noms/tags/portraits des champions et objets (mis en cache dans `.cache/`).
+- **Moteur de conseils** : règles locales (`src/advisor/heuristics.js`, `pickAdvisor.js`, `profile.js`) + couche **Claude** optionnelle (`src/advisor/ai.js`) avec sortie JSON structurée.
+
+---
+
+## 🧩 Personnaliser le dataset
+
+Le fichier **`data/counters.json`** est entièrement éditable :
+
+- `counters` : pour chaque champion, la liste de ceux qui le contrent (counter-picks) ;
+- `rolePicks` : un pool de picks solides par rôle ;
+- `damageOverride`, `ccHeavy`, `burstThreats` : pour affiner l’analyse de composition.
+
+Le matching est **tolérant à la casse et à la ponctuation** (`Kha'Zix` ≡ `Khazix`). Ajoute tes propres champions/matchups pour des suggestions plus pointues.
+
+`data/champions.fallback.json` est le référentiel hors-ligne utilisé **uniquement** si Data Dragon est injoignable.
+
+---
+
+## 🩺 Dépannage
+
+| Symptôme | Cause probable | Solution |
+|---|---|---|
+| Badge « Client ✗ » | League n’est pas lancé / lockfile introuvable | Lance League ; au besoin, renseigne `LEAGUE_PATH`. |
+| Badge « Jeu ✗ » mais en partie | Live Client Data API pas encore prête | Patiente quelques secondes après le chargement de la partie. |
+| Portraits de champions absents | Data Dragon injoignable (firewall/hors-ligne) | Vérifie l’accès à `ddragon.leagueoflegends.com` ; le fallback assure le reste. |
+| « IA: règles » | Pas de clé Claude / SDK absent | Renseigne `ANTHROPIC_API_KEY` (et `npm install`). |
+| Pas de conseils IA | Clé invalide ou quota | Le moteur de règles prend automatiquement le relais. |
+
+---
+
+## 📁 Structure du projet
+
+```
+lol-coach/
+├── src/
+│   ├── server.js          # serveur web + WebSocket
+│   ├── coachLoop.js       # orchestrateur (détection de phase, flux de conseils)
+│   ├── config.js          # configuration (.env)
+│   ├── httpsClient.js     # client HTTPS local (cert auto-signé)
+│   ├── lcu/               # accès au client League (champ select, phase)
+│   ├── liveclient/        # accès à l'API in-game (:2999)
+│   ├── data/ddragon.js    # données statiques Data Dragon + cache + fallback
+│   ├── advisor/           # heuristiques, pick/build advisor, profil, Claude
+│   └── mock/              # données simulées (mode démo)
+├── public/                # interface web (HTML/CSS/JS)
+├── data/                  # dataset de counters + fallback champions
+└── .env.example
+```
+
+---
+
+## ⚖️ Légalité
+
+Cet outil n’utilise que des **API officielles en lecture seule** exposées localement par le client Riot, et **n’automatise aucune action en jeu** (pas de scripting, pas d’injection d’entrées). C’est la même catégorie d’outils que les overlays d’aide au build/au pick. Reste néanmoins responsable de l’usage que tu en fais au regard des conditions d’utilisation de Riot Games.
+
+> Ce projet n’est pas endossé par Riot Games et ne reflète pas les opinions de Riot Games.
