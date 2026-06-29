@@ -189,9 +189,10 @@ function renderChampSelect(pick) {
   if (!(pick.enemyChamps || []).length) enemyRow.innerHTML = '<span class="profile-line">Aucun champion adverse encore visible.</span>';
 
   const prof = $('enemyProfile');
-  prof.textContent = pick.enemyComp
-    ? `Profil : ${pick.enemyComp.profile} · CC ${pick.enemyComp.ccLevel} · burst ${pick.enemyComp.burstLevel}`
-    : '';
+  const parts = [];
+  if (pick.enemyComp) parts.push(`Adverse : ${esc(pick.enemyComp.profile)} · CC ${esc(pick.enemyComp.ccLevel)} · burst ${esc(pick.enemyComp.burstLevel)}`);
+  if (pick.teamComp) parts.push(`Ton équipe : ${esc(pick.teamComp.profile)}`);
+  prof.innerHTML = parts.join('<br>');
 
   const build = $('buildSuggestions');
   build.innerHTML = '';

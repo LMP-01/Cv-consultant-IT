@@ -44,17 +44,34 @@ function matchupChips(list) {
     .join('');
 }
 
+// Un item peut être une chaîne (ancien format) ou un objet { name, icon }.
+function itemName(i) {
+  return i && typeof i === 'object' ? i.name : i;
+}
+function itemIcon(i) {
+  return i && typeof i === 'object' ? i.icon : null;
+}
+// Pastille d'item avec icône (si résolue) + nom.
+function itemPill(i) {
+  if (i == null || i === '') return '';
+  const name = itemName(i);
+  const icon = itemIcon(i);
+  return `<span class="item-pill">${icon ? `<img class="item-ico" src="${esc(icon)}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : ''}<span>${esc(name)}</span></span>`;
+}
+function itemPills(arr) {
+  return (arr || []).map(itemPill).join('');
+}
+
 function buildBlock(b) {
   if (!b) return '<div class="dex-none">Build non renseigné (édite data/builds.json).</div>';
-  const items = (arr) => (arr || []).map((i) => `<span class="item-pill">${esc(i)}</span>`).join('');
   return `
     <div class="build-grid">
       <div class="build-row"><span class="build-k">Runes</span><span>${esc(b.runes ? b.runes.keystone : '')}${b.runes && b.runes.secondary ? ' · ' + esc(b.runes.secondary) : ''}</span></div>
       <div class="build-row"><span class="build-k">Sorts</span><span>${esc(b.summoners || '')}</span></div>
-      <div class="build-row"><span class="build-k">Départ</span><span>${esc(b.start || '')}</span></div>
-      <div class="build-row"><span class="build-k">Core</span><span class="item-line">${items(b.core)}</span></div>
-      <div class="build-row"><span class="build-k">Bottes</span><span>${esc(b.boots || '')}</span></div>
-      <div class="build-row"><span class="build-k">Situationnel</span><span class="item-line">${items(b.situational)}</span></div>
+      <div class="build-row"><span class="build-k">Départ</span><span class="item-line">${itemPill(b.start)}</span></div>
+      <div class="build-row"><span class="build-k">Core</span><span class="item-line">${itemPills(b.core)}</span></div>
+      <div class="build-row"><span class="build-k">Bottes</span><span class="item-line">${itemPill(b.boots)}</span></div>
+      <div class="build-row"><span class="build-k">Situationnel</span><span class="item-line">${itemPills(b.situational)}</span></div>
     </div>
     ${b.note ? `<div class="build-note">💡 ${esc(b.note)}</div>` : ''}`;
 }
@@ -111,12 +128,14 @@ function render(data) {
   }
 
   const root = $('poolRoot');
-  if (!data.roles || !data.roles.length) {
-    root.innerHTML = '<div class="empty">Aucune pool configurée. Renseigne <code>data/champion-pool.json</code>.</div>';
+  // Filtre par poste si la page le définit (mid.html / adc.html).
+  const roles = window.DEX_ROLE ? (data.roles || []).filter((r) => r.role === window.DEX_ROLE) : data.roles || [];
+  if (!roles.length) {
+    root.innerHTML = '<div class="empty">Aucun champion pour ce poste. Renseigne <code>data/champion-pool.json</code>.</div>';
     return;
   }
 
-  root.innerHTML = data.roles
+  root.innerHTML = roles
     .map(
       (r) => `
       <section class="role-section">
@@ -126,8 +145,12 @@ function render(data) {
     )
     .join('');
 
-  if (data.unresolved && data.unresolved.length) {
-    root.innerHTML += `<div class="empty">Non reconnus (nouveau champion ?) : ${esc(data.unresolved.join(', '))}</div>`;
+  // unresolved peut être une liste de chaînes (ancien format) ou d'objets { champion, role }.
+  let unresolved = (data.unresolved || []).map((u) => (u && typeof u === 'object' ? u : { champion: u, role: null }));
+  if (window.DEX_ROLE) unresolved = unresolved.filter((u) => !u.role || u.role === window.DEX_ROLE);
+  if (unresolved.length) {
+    const names = unresolved.map((u) => u.champion);
+    root.innerHTML += `<div class="empty">Non reconnus (nouveau champion ?) : ${esc(names.join(', '))}</div>`;
   }
 }
 
