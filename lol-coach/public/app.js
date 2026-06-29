@@ -51,7 +51,7 @@ function applyState(state) {
   const c = state.connection || {};
   setBadge('liveBadge', 'Jeu ' + (c.liveClient ? '✓' : '✗'), c.liveClient ? 'ok' : 'off');
   setBadge('lcuBadge', 'Client ' + (c.lcu ? '✓' : '✗'), c.lcu ? 'ok' : 'off');
-  setBadge('aiBadge', 'IA: ' + shortAi(c.ai), c.ai && c.ai.startsWith('Claude') ? 'ok' : 'dim');
+  setBadge('aiBadge', 'IA: ' + shortAi(c.ai), c.ai && c.ai.includes('Claude') ? 'ok' : 'dim');
 
   // Flux de conseils
   addFeedItems(state.feed || []);
@@ -69,7 +69,8 @@ function applyState(state) {
 
 function shortAi(ai) {
   if (!ai) return '—';
-  if (ai.startsWith('Claude')) return 'Claude';
+  if (/claude code|abonnement/i.test(ai)) return 'Max';
+  if (/claude/i.test(ai)) return 'Claude';
   return 'règles';
 }
 

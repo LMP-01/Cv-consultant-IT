@@ -1,8 +1,9 @@
 'use strict';
 
+const { spawn } = require('child_process');
 const config = require('../config');
 
-// Schéma de sortie structuré : Claude renvoie un JSON strict de conseils.
+// Schéma de sortie structuré : on demande au modèle un JSON strict de conseils.
 const TIPS_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -32,7 +33,7 @@ Règles:
 - Sois spécifique au contexte (utilise les chiffres fournis). Évite les généralités vagues.
 - N'invente pas de données absentes de l'instantané.
 - Ne répète pas mot pour mot les conseils déjà fournis par le moteur de règles : complète-les ou apporte une perspective de plus haut niveau.
-- Réponds UNIQUEMENT avec le JSON demandé, en français, sans texte autour.`;
+- Réponds UNIQUEMENT avec un objet JSON {"tips":[{"title","message","priority"}]}, en français, sans aucun texte autour.`;
 
 const SYSTEM_PROMPT_EN = `You are a professional League of Legends coach assisting a player in REAL TIME during their game.
 You receive a JSON snapshot of the game state (time, your champion, scores, upcoming objectives, enemy composition, and tips already detected by a rules engine).
@@ -42,11 +43,11 @@ Rules:
 - Be context-specific (use the provided numbers). Avoid vague generalities.
 - Do not invent data not present in the snapshot.
 - Do not repeat the rules-engine tips verbatim: complement them or add a higher-level perspective.
-- Reply ONLY with the requested JSON, in English, with no surrounding text.`;
+- Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
 
-// Parse robuste : tente JSON direct, sinon extrait le 1er objet {...} du texte
-// (au cas où le SDK/modèle entoure la sortie de texte).
+// Parse robuste : tente JSON direct, sinon extrait le 1er objet {...} du texte.
 function parseTips(text) {
+  if (!text) return null;
   try {
     return JSON.parse(text);
   } catch {
@@ -63,24 +64,16 @@ function parseTips(text) {
   }
 }
 
-class AiAdvisor {
+// ── Backend 1 : API Anthropic (clé ANTHROPIC_API_KEY) ───────────────────────
+class ApiBackend {
   constructor() {
-    this.client = null;
-    this.disabledReason = null;
-    this.lastCallTs = 0;
-    this.inFlight = false;
-    this.warned = false;
-
-    if (!config.ai.enabled) {
-      this.disabledReason = 'Aucune clé ANTHROPIC_API_KEY — moteur de règles uniquement.';
-      return;
-    }
+    this.label = `API Claude (${config.ai.model})`;
     try {
-      // Chargement paresseux : si le SDK n'est pas installé, on reste en mode règles.
       const Anthropic = require('@anthropic-ai/sdk');
       this.client = new Anthropic({ apiKey: config.ai.apiKey });
     } catch {
-      this.disabledReason = "SDK @anthropic-ai/sdk non installé (npm install) — moteur de règles uniquement.";
+      this.client = null;
+      this.initError = 'SDK @anthropic-ai/sdk non installé (npm install).';
     }
   }
 
@@ -88,12 +81,164 @@ class AiAdvisor {
     return Boolean(this.client);
   }
 
+  async generate(systemText, userText) {
+    const msg = await this.client.messages.create({
+      model: config.ai.model,
+      max_tokens: 700,
+      system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: TIPS_SCHEMA } },
+      messages: [{ role: 'user', content: userText }],
+    });
+    const block = (msg.content || []).find((b) => b.type === 'text');
+    return block ? block.text : null;
+  }
+}
+
+// ── Backend 2 : Claude Code (abonnement Claude Max/Pro, sans clé API) ────────
+// On appelle la CLI locale `claude` en mode headless. L'authentification utilise
+// ton abonnement (login Claude Code ou token `claude setup-token`).
+class ClaudeCodeBackend {
+  constructor() {
+    this.model = config.ai.claudeCodeModel;
+    this.label = `Claude Code / abonnement (${this.model})`;
+    this.detected = false;
+  }
+
+  get available() {
+    return this.detected;
+  }
+
+  // Détecte la présence de la CLI `claude`.
+  async detect() {
+    this.detected = await this._run(['--version'], null, 8000)
+      .then((r) => r !== null)
+      .catch(() => false);
+    return this.detected;
+  }
+
+  // Exécute `claude` ; prompt passé via stdin pour éviter tout souci d'échappement.
+  _run(args, stdinText, timeoutMs) {
+    return new Promise((resolve) => {
+      // On retire ANTHROPIC_API_KEY pour forcer l'usage de l'abonnement.
+      const env = { ...process.env };
+      delete env.ANTHROPIC_API_KEY;
+      let child;
+      try {
+        child = spawn('claude', args, { env, shell: process.platform === 'win32' });
+      } catch {
+        return resolve(null);
+      }
+      let out = '';
+      let done = false;
+      const finish = (val) => {
+        if (done) return;
+        done = true;
+        resolve(val);
+      };
+      const timer = setTimeout(() => {
+        try {
+          child.kill();
+        } catch {
+          /* ignore */
+        }
+        finish(null);
+      }, timeoutMs);
+
+      child.stdout.on('data', (d) => (out += d));
+      child.on('error', () => {
+        clearTimeout(timer);
+        finish(null);
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        finish(code === 0 ? out : null);
+      });
+
+      if (stdinText != null) {
+        try {
+          child.stdin.write(stdinText);
+          child.stdin.end();
+        } catch {
+          /* le timeout/erreur gérera */
+        }
+      } else if (child.stdin) {
+        child.stdin.end();
+      }
+    });
+  }
+
+  async generate(systemText, userText) {
+    // Claude Code conserve son prompt système ; on injecte nos instructions
+    // dans le prompt utilisateur (envoyé via stdin).
+    const prompt = `${systemText}\n\n=== ÉTAT DE JEU (JSON) ===\n${userText}`;
+    const args = ['-p', '--output-format', 'json'];
+    if (this.model) args.push('--model', this.model);
+    const raw = await this._run(args, prompt, 30000);
+    if (!raw) return null;
+    // En --output-format json, la CLI renvoie une enveloppe {result, ...}.
+    try {
+      const env = JSON.parse(raw);
+      if (typeof env.result === 'string') return env.result;
+    } catch {
+      /* pas du JSON enveloppe : on tente le texte brut */
+    }
+    return raw;
+  }
+}
+
+// ── Façade : choisit le backend selon la config et l'environnement ──────────
+class AiAdvisor {
+  constructor() {
+    this.backend = null;
+    this.disabledReason = 'détection…';
+    this.lastCallTs = 0;
+    this.inFlight = false;
+    this.warned = false;
+  }
+
   get system() {
     return config.lang === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_FR;
   }
 
-  // Renvoie des conseils IA ou null si indisponible/limité/échec.
-  // `force` ignore la limite de cadence (ex: événement marquant).
+  get available() {
+    return Boolean(this.backend && this.backend.available);
+  }
+
+  // Résolution du backend (asynchrone car la détection de la CLI l'est).
+  async init() {
+    const provider = (config.ai.provider || 'auto').toLowerCase();
+    const hasApi = config.ai.enabled;
+    const api = hasApi ? new ApiBackend() : null;
+    const cc = new ClaudeCodeBackend();
+
+    const tryClaudeCode = async () => {
+      await cc.detect();
+      return cc.available ? cc : null;
+    };
+
+    if (provider === 'rules') {
+      this.backend = null;
+      this.disabledReason = 'Mode règles forcé (AI_PROVIDER=rules).';
+    } else if (provider === 'api') {
+      this.backend = api && api.available ? api : null;
+      if (!this.backend) this.disabledReason = api ? api.initError || 'SDK manquant.' : 'Aucune clé ANTHROPIC_API_KEY.';
+    } else if (provider === 'claude-code' || provider === 'claudecode' || provider === 'max') {
+      this.backend = await tryClaudeCode();
+      if (!this.backend) this.disabledReason = "CLI `claude` introuvable. Installe Claude Code et connecte ton abonnement.";
+    } else {
+      // auto : si une clé API est fournie on la privilégie ; sinon l'abonnement
+      // via Claude Code ; sinon le moteur de règles.
+      if (api && api.available) this.backend = api;
+      else this.backend = await tryClaudeCode();
+      if (!this.backend) this.disabledReason = 'Ni clé API, ni CLI Claude Code détectées — moteur de règles.';
+    }
+
+    if (this.backend) console.log(`[IA] Backend actif : ${this.backend.label}`);
+    else console.log(`[IA] ${this.disabledReason} (moteur de règles)`);
+    return this;
+  }
+
+  // Renvoie des conseils IA ou null si indisponible / limité / échec.
   async getInGameTips(snapshot, { force = false } = {}) {
     if (!this.available || this.inFlight) return null;
     const now = Date.now();
@@ -102,33 +247,24 @@ class AiAdvisor {
     this.inFlight = true;
     this.lastCallTs = now;
     try {
-      const msg = await this.client.messages.create({
-        model: config.ai.model,
-        max_tokens: 700,
-        system: [{ type: 'text', text: this.system, cache_control: { type: 'ephemeral' } }],
-        output_config: {
-          effort: 'low',
-          format: { type: 'json_schema', schema: TIPS_SCHEMA },
-        },
-        messages: [{ role: 'user', content: JSON.stringify(snapshot) }],
-      });
-      const textBlock = (msg.content || []).find((b) => b.type === 'text');
-      if (!textBlock) return null;
-      const parsed = parseTips(textBlock.text);
+      const text = await this.backend.generate(this.system, JSON.stringify(snapshot));
+      const parsed = parseTips(text);
       if (!parsed) return null;
       const tips = Array.isArray(parsed.tips) ? parsed.tips.slice(0, 3) : [];
-      return tips.map((t, i) => ({
-        id: `ai-${Math.floor(now / 1000)}-${i}`,
-        priority: t.priority || 'medium',
-        category: 'Coach IA',
-        title: t.title,
-        message: t.message,
-        source: 'ai',
-      }));
+      return tips
+        .filter((t) => t && t.title && t.message)
+        .map((t, i) => ({
+          id: `ai-${Math.floor(now / 1000)}-${i}`,
+          priority: t.priority || 'medium',
+          category: 'Coach IA',
+          title: t.title,
+          message: t.message,
+          source: 'ai',
+        }));
     } catch (err) {
       if (!this.warned) {
         this.warned = true;
-        console.warn('[IA] Appel Claude en échec, bascule sur le moteur de règles:', err.message);
+        console.warn('[IA] Appel en échec, bascule sur le moteur de règles:', err.message);
       }
       return null;
     } finally {
@@ -137,7 +273,7 @@ class AiAdvisor {
   }
 
   statusLabel() {
-    if (this.available) return `Claude (${config.ai.model})`;
+    if (this.available) return this.backend.label;
     return this.disabledReason || 'désactivé';
   }
 }

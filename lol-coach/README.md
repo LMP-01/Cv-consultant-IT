@@ -82,15 +82,30 @@ Toutes les variables sont optionnelles (voir `.env.example`) :
 |---|---|---|
 | `PORT` | Port de l’interface web | `3000` |
 | `LANG` | Langue (`fr` / `en`) | `fr` |
-| `ANTHROPIC_API_KEY` | Active les conseils Claude (sinon : règles locales) | — |
-| `CLAUDE_MODEL` | Modèle Claude | `claude-opus-4-8` |
+| `AI_PROVIDER` | `auto` / `claude-code` / `api` / `rules` | `auto` |
+| `CLAUDE_CODE_MODEL` | Modèle via l’abonnement (Claude Code) | `sonnet` |
+| `ANTHROPIC_API_KEY` | Clé API (backend `api`, facturation au token) | — |
+| `CLAUDE_MODEL` | Modèle pour le backend API | `claude-opus-4-8` |
 | `AI_MIN_INTERVAL_SECONDS` | Intervalle min. entre 2 appels IA en jeu | `12` |
 | `RIOT_API_KEY` | (Optionnel) enrichissement Riot API | — |
 | `DDRAGON_LOCALE` | Locale des noms (`fr_FR`, `en_US`…) | `fr_FR` |
 | `LEAGUE_PATH` | Chemin d’install de League (sinon autodétection) | — |
 | `MOCK_CHAMPSELECT_SECONDS` | Durée du champ select en mode démo | `30` |
 
-> 💡 Pour des conseils IA plus **rapides** en jeu, tu peux mettre `CLAUDE_MODEL=claude-haiku-4-5`.
+### 🤖 Activer les conseils IA avec ton abonnement Claude Max/Pro (sans clé API)
+
+Le backend `claude-code` utilise ton **abonnement Claude** via la CLI **Claude Code** — aucune clé API ni facturation au token.
+
+1. Installe Claude Code : `npm install -g @anthropic-ai/claude-code` (ou voir https://code.claude.com).
+2. Connecte ton abonnement : lance `claude` puis tape `/login` (ou `claude setup-token` pour un token longue durée).
+3. Vérifie que **`ANTHROPIC_API_KEY` n’est PAS définie** (elle aurait la priorité). Mets dans `.env` :
+   ```
+   AI_PROVIDER=claude-code
+   CLAUDE_CODE_MODEL=sonnet
+   ```
+4. Lance l’app : `npm start`. Le badge « IA » affiche **Max** quand l’abonnement est actif.
+
+> 💡 `sonnet` est conseillé en temps réel : il préserve ton **quota Max** (limites par fenêtres de 5 h) et répond plus vite. Mets `CLAUDE_CODE_MODEL=opus` si tu préfères. L’app **limite la cadence** des appels (`AI_MIN_INTERVAL_SECONDS`) et **retombe sur le moteur de règles** si le quota est atteint.
 
 ---
 
