@@ -107,17 +107,27 @@ function addFeedItems(feed) {
   }
 }
 
+const PRIO_LABEL = { high: 'Urgent', medium: 'Important', low: 'Conseil', info: 'Info' };
+
 function buildAdviceEl(a) {
   const el = document.createElement('div');
-  const cls = a.source === 'ai' ? 'ai' : a.priority || 'info';
-  el.className = 'advice ' + cls;
+  const isAi = a.source === 'ai';
+  el.className = 'advice ' + (isAi ? 'ai' : a.priority || 'info');
   el.dataset.at = a.at;
+  const prio = isAi ? 'IA' : PRIO_LABEL[a.priority] || 'Info';
   el.innerHTML = `
-    <div class="advice-head">
-      <span class="advice-title">${esc(a.title)}</span>
-      <span class="advice-meta"><span class="rel" data-at="${a.at}"></span></span>
-    </div>
-    <div class="advice-msg"><span class="advice-cat">${esc(a.category || '')}</span>${esc(a.message)}</div>`;
+    <div class="advice-accent"></div>
+    <div class="advice-body">
+      <div class="advice-head">
+        <span class="advice-title">${esc(a.title)}</span>
+        <span class="rel" data-at="${a.at}"></span>
+      </div>
+      <div class="advice-msg">${esc(a.message)}</div>
+      <div class="advice-foot">
+        ${a.category ? `<span class="chip chip-cat">${esc(a.category)}</span>` : ''}
+        <span class="chip chip-prio">${esc(prio)}</span>
+      </div>
+    </div>`;
   return el;
 }
 
