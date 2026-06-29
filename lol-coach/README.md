@@ -35,6 +35,9 @@ C’est conforme à l’esprit des outils tiers de Riot : on **lit** uniquement 
 - **Conseils contextuels** : objectif imminent/disponible, PV bas, recall sur spike d’or, CS/min, mortalité, niveau 6, réponse à un objectif adverse, build défensif.
 - **Tableau de bord** : ton KDA / CS / or / PV, et le **scoreboard** des deux équipes.
 - Optionnel : **conseils générés par Claude** en complément, priorisés et concis.
+- 🔊 **Lecture vocale** : les conseils peuvent être **lus à voix haute** pour ne pas quitter le jeu des yeux. Bouton « Voix », **choix de la voix** (les françaises en tête), et filtre *Important / Tout / IA*.
+
+> 💡 La synthèse vocale utilise la **Web Speech API du navigateur** (locale, sans clé, sans réseau). La qualité dépend des voix installées sur ton OS : pour des voix françaises plus naturelles, **Microsoft Edge** (voix « Natural », ex. *Denise/Henri*) ou l’ajout de voix dans Windows/macOS donne le meilleur rendu. Clique « Voix » une fois (interaction requise par les navigateurs) puis « Test » pour l’essayer.
 
 ---
 
