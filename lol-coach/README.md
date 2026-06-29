@@ -166,6 +166,16 @@ En champ select, **si ton rôle assigné a une pool**, le coach te suggère **en
 
 Les champions **bannis** ou **déjà pris** sont retirés ; un champion inconnu de Data Dragon (nouveau champion) est signalé. Sans pool pour ton rôle, le coach retombe sur ses suggestions de counters génériques.
 
+### 📖 Page « Ma Pool » (fiches champions)
+
+Depuis l'interface, le bouton **« 📖 Ma Pool »** (ou `/pool.html`) ouvre une **fiche par champion de ta pool**, par poste, avec :
+- **caractéristiques** (tags, type de dégâts, ressource, difficulté, description) via Data Dragon ;
+- **build conseillé** (runes, sorts, objets core/situationnels) — éditable dans `data/builds.json` ;
+- **winrate overall** + **winrate par match-up** (qui le counter / qui il counter) ;
+- les listes de counters.
+
+Les **winrates live** proviennent de `data/champion-data.json`, généré par `npm run fetch-counters` (sur ta machine). Sans ce fichier, la page affiche les caractéristiques, le build et les counters curés ; les winrates apparaissent dès que tu lances le scraper.
+
 ### 📥 Remplir `counters` avec des données réelles (winrate)
 
 Plutôt que de tout saisir à la main, tu peux régénérer le bloc `counters` à
