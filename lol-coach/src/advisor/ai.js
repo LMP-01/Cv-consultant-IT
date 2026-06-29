@@ -33,6 +33,7 @@ Règles:
 - Sois spécifique au contexte (utilise les chiffres fournis). Évite les généralités vagues.
 - N'invente pas de données absentes de l'instantané.
 - Ne répète pas mot pour mot les conseils déjà fournis par le moteur de règles : complète-les ou apporte une perspective de plus haut niveau.
+- "priority" doit valoir exactement "high", "medium" ou "low".
 - Réponds UNIQUEMENT avec un objet JSON {"tips":[{"title","message","priority"}]}, en français, sans aucun texte autour.`;
 
 const SYSTEM_PROMPT_EN = `You are a professional League of Legends coach assisting a player in REAL TIME during their game.
@@ -43,7 +44,17 @@ Rules:
 - Be context-specific (use the provided numbers). Avoid vague generalities.
 - Do not invent data not present in the snapshot.
 - Do not repeat the rules-engine tips verbatim: complement them or add a higher-level perspective.
+- "priority" must be exactly "high", "medium" or "low".
 - Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
+
+// Normalise la priorité vers high|medium|low (les modèles renvoient parfois
+// 1/2/3 ou des libellés FR/EN selon le backend).
+function normalizePriority(p) {
+  const s = String(p == null ? '' : p).toLowerCase().trim();
+  if (['high', 'haute', 'élevé', 'eleve', 'elevee', '1'].includes(s)) return 'high';
+  if (['low', 'basse', 'faible', '3'].includes(s)) return 'low';
+  return 'medium';
+}
 
 // Parse robuste : tente JSON direct, sinon extrait le 1er objet {...} du texte.
 function parseTips(text) {
@@ -255,7 +266,7 @@ class AiAdvisor {
         .filter((t) => t && t.title && t.message)
         .map((t, i) => ({
           id: `ai-${Math.floor(now / 1000)}-${i}`,
-          priority: t.priority || 'medium',
+          priority: normalizePriority(t.priority),
           category: 'Coach IA',
           title: t.title,
           message: t.message,
