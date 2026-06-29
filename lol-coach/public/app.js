@@ -7,6 +7,9 @@ let latestObjectives = [];
 let objReceivedAt = Date.now();
 const renderedKeys = new Set();
 
+// État de la synthèse vocale (Web Speech API, 100% navigateur, sans clé).
+const tts = { enabled: false, enabledAt: 0, voiceURI: '', scope: 'important', pending: 0 };
+
 // ── WebSocket ──────────────────────────────────────────────────────────────
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -93,6 +96,7 @@ function addFeedItems(feed) {
     const el = buildAdviceEl(a);
     el.dataset.key = key;
     container.prepend(el);
+    maybeSpeak(a);
   }
   // Limite le DOM et purge les clés des éléments évincés (évite une fuite mémoire
   // sur une session longue couvrant plusieurs parties).
@@ -255,6 +259,151 @@ function renderObjectives() {
   if (!latestObjectives.length) c.innerHTML = '<div class="empty">Pas d’objectif suivi pour le moment.</div>';
 }
 
+// ── Synthèse vocale (Web Speech API) ────────────────────────────────────────
+function ttsSupported() {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+// Nettoie le texte pour une lecture propre : retire emojis/symboles.
+function cleanForSpeech(text) {
+  return String(text == null ? '' : text)
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}️‍]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function listVoices() {
+  return ttsSupported() ? window.speechSynthesis.getVoices() : [];
+}
+
+function selectedVoice() {
+  const voices = listVoices();
+  return (
+    voices.find((v) => v.voiceURI === tts.voiceURI) ||
+    voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('fr')) ||
+    voices[0] ||
+    null
+  );
+}
+
+function populateVoices() {
+  const sel = $('ttsVoice');
+  if (!sel) return;
+  const voices = listVoices().slice().sort((a, b) => {
+    const af = a.lang && a.lang.toLowerCase().startsWith('fr') ? 0 : 1;
+    const bf = b.lang && b.lang.toLowerCase().startsWith('fr') ? 0 : 1;
+    return af - bf || a.name.localeCompare(b.name);
+  });
+  const saved = tts.voiceURI || localStorage.getItem('tts_voice') || '';
+  sel.innerHTML = '';
+  voices.forEach((v) => {
+    const o = document.createElement('option');
+    o.value = v.voiceURI;
+    o.textContent = `${v.name} (${v.lang})${v.localService ? '' : ' ☁'}`;
+    sel.appendChild(o);
+  });
+  let chosen = saved && voices.some((v) => v.voiceURI === saved) ? saved : '';
+  if (!chosen) {
+    const fr = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    chosen = fr ? fr.voiceURI : voices[0] ? voices[0].voiceURI : '';
+  }
+  if (chosen) {
+    sel.value = chosen;
+    tts.voiceURI = chosen;
+  }
+}
+
+function speak(text) {
+  if (!ttsSupported()) return;
+  const clean = cleanForSpeech(text);
+  if (!clean) return;
+  // Anti-retard : si la file s'allonge, on repart sur le conseil le plus récent.
+  if (tts.pending > 2) {
+    window.speechSynthesis.cancel();
+    tts.pending = 0;
+  }
+  const u = new SpeechSynthesisUtterance(clean);
+  const v = selectedVoice();
+  if (v) {
+    u.voice = v;
+    u.lang = v.lang;
+  } else {
+    u.lang = 'fr-FR';
+  }
+  u.rate = 1.05;
+  u.pitch = 1;
+  u.volume = 1;
+  tts.pending++;
+  u.onend = u.onerror = () => {
+    tts.pending = Math.max(0, tts.pending - 1);
+  };
+  window.speechSynthesis.speak(u);
+}
+
+// Lit un conseil si la voix est active et qu'il passe le filtre choisi.
+function maybeSpeak(a) {
+  if (!tts.enabled || !a) return;
+  if (a.at <= tts.enabledAt) return; // ne pas relire l'historique au démarrage
+  const isAi = a.source === 'ai';
+  let ok;
+  if (tts.scope === 'ai') ok = isAi;
+  else if (tts.scope === 'all') ok = true;
+  else ok = isAi || a.priority === 'high' || a.priority === 'medium';
+  if (!ok) return;
+  speak(a.message || a.title);
+}
+
+function setTtsEnabled(on) {
+  tts.enabled = on;
+  tts.enabledAt = Date.now();
+  localStorage.setItem('tts_enabled', on ? '1' : '0');
+  const btn = $('ttsToggle');
+  if (btn) {
+    btn.textContent = on ? '🔊 Voix on' : '🔈 Voix off';
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  if (ttsSupported()) window.speechSynthesis.cancel();
+  tts.pending = 0;
+  if (on) speak('Coach vocal activé.');
+}
+
+function initTts() {
+  const bar = $('ttsBar');
+  if (!ttsSupported()) {
+    if (bar) bar.innerHTML = '<span class="tts-na">Synthèse vocale non supportée par ce navigateur.</span>';
+    return;
+  }
+  tts.scope = localStorage.getItem('tts_scope') || 'important';
+  const scopeSel = $('ttsScope');
+  if (scopeSel) scopeSel.value = tts.scope;
+
+  populateVoices();
+  // Les voix se chargent parfois de façon asynchrone.
+  window.speechSynthesis.onvoiceschanged = populateVoices;
+
+  const toggle = $('ttsToggle');
+  if (toggle) toggle.addEventListener('click', () => setTtsEnabled(!tts.enabled));
+  const test = $('ttsTest');
+  if (test)
+    test.addEventListener('click', () =>
+      speak('Ceci est un test de la voix du coach. Dragon dans vingt secondes, place ta vision et regroupe.')
+    );
+  const voiceSel = $('ttsVoice');
+  if (voiceSel)
+    voiceSel.addEventListener('change', (e) => {
+      tts.voiceURI = e.target.value;
+      localStorage.setItem('tts_voice', tts.voiceURI);
+    });
+  if (scopeSel)
+    scopeSel.addEventListener('change', (e) => {
+      tts.scope = e.target.value;
+      localStorage.setItem('tts_scope', tts.scope);
+    });
+
+  if (localStorage.getItem('tts_enabled') === '1') setTtsEnabled(true);
+}
+
 // ── Utilitaires ─────────────────────────────────────────────────────────────
 function mmss(sec) {
   const m = Math.floor(sec / 60);
@@ -274,4 +423,5 @@ setInterval(() => {
   updateRelTimes();
 }, 1000);
 
+initTts();
 connect();

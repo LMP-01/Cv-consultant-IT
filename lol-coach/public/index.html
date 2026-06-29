@@ -29,6 +29,16 @@
       <!-- Colonne flux de coaching -->
       <section class="panel feed-panel">
         <h2 class="panel-title">💬 Conseils en direct</h2>
+        <div class="tts-bar" id="ttsBar">
+          <button id="ttsToggle" class="tts-btn" aria-pressed="false" title="Activer / couper la voix">🔈 Voix off</button>
+          <select id="ttsVoice" class="tts-select" title="Choisir la voix"></select>
+          <select id="ttsScope" class="tts-select" title="Quels conseils lire à voix haute">
+            <option value="important">Important</option>
+            <option value="all">Tout</option>
+            <option value="ai">IA seulement</option>
+          </select>
+          <button id="ttsTest" class="tts-btn ghost" title="Écouter un exemple">▶︎ Test</button>
+        </div>
         <div id="feed" class="feed">
           <div class="empty" id="feedEmpty">
             En attente d’une partie ou d’un champ select…
