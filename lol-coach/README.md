@@ -147,6 +147,25 @@ Le matching est **tolérant à la casse et à la ponctuation** (`Kha'Zix` ≡ `K
 
 `data/champions.fallback.json` est le référentiel hors-ligne utilisé **uniquement** si Data Dragon est injoignable.
 
+### 🎯 Ta pool de champions
+
+Renseigne tes champions par rôle dans **`data/champion-pool.json`** :
+
+```json
+{
+  "pool": {
+    "MIDDLE": [{ "champion": "Anivia", "mastery": 700000 }, { "champion": "Malzahar", "mastery": 100000 }],
+    "BOTTOM": [{ "champion": "Ezreal", "mastery": 200000 }, { "champion": "Draven", "mastery": 100000 }]
+  }
+}
+```
+
+En champ select, **si ton rôle assigné a une pool**, le coach te suggère **en priorité tes propres champions** (titre « 🎯 Tes picks »), classés selon :
+1. à quel point ils **counterent** l'adversaire de lane (+++) et le reste de la team adverse (+),
+2. ta **maîtrise** (départage à counter égal).
+
+Les champions **bannis** ou **déjà pris** sont retirés ; un champion inconnu de Data Dragon (nouveau champion) est signalé. Sans pool pour ton rôle, le coach retombe sur ses suggestions de counters génériques.
+
 ### 📥 Remplir `counters` avec des données réelles (winrate)
 
 Plutôt que de tout saisir à la main, tu peux régénérer le bloc `counters` à

@@ -6,6 +6,7 @@
     "Akali": { "key": 84, "name": "Akali", "tags": ["Assassin"] },
     "Alistar": { "key": 12, "name": "Alistar", "tags": ["Tank", "Support"] },
     "Amumu": { "key": 32, "name": "Amumu", "tags": ["Tank", "Mage"] },
+    "Anivia": { "key": 34, "name": "Anivia", "tags": ["Mage", "Support"] },
     "Annie": { "key": 1, "name": "Annie", "tags": ["Mage"] },
     "Aphelios": { "key": 523, "name": "Aphelios", "tags": ["Marksman"] },
     "Ashe": { "key": 22, "name": "Ashe", "tags": ["Marksman", "Support"] },
@@ -91,6 +92,7 @@
     "Sylas": { "key": 517, "name": "Sylas", "tags": ["Mage", "Assassin"] },
     "Syndra": { "key": 134, "name": "Syndra", "tags": ["Mage"] },
     "TahmKench": { "key": 223, "name": "Tahm Kench", "tags": ["Tank", "Support"] },
+    "Taliyah": { "key": 163, "name": "Taliyah", "tags": ["Mage", "Support"] },
     "Talon": { "key": 91, "name": "Talon", "tags": ["Assassin"] },
     "Teemo": { "key": 17, "name": "Teemo", "tags": ["Marksman", "Assassin"] },
     "Thresh": { "key": 412, "name": "Thresh", "tags": ["Support", "Fighter"] },
@@ -109,6 +111,7 @@
     "Yorick": { "key": 83, "name": "Yorick", "tags": ["Fighter", "Tank"] },
     "Zac": { "key": 154, "name": "Zac", "tags": ["Tank", "Fighter"] },
     "Zed": { "key": 238, "name": "Zed", "tags": ["Assassin"] },
-    "Zilean": { "key": 26, "name": "Zilean", "tags": ["Support", "Mage"] }
+    "Zilean": { "key": 26, "name": "Zilean", "tags": ["Support", "Mage"] },
+    "Zoe": { "key": 142, "name": "Zoe", "tags": ["Mage", "Support"] }
   }
 }
