@@ -29,6 +29,32 @@ function pct(x) {
   return x == null ? null : Math.round(x * 1000) / 10; // 0.512 -> 51.2
 }
 
+// Transforme un nom d'item (ou une liste) en objet(s) { name, icon } via Data Dragon.
+// Si l'item n'est pas résolu (renommé/retiré, ou ddragon indisponible), icon = null
+// et le nom d'origine est conservé pour un affichage texte.
+function resolveItem(name, ddragon) {
+  if (!name) return null;
+  const r = ddragon ? ddragon.resolveItemByName(name) : null;
+  return { name: r ? r.name : name, icon: r ? r.icon : null };
+}
+function resolveItems(arr, ddragon) {
+  return (arr || []).map((n) => resolveItem(n, ddragon)).filter(Boolean);
+}
+
+// Reconstruit le bloc build avec icônes d'items résolues.
+function buildWithIcons(build, ddragon) {
+  if (!build) return null;
+  return {
+    runes: build.runes,
+    summoners: build.summoners,
+    start: resolveItem(build.start, ddragon),
+    core: resolveItems(build.core, ddragon),
+    boots: resolveItem(build.boots, ddragon),
+    situational: resolveItems(build.situational, ddragon),
+    note: build.note,
+  };
+}
+
 /**
  * Construit la "fiche pool" : par rôle, chaque champion avec caractéristiques,
  * build conseillé, winrate overall, counters (qui le bat) et champions qu'il bat.
@@ -76,7 +102,7 @@ function buildPoolDex(ddragon) {
     for (const entry of entries) {
       const champ = ddragon ? ddragon.resolveChampionByName(entry.champion) : null;
       if (!champ) {
-        unresolved.push(entry.champion);
+        unresolved.push({ champion: entry.champion, role });
         continue;
       }
       const build = builds[champ.id] || null;
@@ -107,7 +133,7 @@ function buildPoolDex(ddragon) {
         damage: classifyDamage(champ),
         damageLabel: DAMAGE_LABEL[classifyDamage(champ)] || 'Physique (AD)',
         profile: build ? build.profile : null,
-        build: build ? { runes: build.runes, summoners: build.summoners, start: build.start, core: build.core, boots: build.boots, situational: build.situational, note: build.note } : null,
+        build: buildWithIcons(build, ddragon),
         winrate: liveStats ? { overall: pct(liveStats.overallWinRate), games: liveStats.games || null } : { overall: null, games: null },
         counters,
         countered,

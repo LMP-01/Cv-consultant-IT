@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { dataset, analyzeComp, defensiveSuggestions } = require('./profile');
+const { dataset, analyzeComp, defensiveSuggestions, classifyDamage } = require('./profile');
 
 // Pool de champions du joueur (data/champion-pool.json), chargée à la demande.
 let POOL = null;
@@ -168,6 +168,9 @@ function analyzeChampSelect(session, ddragon) {
     .slice(0, 5);
 
   // ── Picks issus de TA pool (prioritaires si configurée pour ton rôle) ──────
+  // Composition de TON équipe (alliés déjà choisis) pour la synergie/équilibre.
+  const allyComp = myChamps.length ? analyzeComp(myChamps) : null;
+
   const poolEntries = (loadPool().pool || {})[myRole] || [];
   const poolUnresolved = [];
   let poolPicks = [];
@@ -193,6 +196,17 @@ function analyzeChampSelect(session, ddragon) {
         if (set.has(champ.id)) {
           score += 1;
           reasons.push(`fort contre ${e.displayName || e.name}`);
+        }
+      }
+      // Synergie d'équipe : bonus si le pick équilibre les dégâts de TON équipe.
+      if (allyComp) {
+        const dmg = classifyDamage(champ);
+        if (allyComp.profile === 'à dominante AP' && (dmg === 'AD' || dmg === 'MIXED')) {
+          score += 1;
+          reasons.push('équilibre les dégâts (ton équipe est AP)');
+        } else if (allyComp.profile === 'à dominante AD' && dmg === 'AP') {
+          score += 1;
+          reasons.push('équilibre les dégâts (ton équipe est AD)');
         }
       }
       score += masteryWeight(entry.mastery);
@@ -222,6 +236,7 @@ function analyzeChampSelect(session, ddragon) {
     myChamps: myChamps.map(champRef),
     enemyChamps: enemyChamps.map(champRef),
     enemyComp,
+    teamComp: allyComp,
     pickSuggestions: picksFromPool ? poolPicks : pickSuggestions,
     picksFromPool,
     poolUnresolved,

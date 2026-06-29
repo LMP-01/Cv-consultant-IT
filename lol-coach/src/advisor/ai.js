@@ -34,6 +34,7 @@ Règles:
 - N'invente pas de données absentes de l'instantané.
 - Ne répète pas mot pour mot les conseils déjà fournis par le moteur de règles : complète-les ou apporte une perspective de plus haut niveau.
 - "priority" doit valoir exactement "high", "medium" ou "low".
+- Si le champ "evenement" est renseigné, PRIORISE un conseil directement lié à cet événement (réaction immédiate, priorité high).
 - Réponds UNIQUEMENT avec un objet JSON {"tips":[{"title","message","priority"}]}, en français, sans aucun texte autour.`;
 
 const SYSTEM_PROMPT_EN = `You are a professional League of Legends coach assisting a player in REAL TIME during their game.
@@ -45,6 +46,7 @@ Rules:
 - Do not invent data not present in the snapshot.
 - Do not repeat the rules-engine tips verbatim: complement them or add a higher-level perspective.
 - "priority" must be exactly "high", "medium" or "low".
+- If the "evenement" field is set, PRIORITIZE a tip directly related to that event (immediate reaction, high priority).
 - Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
 
 // Normalise la priorité vers high|medium|low (les modèles renvoient parfois
@@ -253,7 +255,11 @@ class AiAdvisor {
   async getInGameTips(snapshot, { force = false } = {}) {
     if (!this.available || this.inFlight) return null;
     const now = Date.now();
-    if (!force && now - this.lastCallTs < config.ai.minIntervalSeconds * 1000) return null;
+    // En cadence normale on respecte minIntervalSeconds. Un moment réactif
+    // (force) peut anticiper, mais jamais plus vite que reactiveFloorSeconds —
+    // pour rester immédiat sans saturer le quota Claude Max.
+    const floorSec = force ? config.ai.reactiveFloorSeconds : config.ai.minIntervalSeconds;
+    if (now - this.lastCallTs < floorSec * 1000) return null;
 
     this.inFlight = true;
     this.lastCallTs = now;

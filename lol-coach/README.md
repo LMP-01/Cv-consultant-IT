@@ -2,8 +2,8 @@
 
 Un agent qui **surveille tes parties de League of Legends en direct** et te donne, dans une **appli web locale (HTML + Node.js)** :
 
-- 💬 des **conseils de jeu en temps réel** (macro, objectifs, timings, recall, survie…) pendant la partie ;
-- 🧩 des **suggestions de pick et de build** adaptées à la composition adverse pendant le **champ select** ;
+- 💬 des **conseils de jeu en temps réel** (macro, objectifs, timings, recall, survie…) pendant la partie, à cadence régulière **et immédiatement sur les moments clés** (mort, chute de PV brutale, kill/objectif) ;
+- 🧩 des **suggestions de pick et de build** adaptées à **toute la composition adverse ET à ta propre équipe** (synergie/équilibre des dégâts) pendant le **champ select** ;
 - 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats).
 
 Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
@@ -89,7 +89,8 @@ Toutes les variables sont optionnelles (voir `.env.example`) :
 | `CLAUDE_CODE_MODEL` | Modèle via l’abonnement (Claude Code) | `sonnet` |
 | `ANTHROPIC_API_KEY` | Clé API (backend `api`, facturation au token) | — |
 | `CLAUDE_MODEL` | Modèle pour le backend API | `claude-opus-4-8` |
-| `AI_MIN_INTERVAL_SECONDS` | Intervalle min. entre 2 appels IA en jeu | `12` |
+| `AI_MIN_INTERVAL_SECONDS` | Cadence normale des conseils IA en jeu (s) | `8` |
+| `AI_REACTIVE_FLOOR_SECONDS` | Plancher des conseils **réactifs** (mort, prise de risque, objectif…) (s) | `4` |
 | `RIOT_API_KEY` | (Optionnel) enrichissement Riot API | — |
 | `DDRAGON_LOCALE` | Locale des noms (`fr_FR`, `en_US`…) | `fr_FR` |
 | `LEAGUE_PATH` | Chemin d’install de League (sinon autodétection) | — |
@@ -162,17 +163,20 @@ Renseigne tes champions par rôle dans **`data/champion-pool.json`** :
 
 En champ select, **si ton rôle assigné a une pool**, le coach te suggère **en priorité tes propres champions** (titre « 🎯 Tes picks »), classés selon :
 1. à quel point ils **counterent** l'adversaire de lane (+++) et le reste de la team adverse (+),
-2. ta **maîtrise** (départage à counter égal).
+2. la **synergie d'équipe** : un bonus si le pick **équilibre les dégâts de TON équipe** (un pick AP quand tes alliés sont full AD, et inversement) — le panneau « Composition » affiche `Adverse :` **et** `Ton équipe :`,
+3. ta **maîtrise** (départage à counter égal).
 
 Les champions **bannis** ou **déjà pris** sont retirés ; un champion inconnu de Data Dragon (nouveau champion) est signalé. Sans pool pour ton rôle, le coach retombe sur ses suggestions de counters génériques.
 
-### 📖 Page « Ma Pool » (fiches champions)
+### 📖 Pages « Pool » par poste (fiches champions)
 
-Depuis l'interface, le bouton **« 📖 Ma Pool »** (ou `/pool.html`) ouvre une **fiche par champion de ta pool**, par poste, avec :
+Depuis l'interface, les boutons **« 📖 Mid »** (`/mid.html`) et **« 📖 ADC »** (`/adc.html`) ouvrent **une page par poste** avec une **fiche par champion** :
 - **caractéristiques** (tags, type de dégâts, ressource, difficulté, description) via Data Dragon ;
-- **build conseillé** (runes, sorts, objets core/situationnels) — éditable dans `data/builds.json` ;
+- **build conseillé** (runes, sorts, objets core/situationnels) — **avec l'icône de chaque item** (résolue à la volée selon le patch depuis Data Dragon), éditable dans `data/builds.json` ;
 - **winrate overall** + **winrate par match-up** (qui le counter / qui il counter) ;
 - les listes de counters.
+
+> Les objets de `data/builds.json` sont en **noms anglais Data Dragon** pour permettre la résolution de l'icône. Un item renommé/retiré s'affiche en texte sans icône. Les builds sont **les builds méta cohérents** (cœur d'objets + situationnels) — ajuste-les librement en éditant `data/builds.json`.
 
 Les **winrates live** proviennent de `data/champion-data.json`, généré par `npm run fetch-counters` (sur ta machine). Sans ce fichier, la page affiche les caractéristiques, le build et les counters curés ; les winrates apparaissent dès que tu lances le scraper.
 

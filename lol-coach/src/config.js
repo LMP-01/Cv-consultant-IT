@@ -59,7 +59,11 @@ const config = {
     // Modèle utilisé via Claude Code (abonnement). Sonnet par défaut : bien plus
     // léger pour le quota et la latence en temps réel. Mets 'opus' si tu veux.
     claudeCodeModel: process.env.CLAUDE_CODE_MODEL || 'sonnet',
-    minIntervalSeconds: intEnv('AI_MIN_INTERVAL_SECONDS', 12),
+    minIntervalSeconds: intEnv('AI_MIN_INTERVAL_SECONDS', 8),
+    // Cadence minimale lors d'un moment "réactif" (mort, prise de risque,
+    // objectif...). Plus courte que la cadence normale pour réagir vite, mais
+    // garde un plancher pour ne pas saturer le quota Claude Max.
+    reactiveFloorSeconds: intEnv('AI_REACTIVE_FLOOR_SECONDS', 4),
     get enabled() {
       return Boolean(this.apiKey);
     },

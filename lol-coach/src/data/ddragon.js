@@ -54,6 +54,7 @@ class DataDragon {
     this.championByKey = new Map(); // championId numérique -> entrée
     this.nameIndex = new Map(); // nom normalisé (EN + localisé) -> id
     this.itemById = new Map();
+    this.itemNameIndex = new Map(); // nom d'item normalisé (EN + localisé) -> id
     this.ready = false;
     this.initError = null;
   }
@@ -103,7 +104,7 @@ class DataDragon {
         }
       }
 
-      // Items (optionnels) pour résoudre les noms d'objets du scoreboard.
+      // Items (optionnels) pour résoudre les noms d'objets du scoreboard + icônes des builds.
       try {
         const items = await cachedJson(
           `item_${this.version}_${this.locale}.json`,
@@ -111,12 +112,30 @@ class DataDragon {
         );
         for (const itemId of Object.keys(items.data || {})) {
           const it = items.data[itemId];
-          this.itemById.set(parseInt(itemId, 10), {
-            id: parseInt(itemId, 10),
+          const num = parseInt(itemId, 10);
+          this.itemById.set(num, {
+            id: num,
             name: it.name,
+            image: it.image && it.image.full ? it.image.full : `${itemId}.png`,
             gold: it.gold ? it.gold.total : 0,
             tags: it.tags || [],
           });
+          this.itemNameIndex.set(normName(it.name), num);
+        }
+
+        // Référentiel anglais des noms d'items (les builds.json sont en EN) si la locale diffère.
+        if (this.locale && this.locale !== 'en_US') {
+          try {
+            const itemsEn = await cachedJson(
+              `item_${this.version}_en_US.json`,
+              `${CDN}/cdn/${this.version}/data/en_US/item.json`
+            );
+            for (const itemId of Object.keys(itemsEn.data || {})) {
+              this.itemNameIndex.set(normName(itemsEn.data[itemId].name), parseInt(itemId, 10));
+            }
+          } catch {
+            /* l'index EN est optionnel */
+          }
         }
       } catch {
         /* items optionnels */
@@ -169,6 +188,22 @@ class DataDragon {
   itemName(itemId) {
     const it = this.itemById.get(Number(itemId));
     return it ? it.name : null;
+  }
+
+  // URL de l'icône d'un item (par id numérique).
+  itemIconUrl(itemId) {
+    const it = this.itemById.get(Number(itemId));
+    if (!this.version || !it) return null;
+    return `${CDN}/cdn/${this.version}/img/item/${it.image}`;
+  }
+
+  // Résout un nom d'item (FR ou EN) -> { id, name, icon }, ou null si introuvable.
+  resolveItemByName(name) {
+    if (!name) return null;
+    const id = this.itemNameIndex.get(normName(name));
+    if (!id) return null;
+    const it = this.itemById.get(id);
+    return it ? { id, name: it.name, icon: this.itemIconUrl(id) } : null;
   }
 
   squarePortraitUrl(championIdStr) {

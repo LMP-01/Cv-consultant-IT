@@ -28,6 +28,7 @@ class CoachLoop {
     this.lastPhase = 'offline';
     this.mockStart = Date.now();
     this.timer = null;
+    this.prevGame = null; // état précédent (PV/mort/events) pour les déclencheurs IA
   }
 
   _emptyState() {
@@ -165,16 +166,22 @@ class CoachLoop {
   // ── Handlers de phase ──────────────────────────────────────────────────────
   async _handleInGame(gameData, isMock) {
     const fresh = this.lastPhase !== 'ingame';
-    if (fresh) this._resetFeed();
+    if (fresh) {
+      this._resetFeed();
+      this.prevGame = null;
+    }
     this.lastPhase = 'ingame';
 
     const result = analyzeInGame(gameData, this.ddragon);
     this._pushAdvice(result.advice);
 
+    // Déclencheur réactif : mort, chute de PV, kill/objectif... => conseil immédiat.
+    const trigger = this._detectTrigger(result, gameData, fresh);
+
     // Conseils IA (si disponibles), en complément du moteur de règles.
     if (this.ai.available) {
-      const snapshot = this._aiSnapshot(result);
-      const aiTips = await this.ai.getInGameTips(snapshot, { force: fresh });
+      const snapshot = this._aiSnapshot(result, trigger);
+      const aiTips = await this.ai.getInGameTips(snapshot, { force: fresh || Boolean(trigger) });
       if (aiTips && aiTips.length) this._pushAdvice(aiTips);
     }
 
@@ -223,8 +230,32 @@ class CoachLoop {
     this._broadcast();
   }
 
+  // Détecte un moment "réactif" (prise de risque, action) entre deux ticks.
+  _detectTrigger(result, gameData, fresh) {
+    const me = result.scoreboard.me;
+    const hp = result.summary.me ? result.summary.me.hpPct : null;
+    const dead = me ? me.isDead : false;
+    const events = (gameData.events && gameData.events.Events) || [];
+    const NOTABLE = ['ChampionKill', 'Multikill', 'Ace', 'DragonKill', 'BaronKill', 'HeraldKill', 'FirstBlood', 'TurretKilled'];
+    const notable = events.filter((e) => NOTABLE.includes(e.EventName));
+    const lastNotableTime = notable.length ? notable[notable.length - 1].EventTime : -1;
+
+    let trigger = null;
+    const prev = this.prevGame;
+    if (!fresh && prev) {
+      // Déclencheurs sur FRONT (transition) uniquement : on évite de relancer
+      // l'IA à chaque tick tant qu'un état (PV bas) persiste.
+      if (dead && !prev.dead) trigger = 'Tu viens de mourir — analyse l’erreur et reviens prudemment.';
+      else if (hp != null && prev.hp != null && prev.hp - hp >= 25 && !dead) trigger = 'Tes PV ont chuté brutalement (prise de risque) — recule si nécessaire.';
+      else if (lastNotableTime > prev.lastNotableTime) trigger = 'Action de jeu récente (kill / objectif) — réagis à la situation sur la map.';
+      else if (hp != null && hp < 30 && prev.hp != null && prev.hp >= 30 && !dead) trigger = 'PV bas, situation risquée — temporise et repositionne-toi.';
+    }
+    this.prevGame = { hp, dead, lastNotableTime };
+    return trigger;
+  }
+
   // Construit un instantané compact pour l'IA.
-  _aiSnapshot(result) {
+  _aiSnapshot(result, trigger) {
     const { summary, objectives, scoreboard } = result;
     const compact = (p) => ({
       champion: p.championDisplay || p.champion,
@@ -235,6 +266,7 @@ class CoachLoop {
     return {
       lang: config.lang,
       gameTime: summary.gameTimeText,
+      evenement: trigger || null,
       you: summary.me,
       objectivesSoon: objectives
         .filter((o) => o.etaSeconds <= 60)
