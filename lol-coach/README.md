@@ -144,6 +144,33 @@ Le matching est **tolérant à la casse et à la ponctuation** (`Kha'Zix` ≡ `K
 
 `data/champions.fallback.json` est le référentiel hors-ligne utilisé **uniquement** si Data Dragon est injoignable.
 
+### 📥 Remplir `counters` avec des données réelles (winrate)
+
+Plutôt que de tout saisir à la main, tu peux régénérer le bloc `counters` à
+partir de données de matchups **réelles** (winrate) d'un agrégateur en ligne :
+
+```bash
+npm run fetch-counters                 # source par défaut : OP.GG
+# options utiles :
+node scripts/fetch-counters.js --self-test          # test du parsing (hors-ligne)
+node scripts/fetch-counters.js --dry-run            # n'écrit rien, aperçu
+node scripts/fetch-counters.js --champions Zed,Garen --top 5
+node scripts/fetch-counters.js --tier diamond_plus --region kr
+```
+
+- Le script résout les champions via Data Dragon, interroge l'API counters
+  d'OP.GG par champion et par rôle, classe les counters par **winrate**, et
+  **fusionne** le résultat dans `data/counters.json` (une **sauvegarde
+  horodatée** est créée avant écriture). Les champs éditoriaux
+  (`damageOverride`, `ccHeavy`, `burstThreats`, `rolePicks`) sont **préservés**.
+- ⚠️ **À lancer chez toi** : l'API est tierce et **non officielle** (elle peut
+  changer entre patchs). Respecte les **CGU** du site (usage personnel/non
+  commercial, faible volume — le script limite la cadence à ~1 req/s). Si tu
+  préfères une autre source, l'adapter est isolé dans `scripts/fetch-counters.js`.
+- Sources comparées : **OP.GG** (CGU les plus clémentes, JSON propre — défaut),
+  **U.GG** (CDN très stable), **Lolalytics** (données les plus riches, mais CGU
+  les plus restrictives).
+
 ---
 
 ## 🩺 Dépannage

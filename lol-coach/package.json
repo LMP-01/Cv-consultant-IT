@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "mock": "node src/server.js --mock",
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "fetch-counters": "node scripts/fetch-counters.js"
   },
   "keywords": [
     "league-of-legends",
