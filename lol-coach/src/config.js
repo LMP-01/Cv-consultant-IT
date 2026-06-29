@@ -56,9 +56,9 @@ const config = {
     provider: (process.env.AI_PROVIDER || 'auto').toLowerCase(),
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     model: process.env.CLAUDE_MODEL || 'claude-opus-4-8',
-    // Modèle utilisé via Claude Code (abonnement). Sonnet par défaut : bien plus
-    // léger pour le quota et la latence en temps réel. Mets 'opus' si tu veux.
-    claudeCodeModel: process.env.CLAUDE_CODE_MODEL || 'sonnet',
+    // Modèle utilisé via Claude Code (abonnement). Sonnet 4.6 par défaut : bien
+    // plus léger pour le quota et la latence en temps réel. Mets 'opus' si tu veux.
+    claudeCodeModel: process.env.CLAUDE_CODE_MODEL || 'claude-sonnet-4-6',
     minIntervalSeconds: intEnv('AI_MIN_INTERVAL_SECONDS', 8),
     // Cadence minimale lors d'un moment "réactif" (mort, prise de risque,
     // objectif...). Plus courte que la cadence normale pour réagir vite, mais

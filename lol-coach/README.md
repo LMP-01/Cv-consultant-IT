@@ -86,7 +86,7 @@ Toutes les variables sont optionnelles (voir `.env.example`) :
 | `PORT` | Port de l’interface web | `3000` |
 | `LANG` | Langue (`fr` / `en`) | `fr` |
 | `AI_PROVIDER` | `auto` / `claude-code` / `api` / `rules` | `auto` |
-| `CLAUDE_CODE_MODEL` | Modèle via l’abonnement (Claude Code) | `sonnet` |
+| `CLAUDE_CODE_MODEL` | Modèle via l’abonnement (Claude Code) | `claude-sonnet-4-6` |
 | `ANTHROPIC_API_KEY` | Clé API (backend `api`, facturation au token) | — |
 | `CLAUDE_MODEL` | Modèle pour le backend API | `claude-opus-4-8` |
 | `AI_MIN_INTERVAL_SECONDS` | Cadence normale des conseils IA en jeu (s) | `8` |
@@ -105,11 +105,13 @@ Le backend `claude-code` utilise ton **abonnement Claude** via la CLI **Claude C
 3. Vérifie que **`ANTHROPIC_API_KEY` n’est PAS définie** (elle aurait la priorité). Mets dans `.env` :
    ```
    AI_PROVIDER=claude-code
-   CLAUDE_CODE_MODEL=sonnet
+   CLAUDE_CODE_MODEL=claude-sonnet-4-6
    ```
 4. Lance l’app : `npm start`. Le badge « IA » affiche **Max** quand l’abonnement est actif.
 
-> 💡 `sonnet` est conseillé en temps réel : il préserve ton **quota Max** (limites par fenêtres de 5 h) et répond plus vite. Mets `CLAUDE_CODE_MODEL=opus` si tu préfères. L’app **limite la cadence** des appels (`AI_MIN_INTERVAL_SECONDS`) et **retombe sur le moteur de règles** si le quota est atteint.
+> 💡 **Sonnet 4.6** (`claude-sonnet-4-6`) est conseillé en temps réel : il préserve ton **quota Max** (limites par fenêtres de 5 h) et répond plus vite. Mets `CLAUDE_CODE_MODEL=opus` si tu préfères. L’app **limite la cadence** des appels (`AI_MIN_INTERVAL_SECONDS`) et **retombe sur le moteur de règles** si le quota est atteint.
+
+> 🧠 **L’IA analyse aussi le champ select EN DIRECT** : dès que la CLI Claude est détectée, le coach commente la **draft** (quel pick privilégier dans ta pool, quel ajustement de build/runes contre la compo) et **rafraîchit son analyse à chaque nouveau pick/ban** adverse. Les conseils apparaissent dans le flux « Conseils en direct » (catégorie **Draft IA**) et sont lus à voix haute si la voix est activée.
 
 ---
 
