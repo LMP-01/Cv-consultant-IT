@@ -41,6 +41,8 @@ class CoachLoop {
 
   async init(onState) {
     this.onState = onState;
+    await this.ai.init();
+    this.state.connection.ai = this.ai.statusLabel();
     await this.ddragon.init();
     if (!this.ddragon.ready) {
       console.warn('[ddragon] Données statiques indisponibles:', this.ddragon.initError || '');

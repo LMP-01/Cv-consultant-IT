@@ -51,8 +51,14 @@ const config = {
   mockMode,
 
   ai: {
+    // Backend : 'auto' (clé API si présente, sinon abonnement via Claude Code,
+    // sinon règles), 'api', 'claude-code' (abonnement Max/Pro), 'rules'.
+    provider: (process.env.AI_PROVIDER || 'auto').toLowerCase(),
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     model: process.env.CLAUDE_MODEL || 'claude-opus-4-8',
+    // Modèle utilisé via Claude Code (abonnement). Sonnet par défaut : bien plus
+    // léger pour le quota et la latence en temps réel. Mets 'opus' si tu veux.
+    claudeCodeModel: process.env.CLAUDE_CODE_MODEL || 'sonnet',
     minIntervalSeconds: intEnv('AI_MIN_INTERVAL_SECONDS', 12),
     get enabled() {
       return Boolean(this.apiKey);
