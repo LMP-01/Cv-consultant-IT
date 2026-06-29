@@ -149,6 +149,17 @@ function renderChampSelect(pick) {
     ? `Adversaire de lane : <strong>${esc(pick.laneOpponent.name)}</strong>`
     : 'Adversaire de lane : non encore choisi';
 
+  const heading = $('pickHeading');
+  if (heading) heading.textContent = pick.picksFromPool ? '🎯 Tes picks (ta pool)' : 'Picks conseillés';
+
+  const unres = $('poolUnresolved');
+  if (unres) {
+    unres.textContent =
+      pick.poolUnresolved && pick.poolUnresolved.length
+        ? `Non reconnus dans ta pool (nouveau champion ?) : ${pick.poolUnresolved.join(', ')}`
+        : '';
+  }
+
   const grid = $('pickSuggestions');
   grid.innerHTML = '';
   if (!pick.pickSuggestions || !pick.pickSuggestions.length) {

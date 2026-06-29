@@ -1,6 +1,34 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { dataset, analyzeComp, defensiveSuggestions } = require('./profile');
+
+// Pool de champions du joueur (data/champion-pool.json), chargée à la demande.
+let POOL = null;
+function loadPool() {
+  if (POOL) return POOL;
+  try {
+    POOL = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'champion-pool.json'), 'utf8'));
+  } catch {
+    POOL = { pool: {} };
+  }
+  return POOL;
+}
+
+function formatMastery(n) {
+  n = Number(n) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return Math.round(n / 1000) + 'K';
+  return String(n);
+}
+
+// Poids de maîtrise (0..2) : départage à counter égal, sans dominer le counter.
+function masteryWeight(n) {
+  n = Number(n) || 0;
+  if (n <= 0) return 0;
+  return Math.min(2, (Math.log10(n + 1) / Math.log10(1000000)) * 2);
+}
 
 const ROLE_LABEL = {
   TOP: 'Top',
@@ -139,6 +167,42 @@ function analyzeChampSelect(session, ddragon) {
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
+  // ── Picks issus de TA pool (prioritaires si configurée pour ton rôle) ──────
+  const poolEntries = (loadPool().pool || {})[myRole] || [];
+  const poolUnresolved = [];
+  let poolPicks = [];
+  if (poolEntries.length) {
+    const laneSet = laneOpponent ? new Set(counterListOf(laneOpponent).map(canonId).filter(Boolean)) : new Set();
+    const enemySets = enemyChamps
+      .filter((e) => !laneOpponent || e.id !== laneOpponent.id)
+      .map((e) => ({ e, set: new Set(counterListOf(e).map(canonId).filter(Boolean)) }));
+    for (const entry of poolEntries) {
+      const champ = ddragon ? ddragon.resolveChampionByName(entry.champion) : null;
+      if (!champ) {
+        poolUnresolved.push(entry.champion);
+        continue;
+      }
+      if (taken.has(champ.id) || bannedSet.has(champ.id)) continue;
+      let score = 0;
+      const reasons = [];
+      if (laneSet.has(champ.id)) {
+        score += 3;
+        reasons.push(`counter de ${laneOpponent.displayName || laneOpponent.name} (ta lane)`);
+      }
+      for (const { e, set } of enemySets) {
+        if (set.has(champ.id)) {
+          score += 1;
+          reasons.push(`fort contre ${e.displayName || e.name}`);
+        }
+      }
+      score += masteryWeight(entry.mastery);
+      reasons.push(`maîtrise ${formatMastery(entry.mastery)}`);
+      poolPicks.push({ ...champRef(champ), mastery: entry.mastery, score: +score.toFixed(2), reasons });
+    }
+    poolPicks.sort((a, b) => b.score - a.score || (b.mastery || 0) - (a.mastery || 0));
+  }
+  const picksFromPool = poolPicks.length > 0;
+
   // ── Build / runes vs composition adverse ──────────────────────────────────
   const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
   const buildSuggestions = enemyComp ? defensiveSuggestions(enemyComp) : [];
@@ -158,7 +222,9 @@ function analyzeChampSelect(session, ddragon) {
     myChamps: myChamps.map(champRef),
     enemyChamps: enemyChamps.map(champRef),
     enemyComp,
-    pickSuggestions,
+    pickSuggestions: picksFromPool ? poolPicks : pickSuggestions,
+    picksFromPool,
+    poolUnresolved,
     buildSuggestions,
     runeHints,
     timerSeconds: session.timer ? Math.round((session.timer.adjustedTimeLeftInPhase || 0) / 1000) : null,
