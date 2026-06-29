@@ -6,6 +6,7 @@ const express = require('express');
 const { WebSocketServer } = require('ws');
 const config = require('./config');
 const { CoachLoop } = require('./coachLoop');
+const { buildPoolDex } = require('./advisor/championDex');
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +39,15 @@ app.get('/api/state', (_req, res) => {
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, mock: config.mockMode, ai: loop.ai.statusLabel() });
+});
+
+// Fiche de ta pool : caractéristiques, build, counters, winrates par champion.
+app.get('/api/pool', (_req, res) => {
+  try {
+    res.json(buildPoolDex(loop.ddragon));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 wss.on('connection', (ws) => {

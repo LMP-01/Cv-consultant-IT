@@ -31,6 +31,9 @@ const COUNTERS_FILE = path.join(DATA_DIR, 'counters.json');
 const DDRAGON = 'https://ddragon.leagueoflegends.com';
 
 const OPGG_POSITIONS = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+// Position OP.GG -> clé de rôle interne.
+const OPGG_ROLE = { TOP: 'TOP', JUNGLE: 'JUNGLE', MID: 'MIDDLE', ADC: 'BOTTOM', SUPPORT: 'UTILITY' };
+const CHAMPDATA_FILE = path.join(DATA_DIR, 'champion-data.json');
 
 const HEADERS = {
   'User-Agent':
@@ -250,12 +253,14 @@ async function main() {
   console.log('   ⚠️ API tierce non officielle — usage personnel/non commercial, faible volume.\n');
 
   const counters = {};
+  const champData = {}; // champId -> { roleKey -> { overallWinRate, games, matchups } }
   let reqCount = 0;
   let withData = 0;
 
   for (let i = 0; i < targets.length; i++) {
     const champ = targets[i];
-    const merged = new Map(); // cid -> meilleur {wr, play} pour union multi-rôles
+    const merged = new Map(); // cid -> meilleur {wr, play} (union multi-rôles, pour counters.json)
+    const perRole = {}; // roleKey -> Map(cid -> {play, win})
     for (const pos of OPGG_POSITIONS) {
       await sleep(opts.throttleMs);
       reqCount++;
@@ -268,23 +273,45 @@ async function main() {
       }
       const arr = findCountersArray(json);
       if (!arr || !arr.length) continue;
+      const roleKey = OPGG_ROLE[pos];
       for (const e of arr) {
         const cid = Number(e.champion_id != null ? e.champion_id : e.championId);
         const play = Number(e.play != null ? e.play : e.games) || 0;
         const win = Number(e.win != null ? e.win : e.wins) || 0;
         if (play < opts.minGames || !keyToId.has(cid)) continue;
-        const wr = win / play;
+        const wrOpp = win / play; // winrate de l'adversaire CONTRE ce champion
         const prev = merged.get(cid);
-        if (!prev || wr > prev.wr) merged.set(cid, { wr, play });
+        if (!prev || wrOpp > prev.wr) merged.set(cid, { wr: wrOpp, play });
+        if (!perRole[roleKey]) perRole[roleKey] = new Map();
+        perRole[roleKey].set(cid, { play, win });
       }
     }
     if (merged.size) {
-      const ranked = [...merged.entries()]
+      counters[champ.id] = [...merged.entries()]
         .sort((a, b) => b[1].wr - a[1].wr)
         .slice(0, opts.topN)
         .map(([cid]) => keyToId.get(cid));
-      counters[champ.id] = ranked;
       withData++;
+    }
+    // champion-data.json : winrate du CHAMPION (≈ 1 - winrate adverse) par rôle.
+    for (const roleKey of Object.keys(perRole)) {
+      const m = perRole[roleKey];
+      let totalPlay = 0;
+      let myWins = 0;
+      const matchups = [];
+      for (const [cid, { play, win }] of m.entries()) {
+        totalPlay += play;
+        myWins += play - win;
+        matchups.push({ id: keyToId.get(cid), wr: (play - win) / play, games: play });
+      }
+      if (matchups.length) {
+        if (!champData[champ.id]) champData[champ.id] = {};
+        champData[champ.id][roleKey] = {
+          overallWinRate: totalPlay ? myWins / totalPlay : null,
+          games: totalPlay,
+          matchups,
+        };
+      }
     }
     process.stdout.write(
       `\r[${i + 1}/${targets.length}] ${champ.id.padEnd(14)} counters=${(counters[champ.id] || []).length}  (req ${reqCount})   `
@@ -311,6 +338,7 @@ async function main() {
   if (opts.dryRun) {
     console.log('🔍 --dry-run : aucune écriture. Aperçu de 5 entrées :');
     Object.entries(counters).slice(0, 5).forEach(([k, v]) => console.log(`   ${k} <- ${v.join(', ')}`));
+    console.log(`   (champion-data.json : ${Object.keys(champData).length} champions avec winrates)`);
     return;
   }
 
@@ -318,6 +346,18 @@ async function main() {
   if (bak) console.log(`💾 Sauvegarde : ${path.basename(bak)}`);
   fs.writeFileSync(COUNTERS_FILE, JSON.stringify(result, null, 2) + '\n');
   console.log(`📝 counters.json mis à jour (${withData} champions).`);
+
+  const champDataOut = {
+    _meta: {
+      source: 'op.gg',
+      tier: opts.tier,
+      region: opts.region,
+      note: 'winrate du champion ≈ 1 - winrate adverse, dérivé des match-ups',
+    },
+    champions: champData,
+  };
+  fs.writeFileSync(CHAMPDATA_FILE, JSON.stringify(champDataOut, null, 2) + '\n');
+  console.log(`📝 champion-data.json mis à jour (${Object.keys(champData).length} champions, winrates/match-ups).`);
 }
 
 if (require.main === module) {
