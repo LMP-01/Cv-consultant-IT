@@ -49,6 +49,30 @@ Rules:
 - If the "evenement" field is set, PRIORITIZE a tip directly related to that event (immediate reaction, high priority).
 - Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
 
+const SYSTEM_DRAFT_FR = `Tu es un coach de DRAFT (champ select) de League of Legends de très haut niveau.
+On te donne un instantané JSON du champ select : ton rôle, ton adversaire de lane, la composition adverse et la tienne (champions déjà choisis), le profil de dégâts des deux équipes, tes picks candidats (avec maîtrise et raisons), et des pistes de build/runes défensifs.
+Donne 1 à 3 conseils COURTS et actionnables pour CE moment du draft :
+- quel champion PICK privilégier et POURQUOI (counter de ta lane / de la team adverse, et synergie/équilibre avec TA team) ;
+- l'ajustement de BUILD ou de RUNES le plus important contre cette composition (AD/AP, CC, burst).
+Règles :
+- Base-toi UNIQUEMENT sur les champions présents dans l'instantané. N'invente pas de picks adverses non révélés.
+- Privilégie les champions de "candidatePicks" (la pool du joueur) quand c'est pertinent ; cite-les par leur nom.
+- Sois concret (cite les champions et le profil). Priorise le conseil le plus important.
+- "priority" doit valoir exactement "high", "medium" ou "low".
+- Réponds UNIQUEMENT avec un objet JSON {"tips":[{"title","message","priority"}]}, en français, sans aucun texte autour.`;
+
+const SYSTEM_DRAFT_EN = `You are a top-level League of Legends DRAFT (champ select) coach.
+You receive a JSON snapshot of champ select: your role, your lane opponent, the enemy and your own composition (champions already locked), both teams' damage profile, your candidate picks (with mastery and reasons), and defensive build/rune hints.
+Give 1 to 3 SHORT, actionable tips for THIS draft moment:
+- which champion to PICK and WHY (counters your lane / the enemy team, and synergy/balance with YOUR team);
+- the single most important BUILD or RUNE adjustment against this composition (AD/AP, CC, burst).
+Rules:
+- Use ONLY champions present in the snapshot. Do not invent enemy picks not revealed yet.
+- Prefer champions from "candidatePicks" (the player's pool) when relevant; name them.
+- Be concrete (cite champions and profile). Put the most important tip first.
+- "priority" must be exactly "high", "medium" or "low".
+- Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
+
 // Normalise la priorité vers high|medium|low (les modèles renvoient parfois
 // 1/2/3 ou des libellés FR/EN selon le backend).
 function normalizePriority(p) {
@@ -213,6 +237,10 @@ class AiAdvisor {
     return config.lang === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_FR;
   }
 
+  get draftSystem() {
+    return config.lang === 'en' ? SYSTEM_DRAFT_EN : SYSTEM_DRAFT_FR;
+  }
+
   get available() {
     return Boolean(this.backend && this.backend.available);
   }
@@ -251,8 +279,18 @@ class AiAdvisor {
     return this;
   }
 
-  // Renvoie des conseils IA ou null si indisponible / limité / échec.
-  async getInGameTips(snapshot, { force = false } = {}) {
+  // Conseils IA en partie (ou null si indisponible / limité / échec).
+  async getInGameTips(snapshot, opts = {}) {
+    return this._getTips(this.system, snapshot, { ...opts, category: 'Coach IA' });
+  }
+
+  // Conseils IA de draft pendant le champ select (pick + build, en direct).
+  async getChampSelectTips(snapshot, opts = {}) {
+    return this._getTips(this.draftSystem, snapshot, { ...opts, category: 'Draft IA' });
+  }
+
+  // Cœur commun : génère, parse et formate les conseils, en respectant la cadence.
+  async _getTips(systemText, snapshot, { force = false, category = 'Coach IA' } = {}) {
     if (!this.available || this.inFlight) return null;
     const now = Date.now();
     // En cadence normale on respecte minIntervalSeconds. Un moment réactif
@@ -264,7 +302,7 @@ class AiAdvisor {
     this.inFlight = true;
     this.lastCallTs = now;
     try {
-      const text = await this.backend.generate(this.system, JSON.stringify(snapshot));
+      const text = await this.backend.generate(systemText, JSON.stringify(snapshot));
       const parsed = parseTips(text);
       if (!parsed) return null;
       const tips = Array.isArray(parsed.tips) ? parsed.tips.slice(0, 3) : [];
@@ -273,7 +311,7 @@ class AiAdvisor {
         .map((t, i) => ({
           id: `ai-${Math.floor(now / 1000)}-${i}`,
           priority: normalizePriority(t.priority),
-          category: 'Coach IA',
+          category,
           title: t.title,
           message: t.message,
           source: 'ai',

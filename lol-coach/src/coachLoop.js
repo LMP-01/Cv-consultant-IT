@@ -29,6 +29,7 @@ class CoachLoop {
     this.mockStart = Date.now();
     this.timer = null;
     this.prevGame = null; // état précédent (PV/mort/events) pour les déclencheurs IA
+    this.prevDraftSig = null; // signature du draft précédent (picks/bans) pour rafraîchir l'IA
   }
 
   _emptyState() {
@@ -137,7 +138,7 @@ class CoachLoop {
         session = null;
       }
       if (session) {
-        this._handleChampSelect(session);
+        await this._handleChampSelect(session);
         return config.pollIntervalLobbyMs;
       }
     }
@@ -155,7 +156,7 @@ class CoachLoop {
 
     const csWindow = config.mockChampSelectSeconds;
     if (elapsed < csWindow) {
-      this._handleChampSelect(mockChampSelectSession(), true);
+      await this._handleChampSelect(mockChampSelectSession(), true);
       return 1000;
     }
     const gameData = mockAllGameData(elapsed - csWindow);
@@ -200,11 +201,25 @@ class CoachLoop {
     this._broadcast();
   }
 
-  _handleChampSelect(session, isMock) {
-    if (this.lastPhase !== 'champselect') this._resetFeed();
+  async _handleChampSelect(session, isMock) {
+    if (this.lastPhase !== 'champselect') {
+      this._resetFeed();
+      this.prevDraftSig = null;
+    }
     this.lastPhase = 'champselect';
 
     const pick = analyzeChampSelect(session, this.ddragon);
+
+    // Conseils IA de draft EN DIRECT : on rafraîchit dès que le draft change
+    // (nouveau pick/ban), avec un plancher pour préserver le quota Claude Max.
+    if (this.ai.available) {
+      const sig = this._draftSignature(pick);
+      const changed = sig !== this.prevDraftSig;
+      this.prevDraftSig = sig;
+      const aiTips = await this.ai.getChampSelectTips(this._draftSnapshot(pick), { force: changed });
+      if (aiTips && aiTips.length) this._pushAdvice(aiTips);
+    }
+
     this.state = {
       phase: isMock ? 'champselect-demo' : 'champselect',
       connection: this.state.connection,
@@ -214,6 +229,37 @@ class CoachLoop {
       timestamp: Date.now(),
     };
     this._broadcast();
+  }
+
+  // Signature compacte du draft : change quand un pick/ban/rôle évolue.
+  _draftSignature(pick) {
+    const en = (pick.enemyChamps || []).map((c) => c.id).sort().join(',');
+    const al = (pick.myChamps || []).map((c) => c.id).sort().join(',');
+    const lane = pick.laneOpponent ? pick.laneOpponent.id : '';
+    return `${pick.myRole}|lane:${lane}|en:${en}|al:${al}`;
+  }
+
+  // Instantané compact du champ select pour l'IA de draft.
+  _draftSnapshot(pick) {
+    return {
+      lang: config.lang,
+      phase: 'champ-select',
+      yourRole: pick.myRoleLabel,
+      laneOpponent: pick.laneOpponent ? pick.laneOpponent.name : null,
+      enemyTeam: (pick.enemyChamps || []).map((c) => c.name),
+      yourTeam: (pick.myChamps || []).map((c) => c.name),
+      enemyComposition: pick.enemyComp
+        ? { profile: pick.enemyComp.profile, cc: pick.enemyComp.ccLevel, burst: pick.enemyComp.burstLevel }
+        : null,
+      yourComposition: pick.teamComp ? { profile: pick.teamComp.profile } : null,
+      candidatePicks: (pick.pickSuggestions || []).slice(0, 5).map((p) => ({
+        champion: p.name,
+        mastery: p.mastery != null ? p.mastery : undefined,
+        reasons: p.reasons || [],
+      })),
+      defensiveBuildHints: (pick.buildSuggestions || []).map((b) => `${b.item} — ${b.reason}`),
+      runeHints: pick.runeHints || [],
+    };
   }
 
   _handleIdle(phase) {
