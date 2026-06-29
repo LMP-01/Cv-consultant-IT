@@ -307,26 +307,37 @@ function selectedVoice() {
   );
 }
 
+// Repère les voix de meilleure qualité (neuronales) pour les mettre en avant.
+const HQ_VOICE = /natural|neural|online|enhanced|premium|wavenet|journey|google|amélior/i;
+const isFr = (v) => v.lang && v.lang.toLowerCase().startsWith('fr');
+
 function populateVoices() {
   const sel = $('ttsVoice');
   if (!sel) return;
-  const voices = listVoices().slice().sort((a, b) => {
-    const af = a.lang && a.lang.toLowerCase().startsWith('fr') ? 0 : 1;
-    const bf = b.lang && b.lang.toLowerCase().startsWith('fr') ? 0 : 1;
-    return af - bf || a.name.localeCompare(b.name);
-  });
+  const voices = listVoices()
+    .slice()
+    .sort((a, b) => {
+      // français d'abord, puis voix HD, puis ordre alpha
+      return (isFr(b) - isFr(a)) || (HQ_VOICE.test(b.name) - HQ_VOICE.test(a.name)) || a.name.localeCompare(b.name);
+    });
   const saved = tts.voiceURI || localStorage.getItem('tts_voice') || '';
   sel.innerHTML = '';
   voices.forEach((v) => {
     const o = document.createElement('option');
     o.value = v.voiceURI;
-    o.textContent = `${v.name} (${v.lang})${v.localService ? '' : ' ☁'}`;
+    const hq = HQ_VOICE.test(v.name) ? ' ✨' : '';
+    o.textContent = `${v.name} (${v.lang})${hq}${v.localService ? '' : ' ☁'}`;
     sel.appendChild(o);
   });
+  // Défaut : meilleure voix française dispo (HD si possible), sinon meilleure HD, sinon 1re.
   let chosen = saved && voices.some((v) => v.voiceURI === saved) ? saved : '';
   if (!chosen) {
-    const fr = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('fr'));
-    chosen = fr ? fr.voiceURI : voices[0] ? voices[0].voiceURI : '';
+    const best =
+      voices.find((v) => isFr(v) && HQ_VOICE.test(v.name)) ||
+      voices.find((v) => isFr(v)) ||
+      voices.find((v) => HQ_VOICE.test(v.name)) ||
+      voices[0];
+    chosen = best ? best.voiceURI : '';
   }
   if (chosen) {
     sel.value = chosen;
