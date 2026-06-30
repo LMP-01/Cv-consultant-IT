@@ -119,6 +119,8 @@ function analyzeChampSelect(session, ddragon) {
   const localCellId = session.localPlayerCellId;
   const myMember = (session.myTeam || []).find((m) => m.cellId === localCellId);
   const myRole = normRole(myMember ? myMember.assignedPosition : '');
+  // Champion que TU as pické/hovered (pour le fond d'écran).
+  const myPicked = myMember && myMember.championId > 0 && ddragon ? ddragon.resolveChampionByKey(myMember.championId) : null;
 
   const myCellIds = new Set((session.myTeam || []).map((m) => m.cellId));
   const enemyCellIds = new Set((session.theirTeam || []).map((m) => m.cellId));
@@ -378,6 +380,7 @@ function analyzeChampSelect(session, ddragon) {
   return {
     myRole,
     myRoleLabel: ROLE_LABEL[myRole] || myRole || 'Inconnu',
+    myChampion: champRef(myPicked),
     laneOpponent: champRef(laneOpponent),
     myChamps: myChamps.map(champRef),
     enemyChamps: enemyChamps.map(champRef),

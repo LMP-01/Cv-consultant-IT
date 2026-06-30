@@ -16,9 +16,9 @@ function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(`${proto}://${location.host}`);
 
-  ws.onopen = () => setBadge('wsBadge', 'Serveur ✓', 'ok');
+  ws.onopen = () => setBadge('wsBadge', 'Serveur', 'ok');
   ws.onclose = () => {
-    setBadge('wsBadge', 'Serveur ✗', 'off');
+    setBadge('wsBadge', 'Serveur', 'off');
     setTimeout(connect, 2000);
   };
   ws.onerror = () => ws.close();
@@ -102,8 +102,8 @@ function applyState(state) {
   // Badges de statut
   setBadge('phaseBadge', PHASE_LABELS[state.phase] || state.phase, 'phase');
   const c = state.connection || {};
-  setBadge('liveBadge', 'Jeu ' + (c.liveClient ? '✓' : '✗'), c.liveClient ? 'ok' : 'off');
-  setBadge('lcuBadge', 'Client ' + (c.lcu ? '✓' : '✗'), c.lcu ? 'ok' : 'off');
+  setBadge('liveBadge', 'Jeu', c.liveClient ? 'ok' : 'off');
+  setBadge('lcuBadge', 'Client', c.lcu ? 'ok' : 'off');
   const u = c.aiUsage;
   const aiTxt = 'IA: ' + shortAi(c.ai) + (u && u.calls ? ` · ${u.calls} appel${u.calls > 1 ? 's' : ''}` : '');
   const aiCls = !(c.ai && c.ai.includes('Claude')) ? 'dim' : u && u.lastOk === false ? 'off' : 'ok';
@@ -125,8 +125,41 @@ function applyState(state) {
   toggle('champSelect', champSelect);
   toggle('inGame', inGame);
 
+  // Fond d'écran = splash du champion pické / joué.
+  if (inGame && state.game && state.game.scoreboard && state.game.scoreboard.me) {
+    setChampionBg(state.game.scoreboard.me.championId);
+  } else if (champSelect && state.pick) {
+    const myC = state.pick.myChampion;
+    const top = state.pick.pickSuggestions && state.pick.pickSuggestions[0];
+    setChampionBg((myC && myC.id) || (top && top.id) || null);
+  } else {
+    setChampionBg(null);
+  }
+
   if (champSelect && state.pick) renderChampSelect(state.pick);
   if (inGame && state.game) renderInGame(state.game);
+}
+
+// Affiche le splash art du champion en fond (Data Dragon CDN).
+let curChampBg = '';
+function setChampionBg(championId) {
+  let el = document.getElementById('champBg');
+  if (!championId) {
+    if (el) el.classList.remove('show');
+    document.body.classList.remove('has-champ');
+    curChampBg = '';
+    return;
+  }
+  if (championId === curChampBg) return;
+  curChampBg = championId;
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'champBg';
+    document.body.prepend(el);
+  }
+  el.style.backgroundImage = `url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championId}_0.jpg')`;
+  el.classList.add('show');
+  document.body.classList.add('has-champ');
 }
 
 function shortAi(ai) {
@@ -184,6 +217,12 @@ function applyFeedFilter() {
   });
 }
 
+// Retire les emojis d'un texte (rendu pro — les icônes SVG / chips suffisent).
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\u{2705}\u{274C}\u{2728}\u{26A1}\u{FE0F}]/gu;
+function noEmoji(s) {
+  return String(s == null ? '' : s).replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 function buildAdviceEl(a) {
   const el = document.createElement('div');
   const isAi = a.source === 'ai';
@@ -196,10 +235,10 @@ function buildAdviceEl(a) {
     <div class="advice-accent"></div>
     <div class="advice-body">
       <div class="advice-head">
-        <span class="advice-title">${esc(a.title)}</span>
+        <span class="advice-title">${esc(noEmoji(a.title))}</span>
         <span class="rel" data-at="${a.at}"></span>
       </div>
-      <div class="advice-msg">${esc(a.message)}</div>
+      <div class="advice-msg">${esc(noEmoji(a.message))}</div>
       <div class="advice-foot">
         ${a.category ? `<span class="chip chip-cat">${esc(a.category)}</span>` : ''}
         <span class="chip chip-prio">${esc(prio)}</span>
@@ -255,13 +294,13 @@ function renderChampSelect(pick) {
     if (p) {
       const dangers = (p.dangers || []).map((d) => `<li>${esc(d)}</li>`).join('');
       mp.innerHTML = `
-        <h3 class="sub">🗺️ Plan de lane (IA)</h3>
+        <h3 class="sub">${iconSvg('map')} Plan de lane (IA)</h3>
         <div class="mplan-card">
           <div class="mplan-row"><span class="mplan-k">Lane</span><span>${esc(p.lanePlan)}</span></div>
           ${p.runes ? `<div class="mplan-row"><span class="mplan-k">Runes</span><span>${esc(p.runes)}</span></div>` : ''}
           ${p.winCondition ? `<div class="mplan-row"><span class="mplan-k">Win condition</span><span>${esc(p.winCondition)}</span></div>` : ''}
           ${p.powerSpikes ? `<div class="mplan-row"><span class="mplan-k">Spikes</span><span>${esc(p.powerSpikes)}</span></div>` : ''}
-          ${dangers ? `<div class="mplan-danger"><b>⚠️ Dangers</b><ul>${dangers}</ul></div>` : ''}
+          ${dangers ? `<div class="mplan-danger"><b>${iconSvg('alert','ic-amber')} Dangers</b><ul>${dangers}</ul></div>` : ''}
         </div>`;
     } else {
       mp.innerHTML = '';
@@ -269,7 +308,7 @@ function renderChampSelect(pick) {
   }
 
   const heading = $('pickHeading');
-  if (heading) heading.textContent = pick.picksFromPool ? '🎯 Tes picks (ta pool)' : 'Picks conseillés';
+  if (heading) heading.innerHTML = pick.picksFromPool ? iconSvg('target') + ' Tes picks (ta pool)' : 'Picks conseill\u00e9s';
 
   const unres = $('poolUnresolved');
   if (unres) {
@@ -291,7 +330,7 @@ function renderChampSelect(pick) {
       el.innerHTML = `
         ${p.portrait ? `<img src="${p.portrait}" alt="" onerror="this.style.visibility='hidden'"/>` : ''}
         <div class="pick-info">
-          <div class="pick-name">${esc(p.name)} ${i === 0 ? '<span class="pick-rank">★ TOP</span>' : ''}</div>
+          <div class="pick-name">${esc(p.name)} ${i === 0 ? '<span class="pick-rank">' + iconSvg('star') + ' TOP</span>' : ''}</div>
           <div class="pick-reasons">${esc((p.reasons || []).join(' · ') || 'pick solide')}</div>
         </div>
         ${wp}`;
@@ -469,7 +508,7 @@ function updateTimers() {
     });
     if (targets.length) {
       go.classList.remove('hidden');
-      go.innerHTML = `🟢 Fenêtre d'engage : <b>${targets.map(esc).join(', ')}</b> sans Flash ni Ulti — go si tu as l'avantage.`;
+      go.innerHTML = `${iconSvg('dot','ic-good')} Fenêtre d'engage : <b>${targets.map(esc).join(', ')}</b> sans Flash ni Ulti — go si tu as l'avantage.`;
     } else {
       go.classList.add('hidden');
     }
@@ -544,13 +583,13 @@ function renderItemPlan(plan) {
   }
   if (plan.summoners) rparts.push(`<div class="plan-rune-line"><span class="plan-k">Sorts</span> ${esc(plan.summoners)}</div>`);
   if (plan.skillOrder) rparts.push(`<div class="plan-rune-line"><span class="plan-k">Sorts max</span> ${esc(plan.skillOrder)}</div>`);
-  (plan.runeHints || []).forEach((h) => rparts.push(`<div class="plan-rune-hint">🛡️ ${esc(h)}</div>`));
+  (plan.runeHints || []).forEach((h) => rparts.push(`<div class="plan-rune-hint">${iconSvg('shield')} ${esc(h)}</div>`));
   runesEl.innerHTML = rparts.join('');
 
   // Prochains achats : pour chaque cible, ses composants (mini-items) en dessous.
   const nextEl = $('itemPlanNext');
   if (!plan.next || !plan.next.length) {
-    nextEl.innerHTML = '<div class="dex-none">Build complété ✓</div>';
+    nextEl.innerHTML = '<div class="dex-none">Build compl\u00e9t\u00e9 </div>';
   } else {
     nextEl.innerHTML = plan.next
       .map((it, i) => {
@@ -570,7 +609,7 @@ function renderItemPlan(plan) {
   const fullEl = $('itemPlanFull');
   fullEl.innerHTML = (plan.full || [])
     .map((it) => `<span class="plan-full-item">${itemIco(it)}<span class="plan-slot">${esc(it.slot || '')}</span></span>`)
-    .join('<span class="plan-arrow">→</span>');
+    .join('<span class="plan-arrow">' + iconSvg('arrowRight') + '</span>');
 
   $('itemPlanStrategy').textContent = plan.strategy || '';
 }
@@ -631,6 +670,7 @@ function renderTeam(id, players) {
   });
 }
 
+const OBJ_IC = { Dragon: 'dragon', Baron: 'baron', 'Héraut': 'herald', Voidgrubs: 'grubs' };
 const objAlerted = {};
 function renderObjectives() {
   const c = $('objectives');
@@ -650,7 +690,7 @@ function renderObjectives() {
     const el = document.createElement('div');
     el.className = 'obj ' + cls;
     el.innerHTML = `
-      <div class="obj-name">${o.icon || ''} ${esc(o.name)}</div>
+      <div class="obj-name">${iconSvg(OBJ_IC[o.name] || 'target')} ${esc(o.name)}</div>
       <div class="obj-eta">${eta === 0 ? 'PRÊT' : mmss(eta)}</div>`;
     c.appendChild(el);
   });
@@ -702,8 +742,8 @@ function populateVoices() {
   voices.forEach((v) => {
     const o = document.createElement('option');
     o.value = v.voiceURI;
-    const hq = HQ_VOICE.test(v.name) ? ' ✨' : '';
-    o.textContent = `${v.name} (${v.lang})${hq}${v.localService ? '' : ' ☁'}`;
+    const hq = HQ_VOICE.test(v.name) ? ' \u2022 HD' : '';
+    o.textContent = `${v.name} (${v.lang})${hq}${v.localService ? '' : ' \u2022 r\u00e9seau'}`;
     sel.appendChild(o);
   });
   // Défaut : meilleure voix française dispo (HD si possible), sinon meilleure HD, sinon 1re.
@@ -798,7 +838,7 @@ function setTtsEnabled(on) {
   }
   const btn = $('ttsToggle');
   if (btn) {
-    btn.textContent = on ? '🔊 Voix on' : '🔈 Voix off';
+    btn.innerHTML = (on ? iconSvg('volume') : iconSvg('volumeOff')) + (on ? ' Voix on' : ' Voix off');
     btn.classList.toggle('on', on);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
@@ -813,7 +853,7 @@ function setupTtsServerButton() {
   if (!btn) return;
   const refresh = () => {
     btn.classList.toggle('on', Boolean(tts.endpoint));
-    btn.textContent = tts.endpoint ? '🎚️ Voix HD ✓' : '🎚️ Voix HD';
+    btn.innerHTML = iconSvg('sliders') + ' Voix HD';
   };
   refresh();
   btn.addEventListener('click', () => {
@@ -1019,7 +1059,7 @@ function initCompact() {
     document.body.classList.toggle('compact', on);
     if (btn) {
       btn.classList.toggle('on', on);
-      btn.textContent = on ? '🗗 Compact' : '🗖 Normal';
+      btn.innerHTML = (on ? iconSvg('minimize') : iconSvg('maximize')) + (on ? ' Compact' : ' Normal');
     }
   };
   apply(localStorage.getItem('coach_compact') === '1');
