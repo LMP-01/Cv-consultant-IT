@@ -7,6 +7,8 @@ const { LcuClient } = require('./lcu/lcuClient');
 const { AiAdvisor } = require('./advisor/ai');
 const { analyzeInGame } = require('./advisor/heuristics');
 const { analyzeChampSelect } = require('./advisor/pickAdvisor');
+const { buildItemPlan } = require('./advisor/itemPlan');
+const { GameHistory } = require('./data/history');
 const { mockAllGameData, mockChampSelectSession } = require('./mock/mockData');
 
 // Cooldowns (s) avant de réafficher un conseil identique dans le flux.
@@ -30,6 +32,9 @@ class CoachLoop {
     this.timer = null;
     this.prevGame = null; // état précédent (PV/mort/events) pour les déclencheurs IA
     this.prevDraftSig = null; // signature du draft précédent (picks/bans) pour rafraîchir l'IA
+    this.history = new GameHistory();
+    this.lastInGame = null; // dernier instantané de partie (chat + historique)
+    this.gameFinalized = false; // évite de sauvegarder deux fois la même partie
   }
 
   _emptyState() {
@@ -114,7 +119,7 @@ class CoachLoop {
     }
 
     if (gameData && gameData.gameData) {
-      await this._handleInGame(gameData, false);
+      this._handleInGame(gameData, false);
       this.state.connection.liveClient = true;
       this.state.connection.lcu = true;
       return config.pollIntervalInGameMs;
@@ -138,8 +143,8 @@ class CoachLoop {
         session = null;
       }
       if (session) {
-        await this._handleChampSelect(session);
-        return config.pollIntervalLobbyMs;
+        this._handleChampSelect(session);
+        return config.pollIntervalChampSelectMs;
       }
     }
 
@@ -156,20 +161,21 @@ class CoachLoop {
 
     const csWindow = config.mockChampSelectSeconds;
     if (elapsed < csWindow) {
-      await this._handleChampSelect(mockChampSelectSession(), true);
+      this._handleChampSelect(mockChampSelectSession(), true);
       return 1000;
     }
     const gameData = mockAllGameData(elapsed - csWindow);
-    await this._handleInGame(gameData, true);
+    this._handleInGame(gameData, true);
     return config.pollIntervalInGameMs;
   }
 
   // ── Handlers de phase ──────────────────────────────────────────────────────
-  async _handleInGame(gameData, isMock) {
+  _handleInGame(gameData, isMock) {
     const fresh = this.lastPhase !== 'ingame';
     if (fresh) {
       this._resetFeed();
       this.prevGame = null;
+      this.gameFinalized = false;
     }
     this.lastPhase = 'ingame';
 
@@ -179,13 +185,10 @@ class CoachLoop {
     // Déclencheur réactif : mort, chute de PV, kill/objectif... => conseil immédiat.
     const trigger = this._detectTrigger(result, gameData, fresh);
 
-    // Conseils IA (si disponibles), en complément du moteur de règles.
-    if (this.ai.available) {
-      const snapshot = this._aiSnapshot(result, trigger);
-      const aiTips = await this.ai.getInGameTips(snapshot, { force: fresh || Boolean(trigger) });
-      if (aiTips && aiTips.length) this._pushAdvice(aiTips);
-    }
+    // Plan d'objets (règles, instantané) : prochains achats + build complet.
+    const itemPlan = buildItemPlan(result, this.ddragon);
 
+    // 1) On diffuse IMMÉDIATEMENT le tableau de bord — l'IA ne doit jamais le bloquer.
     this.state = {
       phase: isMock ? 'ingame-demo' : 'ingame',
       connection: this.state.connection,
@@ -193,16 +196,42 @@ class CoachLoop {
         summary: result.summary,
         objectives: result.objectives,
         scoreboard: result.scoreboard,
+        itemPlan,
       },
       pick: null,
       feed: this.feed,
       timestamp: Date.now(),
     };
     this._broadcast();
+
+    // Mémorise le contexte courant (chat + historique de fin de partie).
+    this.lastInGame = { result, events: (gameData.events && gameData.events.Events) || [], at: Date.now() };
+
+    // 2) Conseils IA EN ARRIÈRE-PLAN (ne bloque pas le live) ; re-diffuse à l'arrivée.
+    if (this.ai.available) {
+      const snapshot = this._aiSnapshot(result, trigger);
+      this._fireAi(() => this.ai.getInGameTips(snapshot, { force: fresh || Boolean(trigger) }));
+    }
   }
 
-  async _handleChampSelect(session, isMock) {
+  // Lance un appel IA sans bloquer la boucle ; pousse les conseils quand ils arrivent.
+  _fireAi(fn) {
+    Promise.resolve()
+      .then(fn)
+      .then((tips) => {
+        if (tips && tips.length) {
+          this._pushAdvice(tips);
+          this._broadcast();
+        }
+      })
+      .catch(() => {
+        /* l'IA ne doit jamais casser la boucle */
+      });
+  }
+
+  _handleChampSelect(session, isMock) {
     if (this.lastPhase !== 'champselect') {
+      this._finalizeGameIfNeeded();
       this._resetFeed();
       this.prevDraftSig = null;
     }
@@ -210,16 +239,7 @@ class CoachLoop {
 
     const pick = analyzeChampSelect(session, this.ddragon);
 
-    // Conseils IA de draft EN DIRECT : on rafraîchit dès que le draft change
-    // (nouveau pick/ban), avec un plancher pour préserver le quota Claude Max.
-    if (this.ai.available) {
-      const sig = this._draftSignature(pick);
-      const changed = sig !== this.prevDraftSig;
-      this.prevDraftSig = sig;
-      const aiTips = await this.ai.getChampSelectTips(this._draftSnapshot(pick), { force: changed });
-      if (aiTips && aiTips.length) this._pushAdvice(aiTips);
-    }
-
+    // 1) Diffuse IMMÉDIATEMENT les picks/build — pas d'attente sur l'IA.
     this.state = {
       phase: isMock ? 'champselect-demo' : 'champselect',
       connection: this.state.connection,
@@ -229,6 +249,15 @@ class CoachLoop {
       timestamp: Date.now(),
     };
     this._broadcast();
+
+    // 2) Conseils IA de draft EN ARRIÈRE-PLAN : on rafraîchit dès que le draft
+    // change (nouveau pick/ban), avec un plancher de cadence (quota Claude Max).
+    if (this.ai.available) {
+      const sig = this._draftSignature(pick);
+      const changed = sig !== this.prevDraftSig;
+      this.prevDraftSig = sig;
+      this._fireAi(() => this.ai.getChampSelectTips(this._draftSnapshot(pick), { force: changed }));
+    }
   }
 
   // Signature compacte du draft : change quand un pick/ban/rôle évolue.
@@ -263,6 +292,7 @@ class CoachLoop {
   }
 
   _handleIdle(phase) {
+    if (this.lastPhase === 'ingame') this._finalizeGameIfNeeded();
     this.lastPhase = 'idle';
     this.state = {
       phase: this.state.connection.lcu ? 'idle' : 'offline',
@@ -274,6 +304,79 @@ class CoachLoop {
       timestamp: Date.now(),
     };
     this._broadcast();
+  }
+
+  // ── Historique de fin de partie ─────────────────────────────────────────────
+  // Sauvegarde la dernière partie (si non encore faite) + critique IA async.
+  _finalizeGameIfNeeded() {
+    if (this.gameFinalized || !this.lastInGame) return;
+    const { result, events } = this.lastInGame;
+    // Ignore les parties trop courtes (remake / écran de chargement).
+    if (!result || !result.summary || (result.summary.gameTime || 0) < 300) return;
+    this.gameFinalized = true;
+
+    const me = result.scoreboard.me;
+    const endEvent = (events || []).find((e) => e.EventName === 'GameEnd');
+    const win = endEvent ? endEvent.Result === 'Win' : null;
+    const record = {
+      date: new Date().toISOString(),
+      durationSec: Math.round(result.summary.gameTime || 0),
+      durationText: result.summary.gameTimeText,
+      win,
+      champion: me ? me.championDisplay || me.champion : null,
+      role: me ? me.position : null,
+      kda: me ? `${me.kills}/${me.deaths}/${me.assists}` : null,
+      kills: me ? me.kills : null,
+      deaths: me ? me.deaths : null,
+      assists: me ? me.assists : null,
+      cs: me ? me.cs : null,
+      csPerMin: result.summary.me ? result.summary.me.csPerMin : null,
+      allies: result.scoreboard.allies.map((p) => p.championDisplay || p.champion),
+      enemies: result.scoreboard.enemies.map((p) => p.championDisplay || p.champion),
+      enemyProfile: result.summary.enemyComp ? result.summary.enemyComp.profile : null,
+      review: null, // rempli par l'IA ci-dessous (async)
+    };
+    const id = this.history.add(record);
+
+    // Critique IA (axes positifs / à améliorer) en arrière-plan.
+    if (this.ai.available) {
+      this.ai
+        .reviewGame(record)
+        .then((review) => {
+          if (review) this.history.update(id, { review });
+        })
+        .catch(() => {
+          /* la critique est optionnelle */
+        });
+    }
+  }
+
+  // Contexte compact pour le chat (selon la phase courante).
+  chatContext() {
+    if (this.lastPhase === 'ingame' && this.lastInGame) {
+      const r = this.lastInGame.result;
+      return {
+        phase: 'in-game',
+        gameTime: r.summary.gameTimeText,
+        you: r.summary.me,
+        objectivesSoon: (r.objectives || []).filter((o) => o.etaSeconds <= 60).map((o) => ({ name: o.name, inSeconds: o.etaSeconds })),
+        allies: r.scoreboard.allies.map((p) => ({ champion: p.championDisplay || p.champion, kda: `${p.kills}/${p.deaths}/${p.assists}` })),
+        enemies: r.scoreboard.enemies.map((p) => ({ champion: p.championDisplay || p.champion, kda: `${p.kills}/${p.deaths}/${p.assists}` })),
+        enemyComposition: r.summary.enemyComp ? { profile: r.summary.enemyComp.profile, cc: r.summary.enemyComp.ccLevel, burst: r.summary.enemyComp.burstLevel } : null,
+      };
+    }
+    if (this.state && this.state.pick) {
+      const p = this.state.pick;
+      return {
+        phase: 'champ-select',
+        yourRole: p.myRoleLabel,
+        laneOpponent: p.laneOpponent ? p.laneOpponent.name : null,
+        enemyTeam: (p.enemyChamps || []).map((c) => c.name),
+        yourTeam: (p.myChamps || []).map((c) => c.name),
+        candidatePicks: (p.pickSuggestions || []).slice(0, 5).map((s) => s.name),
+      };
+    }
+    return { phase: this.state ? this.state.phase : 'idle' };
   }
 
   // Détecte un moment "réactif" (prise de risque, action) entre deux ticks.

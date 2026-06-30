@@ -1022,3 +1022,133 @@ body {
   font-size: 12px;
   color: var(--faint);
 }
+
+/* ── Probabilité de win (champ select) ───────────────────────────────────── */
+.pick-wp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 8px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+}
+.pick-wp small { display: block; font-size: 8.5px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .4px; }
+.wp-good { color: var(--green); }
+.wp-mid { color: var(--gold); }
+.wp-bad { color: var(--rose); }
+.team-winprob { margin: 6px 0 2px; font-size: 12.5px; color: var(--muted); }
+.team-winprob b { font-size: 14px; }
+.wp-note { color: var(--faint); font-size: 11px; }
+
+/* ── Plan d'objets en jeu ─────────────────────────────────────────────────── */
+#itemPlanPanel.hidden { display: none; }
+.plan-runes { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.plan-rune-line { font-size: 12.5px; color: var(--text); }
+.plan-k {
+  display: inline-block; min-width: 48px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; color: var(--faint);
+}
+.plan-rune-hint { font-size: 12px; color: #d6c9ff; }
+.plan-next { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.plan-next-item {
+  background: var(--card-2); border: 1px solid var(--border); border-radius: 11px;
+  padding: 8px 10px; min-width: 120px;
+}
+.plan-next-item.first { border-color: rgba(168, 85, 247, 0.45); box-shadow: 0 0 0 1px rgba(168,85,247,0.18) inset; }
+.plan-next-head { display: flex; align-items: center; gap: 7px; }
+.plan-step {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--grad);
+  color: #0b0d12; font-weight: 800; font-size: 11px; display: grid; place-items: center; flex: 0 0 auto;
+}
+.plan-target { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; color: var(--gold); }
+.plan-target img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(0,0,0,.45); }
+.plan-comp { display: flex; align-items: center; gap: 3px; margin-top: 6px; padding-left: 25px; }
+.plan-mini { display: inline-flex; align-items: center; }
+.plan-mini img { width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,.4); }
+.plan-mini .plan-item-name { display: none; }
+.plan-plus { color: var(--faint); font-size: 11px; }
+.plan-full { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.plan-full-item { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.plan-full-item img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(0,0,0,.45); }
+.plan-full-item .plan-item-name { display: none; }
+.plan-slot { font-size: 8.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .3px; }
+.plan-arrow { color: var(--faint); font-size: 13px; }
+.plan-item-name { font-size: 12px; }
+.plan-strategy {
+  font-size: 12px; line-height: 1.45; color: #d6c9ff; background: var(--grad-soft);
+  border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 9px; padding: 8px 11px; margin-top: 4px;
+}
+
+/* ── Chat avec Claude ─────────────────────────────────────────────────────── */
+.chat { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.chat-title { margin-bottom: 8px; }
+.chat-log { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; margin-bottom: 9px; }
+.chat-hint { font-size: 12px; color: var(--faint); line-height: 1.45; }
+.chat-msg { display: flex; flex-direction: column; gap: 2px; max-width: 92%; }
+.chat-msg.chat-you { align-self: flex-end; align-items: flex-end; }
+.chat-role { font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--faint); }
+.chat-text {
+  font-size: 13px; line-height: 1.5; padding: 8px 11px; border-radius: 12px; white-space: pre-wrap;
+}
+.chat-you .chat-text { background: var(--grad-soft); border: 1px solid rgba(139, 92, 246, 0.3); color: var(--text); border-bottom-right-radius: 4px; }
+.chat-ai .chat-text { background: var(--card-2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+.chat-msg.pending .chat-text { color: var(--faint); animation: chatPulse 1.1s ease-in-out infinite; }
+@keyframes chatPulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+.chat-form { display: flex; gap: 7px; }
+.chat-input {
+  flex: 1; background: var(--card); border: 1px solid var(--border-strong); border-radius: 10px;
+  padding: 9px 12px; color: var(--text); font-size: 13px; font-family: var(--font);
+}
+.chat-input:focus { outline: none; border-color: var(--primary-2); box-shadow: 0 0 0 3px var(--ring); }
+.chat-send {
+  background: var(--grad); color: #0b0d12; font-weight: 700; border: none; border-radius: 10px;
+  padding: 0 15px; font-size: 13px; cursor: pointer;
+}
+.chat-send:hover { filter: brightness(1.08); }
+
+/* ── Page historique ──────────────────────────────────────────────────────── */
+.hist-stats { margin-bottom: 18px; }
+.hist-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 700px) { .hist-kpis { grid-template-columns: repeat(2, 1fr); } }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+.kpi-v { font-size: 22px; font-weight: 800; color: var(--text); }
+.kpi-k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.kpi-sep { color: var(--faint); margin: 0 3px; }
+.hist-champs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.hist-champ { font-size: 12px; background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; color: var(--muted); }
+.hist-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border-strong); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+.hist-card.win { border-left-color: var(--green); }
+.hist-card.loss { border-left-color: var(--rose); }
+.hist-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.hist-id { display: flex; align-items: center; gap: 9px; }
+.hist-result { font-weight: 800; font-size: 13px; }
+.hist-result.win { color: var(--green); }
+.hist-result.loss { color: var(--rose); }
+.hist-result.unknown { color: var(--muted); }
+.hist-champ-name { font-size: 16px; font-weight: 700; }
+.hist-role { font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .5px; }
+.hist-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); }
+.hist-date { color: var(--faint); }
+.hist-rating { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px; margin: 9px 0; }
+.r-great { color: var(--green); background: rgba(52,211,153,.12); }
+.r-good { color: var(--teal); background: rgba(45,212,191,.12); }
+.r-mixed { color: var(--gold); background: rgba(216,178,90,.12); }
+.r-rough { color: var(--rose); background: rgba(251,113,133,.12); }
+.hist-review { margin-top: 4px; }
+.hist-review.pending { font-size: 12px; color: var(--faint); font-style: italic; }
+.hist-summary { font-size: 13px; line-height: 1.5; color: var(--text); margin: 4px 0 10px; }
+.hist-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 700px) { .hist-cols { grid-template-columns: 1fr; } }
+.hist-col h4 { font-size: 12px; margin: 0 0 5px; }
+.hist-col.good h4 { color: var(--green); }
+.hist-col.bad h4 { color: var(--gold); }
+.hist-col ul { margin: 0; padding-left: 18px; }
+.hist-col li { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin-bottom: 3px; }
+.hist-focus { margin-top: 10px; font-size: 12.5px; color: #d6c9ff; background: var(--grad-soft); border: 1px solid rgba(139,92,246,.25); border-radius: 9px; padding: 8px 11px; }
+.hist-comp { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 11.5px; color: var(--faint); }
+.hist-side.allies { color: var(--muted); }

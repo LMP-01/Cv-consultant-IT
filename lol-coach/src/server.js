@@ -12,6 +12,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+app.use(express.json({ limit: '64kb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const loop = new CoachLoop();
@@ -45,6 +46,30 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/pool', (_req, res) => {
   try {
     res.json(buildPoolDex(loop.ddragon));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Chat : poser une question à Claude avec le contexte de jeu courant.
+app.post('/api/chat', async (req, res) => {
+  const message = (req.body && req.body.message ? String(req.body.message) : '').trim().slice(0, 1000);
+  if (!message) return res.status(400).json({ error: 'message requis' });
+  if (!loop.ai.available) {
+    return res.json({ reply: null, ai: false, hint: "Active l'abonnement Claude (CLI claude) pour discuter avec le coach IA." });
+  }
+  try {
+    const reply = await loop.ai.askQuestion(message, loop.chatContext());
+    res.json({ reply: reply || null, ai: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Historique des parties jouées avec le coach (+ stats agrégées).
+app.get('/api/history', (_req, res) => {
+  try {
+    res.json(loop.history.list());
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

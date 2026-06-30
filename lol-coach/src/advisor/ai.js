@@ -73,6 +73,50 @@ Rules:
 - "priority" must be exactly "high", "medium" or "low".
 - Reply ONLY with a JSON object {"tips":[{"title","message","priority"}]}, in English, with no surrounding text.`;
 
+// Schéma de la critique de fin de partie.
+const REVIEW_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'didWell', 'toImprove'],
+  properties: {
+    summary: { type: 'string' },
+    rating: { type: 'string', enum: ['great', 'good', 'mixed', 'rough'] },
+    didWell: { type: 'array', items: { type: 'string' } },
+    toImprove: { type: 'array', items: { type: 'string' } },
+    focusNextGame: { type: 'string' },
+  },
+};
+
+const REVIEW_FR = `Tu es un coach de League of Legends qui débriefe une partie TERMINÉE pour aider le joueur à progresser vers le Challenger.
+On te donne un résumé JSON de la partie (champion, rôle, KDA, CS/min, durée, résultat si connu, compositions alliée et adverse).
+Donne une critique HONNÊTE mais BIENVEILLANTE, et des axes d'amélioration concrets et actionnables.
+Réponds UNIQUEMENT avec un objet JSON :
+{"summary":"...","rating":"great|good|mixed|rough","didWell":["..."],"toImprove":["..."],"focusNextGame":"..."}
+- "didWell" : 2 à 4 points positifs concrets (déduits des chiffres / du contexte).
+- "toImprove" : 2 à 4 axes précis (farm, morts, vision, macro, timings...).
+- "focusNextGame" : UN seul objectif prioritaire pour la prochaine partie.
+N'invente pas de faits absents du résumé. En français, sans aucun texte autour du JSON.`;
+
+const REVIEW_EN = `You are a League of Legends coach debriefing a FINISHED game to help the player climb toward Challenger.
+You receive a JSON summary (champion, role, KDA, CS/min, duration, result if known, ally and enemy compositions).
+Give an HONEST but constructive critique and concrete, actionable improvement areas.
+Reply ONLY with a JSON object:
+{"summary":"...","rating":"great|good|mixed|rough","didWell":["..."],"toImprove":["..."],"focusNextGame":"..."}
+- "didWell": 2-4 concrete positives (from the numbers/context).
+- "toImprove": 2-4 precise areas (farm, deaths, vision, macro, timings...).
+- "focusNextGame": ONE priority goal for the next game.
+Do not invent facts absent from the summary. In English, no text around the JSON.`;
+
+const CHAT_FR = `Tu es un coach expert de League of Legends qui répond au joueur PENDANT sa partie (il est peut-être mort, en attente de respawn, ou en alt-tab).
+On te donne sa question et un contexte de jeu JSON.
+Réponds de façon CONCISE (2 à 4 phrases), concrète et actionnable. Appuie-toi sur le contexte (chiffres, champions, objectifs) quand c'est pertinent. Si l'info n'est pas dans le contexte, donne ton meilleur conseil sans inventer de données précises.
+Réponds en français, en texte simple (PAS de JSON, pas de markdown).`;
+
+const CHAT_EN = `You are an expert League of Legends coach answering the player DURING their game (they may be dead, awaiting respawn, or alt-tabbed).
+You receive their question and a JSON game context.
+Answer CONCISELY (2-4 sentences), concrete and actionable. Use the context (numbers, champions, objectives) when relevant. If the info isn't in the context, give your best advice without inventing precise data.
+Answer in English, plain text (NO JSON, no markdown).`;
+
 // Normalise la priorité vers high|medium|low (les modèles renvoient parfois
 // 1/2/3 ou des libellés FR/EN selon le backend).
 function normalizePriority(p) {
@@ -118,14 +162,18 @@ class ApiBackend {
     return Boolean(this.client);
   }
 
-  async generate(systemText, userText) {
-    const msg = await this.client.messages.create({
+  async generate(systemText, userText, opts = {}) {
+    const body = {
       model: config.ai.model,
-      max_tokens: 700,
+      max_tokens: opts.maxTokens || 700,
       system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: TIPS_SCHEMA } },
       messages: [{ role: 'user', content: userText }],
-    });
+    };
+    // Sortie structurée JSON par défaut ; texte libre si json === false (chat).
+    if (opts.json !== false) {
+      body.output_config = { effort: 'low', format: { type: 'json_schema', schema: opts.schema || TIPS_SCHEMA } };
+    }
+    const msg = await this.client.messages.create(body);
     const block = (msg.content || []).find((b) => b.type === 'text');
     return block ? block.text : null;
   }
@@ -204,13 +252,14 @@ class ClaudeCodeBackend {
     });
   }
 
-  async generate(systemText, userText) {
+  async generate(systemText, userText, opts = {}) {
     // Claude Code conserve son prompt système ; on injecte nos instructions
-    // dans le prompt utilisateur (envoyé via stdin).
-    const prompt = `${systemText}\n\n=== ÉTAT DE JEU (JSON) ===\n${userText}`;
+    // dans le prompt utilisateur (envoyé via stdin). Le format (JSON ou texte)
+    // est piloté par le prompt système ; opts est accepté pour la compatibilité.
+    const prompt = `${systemText}\n\n=== CONTEXTE (JSON) ===\n${userText}`;
     const args = ['-p', '--output-format', 'json'];
     if (this.model) args.push('--model', this.model);
-    const raw = await this._run(args, prompt, 30000);
+    const raw = await this._run(args, prompt, opts.timeoutMs || 30000);
     if (!raw) return null;
     // En --output-format json, la CLI renvoie une enveloppe {result, ...}.
     try {
@@ -287,6 +336,40 @@ class AiAdvisor {
   // Conseils IA de draft pendant le champ select (pick + build, en direct).
   async getChampSelectTips(snapshot, opts = {}) {
     return this._getTips(this.draftSystem, snapshot, { ...opts, category: 'Draft IA' });
+  }
+
+  // Critique de fin de partie (axes positifs / à améliorer). Hors throttle :
+  // déclenché une seule fois en fin de partie.
+  async reviewGame(record) {
+    if (!this.available) return null;
+    const system = config.lang === 'en' ? REVIEW_EN : REVIEW_FR;
+    try {
+      const text = await this.backend.generate(system, JSON.stringify(record), { schema: REVIEW_SCHEMA, maxTokens: 800 });
+      const parsed = parseTips(text);
+      if (!parsed || !parsed.summary) return null;
+      return {
+        summary: String(parsed.summary),
+        rating: parsed.rating || null,
+        didWell: Array.isArray(parsed.didWell) ? parsed.didWell.slice(0, 6) : [],
+        toImprove: Array.isArray(parsed.toImprove) ? parsed.toImprove.slice(0, 6) : [],
+        focusNextGame: parsed.focusNextGame || null,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Réponse libre à une question du joueur (chat), avec le contexte de jeu.
+  async askQuestion(question, context) {
+    if (!this.available) return null;
+    const system = config.lang === 'en' ? CHAT_EN : CHAT_FR;
+    const user = `Question du joueur : ${question}\n\nContexte de jeu (JSON) :\n${JSON.stringify(context)}`;
+    try {
+      const text = await this.backend.generate(system, user, { json: false, maxTokens: 600 });
+      return text ? text.trim() : null;
+    } catch {
+      return null;
+    }
   }
 
   // Cœur commun : génère, parse et formate les conseils, en respectant la cadence.

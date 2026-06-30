@@ -140,6 +140,14 @@ function updateRelTimes() {
   });
 }
 
+// Couleur d'une probabilité de win (vert >55, rouge <47).
+function wpClass(wp) {
+  if (wp == null) return '';
+  if (wp >= 55) return 'wp-good';
+  if (wp < 47) return 'wp-bad';
+  return 'wp-mid';
+}
+
 // ── Champ select ────────────────────────────────────────────────────────────
 function renderChampSelect(pick) {
   $('myRole').textContent = pick.myRoleLabel || '';
@@ -168,14 +176,25 @@ function renderChampSelect(pick) {
     pick.pickSuggestions.forEach((p, i) => {
       const el = document.createElement('div');
       el.className = 'pick' + (i === 0 ? ' top-pick' : '');
+      const wp = p.winProb != null ? `<span class="pick-wp ${wpClass(p.winProb)}">${p.winProb}%<small>win est.</small></span>` : '';
       el.innerHTML = `
         ${p.portrait ? `<img src="${p.portrait}" alt="" onerror="this.style.visibility='hidden'"/>` : ''}
         <div class="pick-info">
           <div class="pick-name">${esc(p.name)} ${i === 0 ? '<span class="pick-rank">★ TOP</span>' : ''}</div>
           <div class="pick-reasons">${esc((p.reasons || []).join(' · ') || 'pick solide')}</div>
-        </div>`;
+        </div>
+        ${wp}`;
       grid.appendChild(el);
     });
+  }
+  // Probabilité de win projetée (avec le pick conseillé).
+  const wpBadge = $('teamWinProb');
+  if (wpBadge) {
+    if (pick.teamWinProb != null) {
+      wpBadge.innerHTML = `Probabilité de win estimée avec le pick conseillé : <b class="${wpClass(pick.teamWinProb)}">${pick.teamWinProb}%</b> <span class="wp-note">(estimation indicative)</span>`;
+    } else {
+      wpBadge.innerHTML = '';
+    }
   }
 
   const enemyRow = $('enemyChamps');
@@ -245,6 +264,67 @@ function renderInGame(game) {
 
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
+
+  renderItemPlan(game.itemPlan);
+}
+
+// Icône d'item (objet {name, icon}) + nom, avec repli texte si pas d'icône.
+function itemIco(it, cls) {
+  if (!it) return '';
+  const name = it.name || '';
+  return `<span class="${cls || 'plan-item'}" title="${esc(name)}">${
+    it.icon ? `<img src="${esc(it.icon)}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : ''
+  }<span class="plan-item-name">${esc(name)}</span></span>`;
+}
+
+function renderItemPlan(plan) {
+  const panel = $('itemPlanPanel');
+  if (!panel) return;
+  if (!plan) {
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.classList.remove('hidden');
+  $('itemPlanChamp').textContent = plan.champion || '';
+
+  // Runes recommandées + ajustements selon la compo adverse.
+  const runesEl = $('itemPlanRunes');
+  const rparts = [];
+  if (plan.runes) {
+    const k = plan.runes.keystone ? esc(plan.runes.keystone) : '';
+    const sec = plan.runes.secondary ? ' · ' + esc(plan.runes.secondary) : '';
+    rparts.push(`<div class="plan-rune-line"><span class="plan-k">Runes</span> ${k}${sec}</div>`);
+  }
+  if (plan.summoners) rparts.push(`<div class="plan-rune-line"><span class="plan-k">Sorts</span> ${esc(plan.summoners)}</div>`);
+  (plan.runeHints || []).forEach((h) => rparts.push(`<div class="plan-rune-hint">🛡️ ${esc(h)}</div>`));
+  runesEl.innerHTML = rparts.join('');
+
+  // Prochains achats : pour chaque cible, ses composants (mini-items) en dessous.
+  const nextEl = $('itemPlanNext');
+  if (!plan.next || !plan.next.length) {
+    nextEl.innerHTML = '<div class="dex-none">Build complété ✓</div>';
+  } else {
+    nextEl.innerHTML = plan.next
+      .map((it, i) => {
+        const comps =
+          it.components && it.components.length
+            ? `<div class="plan-comp">${it.components.map((c) => itemIco(c, 'plan-mini')).join('<span class="plan-plus">+</span>')}</div>`
+            : '';
+        return `<div class="plan-next-item ${i === 0 ? 'first' : ''}">
+            <div class="plan-next-head"><span class="plan-step">${i + 1}</span>${itemIco(it, 'plan-target')}</div>
+            ${comps}
+          </div>`;
+      })
+      .join('');
+  }
+
+  // Build complet ordonné.
+  const fullEl = $('itemPlanFull');
+  fullEl.innerHTML = (plan.full || [])
+    .map((it) => `<span class="plan-full-item">${itemIco(it)}<span class="plan-slot">${esc(it.slot || '')}</span></span>`)
+    .join('<span class="plan-arrow">→</span>');
+
+  $('itemPlanStrategy').textContent = plan.strategy || '';
 }
 
 function renderTeam(id, players) {
@@ -437,6 +517,53 @@ function initTts() {
   if (localStorage.getItem('tts_enabled') === '1') setTtsEnabled(true);
 }
 
+// ── Chat avec Claude ─────────────────────────────────────────────────────────
+function appendChat(role, text) {
+  const log = $('chatLog');
+  const hint = $('chatHint');
+  if (hint) hint.remove();
+  const el = document.createElement('div');
+  el.className = 'chat-msg chat-' + role;
+  el.innerHTML = `<span class="chat-role">${role === 'you' ? 'Toi' : 'Claude'}</span><span class="chat-text"></span>`;
+  el.querySelector('.chat-text').textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function initChat() {
+  const form = $('chatForm');
+  if (!form) return;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('chatInput');
+    const q = (input.value || '').trim();
+    if (!q) return;
+    input.value = '';
+    appendChat('you', q);
+    const pending = appendChat('ai', '…');
+    pending.classList.add('pending');
+    const setText = (t) => {
+      pending.classList.remove('pending');
+      pending.querySelector('.chat-text').textContent = t;
+      $('chatLog').scrollTop = $('chatLog').scrollHeight;
+    };
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: q }),
+      });
+      const data = await res.json();
+      const reply = data.reply || data.hint || 'Pas de réponse (IA indisponible ? Vérifie la CLI Claude).';
+      setText(reply);
+      if (tts.enabled && data.reply) speak(data.reply);
+    } catch (err) {
+      setText('Erreur de connexion au coach.');
+    }
+  });
+}
+
 // ── Utilitaires ─────────────────────────────────────────────────────────────
 function mmss(sec) {
   const m = Math.floor(sec / 60);
@@ -457,4 +584,5 @@ setInterval(() => {
 }, 1000);
 
 initTts();
+initChat();
 connect();

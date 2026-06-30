@@ -11,7 +11,7 @@ function mockAllGameData(elapsedSeconds) {
   const gold = Math.round(450 + elapsedSeconds * 6); // franchit 1300 puis 2200
 
   const me = {
-    championName: 'Ahri',
+    championName: 'Zoe',
     riotId: 'TonPseudo#EUW',
     riotIdGameName: 'TonPseudo',
     summonerName: 'TonPseudo',
