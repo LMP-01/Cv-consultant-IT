@@ -8,7 +8,8 @@ let objReceivedAt = Date.now();
 const renderedKeys = new Set();
 
 // État de la synthèse vocale (Web Speech API, 100% navigateur, sans clé).
-const tts = { enabled: false, enabledAt: 0, voiceURI: '', scope: 'important', pending: 0 };
+// `endpoint` (optionnel) = serveur TTS externe (ex. Piper) qui renvoie de l'audio.
+const tts = { enabled: false, enabledAt: 0, voiceURI: '', scope: 'important', pending: 0, endpoint: '' };
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
 function connect() {
@@ -54,7 +55,16 @@ function applyState(state) {
   const c = state.connection || {};
   setBadge('liveBadge', 'Jeu ' + (c.liveClient ? '✓' : '✗'), c.liveClient ? 'ok' : 'off');
   setBadge('lcuBadge', 'Client ' + (c.lcu ? '✓' : '✗'), c.lcu ? 'ok' : 'off');
-  setBadge('aiBadge', 'IA: ' + shortAi(c.ai), c.ai && c.ai.includes('Claude') ? 'ok' : 'dim');
+  const u = c.aiUsage;
+  const aiTxt = 'IA: ' + shortAi(c.ai) + (u && u.calls ? ` · ${u.calls} appel${u.calls > 1 ? 's' : ''}` : '');
+  const aiCls = !(c.ai && c.ai.includes('Claude')) ? 'dim' : u && u.lastOk === false ? 'off' : 'ok';
+  setBadge('aiBadge', aiTxt, aiCls);
+  if (c.patch) {
+    const ok = c.patchOk !== false;
+    setBadge('patchBadge', 'Patch ' + c.patch, ok ? 'dim' : 'off');
+    const pb = $('patchBadge');
+    if (pb) pb.title = ok ? `Patch détecté : ${c.patch}` : `Patch ${c.patch} — timings d'objectifs vérifiés pour ${c.patchVerified}. Vérifie data dans heuristics.js si nécessaire.`;
+  }
 
   // Flux de conseils
   addFeedItems(state.feed || []);
@@ -157,6 +167,20 @@ function renderChampSelect(pick) {
     ? `Adversaire de lane : <strong>${esc(pick.laneOpponent.name)}</strong>`
     : 'Adversaire de lane : non encore choisi';
 
+  // Bans conseillés
+  const banEl = $('banSuggest');
+  if (banEl) {
+    const bans = pick.banSuggestions || [];
+    banEl.innerHTML = bans.length
+      ? bans
+          .map(
+            (b) =>
+              `<span class="ban-chip" title="${esc(b.reason || '')}">${b.portrait ? `<img src="${b.portrait}" alt="" onerror="this.remove()"/>` : ''}<span>${esc(b.name)}</span></span>`
+          )
+          .join('')
+      : '<span class="profile-line">En attente des picks adverses…</span>';
+  }
+
   const heading = $('pickHeading');
   if (heading) heading.textContent = pick.picksFromPool ? '🎯 Tes picks (ta pool)' : 'Picks conseillés';
 
@@ -191,7 +215,8 @@ function renderChampSelect(pick) {
   const wpBadge = $('teamWinProb');
   if (wpBadge) {
     if (pick.teamWinProb != null) {
-      wpBadge.innerHTML = `Probabilité de win estimée avec le pick conseillé : <b class="${wpClass(pick.teamWinProb)}">${pick.teamWinProb}%</b> <span class="wp-note">(estimation indicative)</span>`;
+      const note = pick.winProbGrounded ? '(basé sur winrate réel de matchup)' : '(estimation indicative)';
+      wpBadge.innerHTML = `Probabilité de win avec le pick conseillé : <b class="${wpClass(pick.teamWinProb)}">${pick.teamWinProb}%</b> <span class="wp-note">${note}</span>`;
     } else {
       wpBadge.innerHTML = '';
     }
@@ -382,7 +407,8 @@ function renderItemPlan(plan) {
     return;
   }
   panel.classList.remove('hidden');
-  $('itemPlanChamp').textContent = plan.champion || '';
+  $('itemPlanChamp').innerHTML =
+    esc(plan.champion || '') + (plan.source ? ` <span class="plan-source">${esc(plan.source)}</span>` : '');
 
   // Runes recommandées + ajustements selon la compo adverse.
   const runesEl = $('itemPlanRunes');
@@ -523,10 +549,35 @@ function populateVoices() {
   }
 }
 
+// Lecture via un serveur TTS externe (ex. Piper) : POST {text} -> audio.
+function speakViaEndpoint(text) {
+  fetch(tts.endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+    .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('TTS ' + r.status))))
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => URL.revokeObjectURL(url);
+      return audio.play();
+    })
+    .catch(() => {
+      // Repli sur la voix navigateur si le serveur échoue.
+      tts.endpoint = '';
+      speak(text);
+    });
+}
+
 function speak(text) {
-  if (!ttsSupported()) return;
   const clean = cleanForSpeech(text);
   if (!clean) return;
+  if (tts.endpoint) {
+    speakViaEndpoint(clean);
+    return;
+  }
+  if (!ttsSupported()) return;
   // Anti-retard : si la file s'allonge, on repart sur le conseil le plus récent.
   if (tts.pending > 2) {
     window.speechSynthesis.cancel();
@@ -578,19 +629,51 @@ function setTtsEnabled(on) {
   if (on) speak('Coach vocal activé.');
 }
 
+// Configure / efface le serveur TTS externe (Piper, etc.).
+function setupTtsServerButton() {
+  const btn = $('ttsServerBtn');
+  if (!btn) return;
+  const refresh = () => {
+    btn.classList.toggle('on', Boolean(tts.endpoint));
+    btn.textContent = tts.endpoint ? '🎚️ Voix HD ✓' : '🎚️ Voix HD';
+  };
+  refresh();
+  btn.addEventListener('click', () => {
+    const cur = tts.endpoint || '';
+    const url = window.prompt(
+      'URL d’un serveur TTS local renvoyant de l’audio pour {"text":"…"} (ex. Piper).\nLaisse vide pour utiliser la voix du navigateur.',
+      cur
+    );
+    if (url === null) return;
+    tts.endpoint = url.trim();
+    if (tts.endpoint) localStorage.setItem('tts_endpoint', tts.endpoint);
+    else localStorage.removeItem('tts_endpoint');
+    refresh();
+    if (tts.endpoint) speak('Voix serveur activée.');
+  });
+}
+
 function initTts() {
-  const bar = $('ttsBar');
-  if (!ttsSupported()) {
-    if (bar) bar.innerHTML = '<span class="tts-na">Synthèse vocale non supportée par ce navigateur.</span>';
-    return;
+  // Charge un éventuel serveur TTS externe et configure son bouton (même si la
+  // synthèse navigateur est absente, la voix serveur peut fonctionner).
+  tts.endpoint = localStorage.getItem('tts_endpoint') || '';
+  setupTtsServerButton();
+
+  const voiceSelEl = $('ttsVoice');
+  if (!ttsSupported() && voiceSelEl) {
+    voiceSelEl.innerHTML = '<option>Voix navigateur indisponible</option>';
+    voiceSelEl.disabled = true;
   }
+
   tts.scope = localStorage.getItem('tts_scope') || 'important';
   const scopeSel = $('ttsScope');
   if (scopeSel) scopeSel.value = tts.scope;
 
-  populateVoices();
-  // Les voix se chargent parfois de façon asynchrone.
-  window.speechSynthesis.onvoiceschanged = populateVoices;
+  if (ttsSupported()) {
+    populateVoices();
+    // Les voix se chargent parfois de façon asynchrone.
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+  }
 
   const toggle = $('ttsToggle');
   if (toggle) toggle.addEventListener('click', () => setTtsEnabled(!tts.enabled));
@@ -661,6 +744,53 @@ function initChat() {
   });
 }
 
+// Dictée vocale de la question (Web Speech Recognition, Chrome/Edge).
+function initVoiceInput() {
+  const mic = $('chatMic');
+  const input = $('chatInput');
+  if (!mic || !input) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    mic.style.display = 'none';
+    return;
+  }
+  let rec = null;
+  let listening = false;
+  mic.addEventListener('click', () => {
+    if (listening && rec) {
+      rec.stop();
+      return;
+    }
+    rec = new SR();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onstart = () => {
+      listening = true;
+      mic.classList.add('listening');
+    };
+    rec.onresult = (e) => {
+      let txt = '';
+      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      input.value = txt;
+    };
+    rec.onend = () => {
+      listening = false;
+      mic.classList.remove('listening');
+      input.focus();
+    };
+    rec.onerror = () => {
+      listening = false;
+      mic.classList.remove('listening');
+    };
+    try {
+      rec.start();
+    } catch {
+      /* déjà en cours */
+    }
+  });
+}
+
 // ── Utilitaires ─────────────────────────────────────────────────────────────
 function mmss(sec) {
   const m = Math.floor(sec / 60);
@@ -681,7 +811,28 @@ setInterval(() => {
   updateTimers();
 }, 1000);
 
+// Mode compact (2e écran) : bascule une classe sur <body>, persistée.
+function initCompact() {
+  const btn = $('compactToggle');
+  const apply = (on) => {
+    document.body.classList.toggle('compact', on);
+    if (btn) {
+      btn.classList.toggle('on', on);
+      btn.textContent = on ? '🗗 Compact' : '🗖 Normal';
+    }
+  };
+  apply(localStorage.getItem('coach_compact') === '1');
+  if (btn)
+    btn.addEventListener('click', () => {
+      const on = !document.body.classList.contains('compact');
+      localStorage.setItem('coach_compact', on ? '1' : '0');
+      apply(on);
+    });
+}
+
 initTts();
 initChat();
+initVoiceInput();
 initTimers();
+initCompact();
 connect();

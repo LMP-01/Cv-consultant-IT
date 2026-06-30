@@ -339,4 +339,7 @@ function analyzeInGame(data, ddragon) {
   return { summary, objectives, scoreboard, advice };
 }
 
-module.exports = { analyzeInGame, mmss, OBJ };
+// Patch pour lequel les timings OBJ ci-dessus ont été vérifiés.
+const OBJ_PATCH = '26.13';
+
+module.exports = { analyzeInGame, mmss, OBJ, OBJ_PATCH };

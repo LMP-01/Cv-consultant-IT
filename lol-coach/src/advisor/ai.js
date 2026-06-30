@@ -318,6 +318,39 @@ class AiAdvisor {
     this.lastCallTs = 0;
     this.inFlight = false;
     this.warned = false;
+    // Suivi d'usage (indicatif — la CLI n'expose pas le vrai quota Max).
+    this.calls = 0;
+    this.failures = 0;
+    this.lastOk = null;
+    this.lastCallAt = 0;
+  }
+
+  // Enveloppe un appel au backend en comptabilisant succès/échecs.
+  async _call(systemText, userText, opts) {
+    this.calls += 1;
+    this.lastCallAt = Date.now();
+    try {
+      const text = await this.backend.generate(systemText, userText, opts);
+      this.lastOk = text != null;
+      if (text == null) this.failures += 1;
+      return text;
+    } catch (err) {
+      this.failures += 1;
+      this.lastOk = false;
+      throw err;
+    }
+  }
+
+  // État d'usage IA pour l'interface (nombre d'appels, dernier statut).
+  usage() {
+    return {
+      enabled: this.available,
+      label: this.available ? this.backend.label : null,
+      calls: this.calls,
+      failures: this.failures,
+      lastOk: this.lastOk,
+      lastCallAt: this.lastCallAt || null,
+    };
   }
 
   get system() {
@@ -382,7 +415,7 @@ class AiAdvisor {
     if (!this.available) return null;
     const system = config.lang === 'en' ? REVIEW_EN : REVIEW_FR;
     try {
-      const text = await this.backend.generate(system, JSON.stringify(record), { schema: REVIEW_SCHEMA, maxTokens: 800 });
+      const text = await this._call(system, JSON.stringify(record), { schema: REVIEW_SCHEMA, maxTokens: 800 });
       const parsed = parseTips(text);
       if (!parsed || !parsed.summary) return null;
       return {
@@ -414,7 +447,7 @@ class AiAdvisor {
     const payload = { stats: history.stats, games };
     const system = config.lang === 'en' ? HISTORY_EN : HISTORY_FR;
     try {
-      const text = await this.backend.generate(system, JSON.stringify(payload), { schema: HISTORY_SCHEMA, maxTokens: 900 });
+      const text = await this._call(system, JSON.stringify(payload), { schema: HISTORY_SCHEMA, maxTokens: 900 });
       const p = parseTips(text);
       if (!p || !Array.isArray(p.patterns)) return null;
       return {
@@ -433,7 +466,7 @@ class AiAdvisor {
     const system = config.lang === 'en' ? CHAT_EN : CHAT_FR;
     const user = `Question du joueur : ${question}\n\nContexte de jeu (JSON) :\n${JSON.stringify(context)}`;
     try {
-      const text = await this.backend.generate(system, user, { json: false, maxTokens: 600 });
+      const text = await this._call(system, user, { json: false, maxTokens: 600 });
       return text ? text.trim() : null;
     } catch {
       return null;
@@ -453,7 +486,7 @@ class AiAdvisor {
     this.inFlight = true;
     this.lastCallTs = now;
     try {
-      const text = await this.backend.generate(systemText, JSON.stringify(snapshot));
+      const text = await this._call(systemText, JSON.stringify(snapshot));
       const parsed = parseTips(text);
       if (!parsed) return null;
       const tips = Array.isArray(parsed.tips) ? parsed.tips.slice(0, 3) : [];

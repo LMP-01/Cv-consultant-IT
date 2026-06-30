@@ -1,20 +1,6 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-
-let BUILDS = null;
-function loadBuilds() {
-  if (BUILDS) return BUILDS;
-  try {
-    BUILDS = (JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'builds.json'), 'utf8')).builds) || {};
-  } catch {
-    BUILDS = {};
-  }
-  return BUILDS;
-}
+const { getBuild } = require('./builds');
 
 // Résout un nom d'item -> { id, name, icon, components:[{name,icon}] } (icône/composants
 // seulement si Data Dragon est dispo ; sinon on garde le texte).
@@ -63,7 +49,7 @@ function orderSituational(situational, enemyComp, ddragon) {
 function buildItemPlan(result, ddragon) {
   const me = result && result.scoreboard ? result.scoreboard.me : null;
   if (!me || !me.championId) return null;
-  const build = loadBuilds()[me.championId];
+  const build = getBuild(me.championId, me.position || null);
   if (!build) return null;
 
   const enemyComp = result.summary ? result.summary.enemyComp : null;
@@ -105,6 +91,7 @@ function buildItemPlan(result, ddragon) {
     runes: build.runes || null,
     summoners: build.summoners || null,
     note: build.note || null,
+    source: build.source || null,
     next,
     full,
     runeHints: compRuneHints(enemyComp),

@@ -5,7 +5,7 @@ const { DataDragon } = require('./data/ddragon');
 const { LiveClient } = require('./liveclient/liveClient');
 const { LcuClient } = require('./lcu/lcuClient');
 const { AiAdvisor } = require('./advisor/ai');
-const { analyzeInGame } = require('./advisor/heuristics');
+const { analyzeInGame, OBJ_PATCH } = require('./advisor/heuristics');
 const { analyzeChampSelect } = require('./advisor/pickAdvisor');
 const { buildItemPlan } = require('./advisor/itemPlan');
 const { GameHistory } = require('./data/history');
@@ -56,6 +56,12 @@ class CoachLoop {
     } else {
       console.log(`[ddragon] Prêt (patch ${this.ddragon.version}, locale ${this.ddragon.locale}).`);
     }
+    // Détection du patch : avertit si les timings d'objectifs ne sont plus à jour.
+    const patch = this.ddragon.version || null;
+    const patchMinor = patch ? patch.split('.').slice(0, 2).join('.') : null;
+    this.state.connection.patch = patch;
+    this.state.connection.patchVerified = OBJ_PATCH;
+    this.state.connection.patchOk = patchMinor ? patchMinor === OBJ_PATCH : null;
     this.tick();
     this._schedule(config.pollIntervalLobbyMs);
   }
@@ -89,6 +95,7 @@ class CoachLoop {
 
   _broadcast() {
     this.state.feed = this.feed;
+    this.state.connection.aiUsage = this.ai.usage();
     this.state.timestamp = Date.now();
     if (this.onState) this.onState(this.state);
   }

@@ -1183,3 +1183,45 @@ body {
 .an-list { margin: 0; padding-left: 20px; }
 .an-list li { font-size: 12.5px; line-height: 1.55; color: var(--muted); margin-bottom: 5px; }
 .an-list b { color: var(--text); }
+
+/* ── Bans conseillés ──────────────────────────────────────────────────────── */
+.ban-suggest { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 4px; }
+.ban-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+  padding: 4px 10px 4px 5px; border-radius: 8px; color: #f7c0c6;
+  background: rgba(251, 113, 133, 0.10); border: 1px solid rgba(251, 113, 133, 0.3);
+}
+.ban-chip img { width: 22px; height: 22px; border-radius: 5px; }
+
+/* ── Progression / objectif (historique) ──────────────────────────────────── */
+.goal-tracker { margin-bottom: 16px; }
+.goal-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.goal-adherence { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.goal-adherence b { color: var(--text); }
+.hist-charts { margin-bottom: 18px; }
+.charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 800px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+.chart-head b { font-size: 15px; }
+.chart-svg { width: 100%; height: 90px; display: block; }
+
+/* ── Micro chat + voix HD ─────────────────────────────────────────────────── */
+.chat-mic {
+  background: var(--card-2); border: 1px solid var(--border-strong); color: var(--muted);
+  border-radius: 10px; padding: 0 12px; font-size: 15px; cursor: pointer;
+}
+.chat-mic:hover { color: var(--text); border-color: var(--primary-2); }
+.chat-mic.listening { color: var(--rose); border-color: var(--rose); animation: timerPulse 1s ease-in-out infinite; }
+.tts-btn.on { background: var(--grad-soft); border-color: rgba(139,92,246,.5); color: #e7ddff; }
+
+/* ── Mode compact (2e écran) ──────────────────────────────────────────────── */
+button.nav-link { cursor: pointer; font-family: var(--font); }
+body.compact .layout { grid-template-columns: 1fr; max-width: 560px; gap: 12px; padding: 12px; }
+body.compact .topbar { padding: 8px 14px; }
+body.compact .tagline, body.compact .footer { display: none; }
+body.compact .panel { padding: 12px 14px; margin-bottom: 12px; }
+body.compact .feed-panel { position: static; max-height: none; }
+body.compact .scoreboard { grid-template-columns: 1fr 1fr; }
+body.compact .brand h1 { font-size: 16px; }
+.plan-source { font-size: 10px; font-weight: 600; color: var(--teal); background: rgba(45,212,191,.12); border: 1px solid rgba(45,212,191,.3); border-radius: 6px; padding: 1px 7px; vertical-align: middle; }

@@ -33,9 +33,11 @@
         <span class="badge dim" id="lcuBadge">Client League</span>
         <span class="badge dim" id="aiBadge">IA</span>
         <span class="badge dim" id="wsBadge">Serveur</span>
+        <span class="badge dim" id="patchBadge" title="Patch détecté (Data Dragon)">Patch —</span>
         <a class="nav-link" href="mid.html">📖 Mid</a>
         <a class="nav-link" href="adc.html">📖 ADC</a>
         <a class="nav-link" href="history.html">📈 Historique</a>
+        <button class="nav-link" id="compactToggle" type="button" title="Mode compact (2e écran)">🗖 Normal</button>
       </div>
     </header>
 
@@ -52,6 +54,7 @@
             <option value="ai">IA seulement</option>
           </select>
           <button id="ttsTest" class="tts-btn ghost" title="Écouter un exemple">▶︎ Test</button>
+          <button id="ttsServerBtn" class="tts-btn ghost" title="Voix serveur optionnelle (Piper, etc.) — meilleure qualité">🎚️ Voix HD</button>
         </div>
         <div id="feed" class="feed">
           <div class="empty" id="feedEmpty">
@@ -67,6 +70,7 @@
           </div>
           <form id="chatForm" class="chat-form" autocomplete="off">
             <input id="chatInput" class="chat-input" type="text" placeholder="Ta question…" maxlength="500" />
+            <button id="chatMic" class="chat-mic" type="button" title="Dicter la question (micro)">🎤</button>
             <button id="chatSend" class="chat-send" type="submit">Envoyer</button>
           </form>
         </div>
@@ -91,6 +95,9 @@
         <div id="champSelect" class="panel hidden">
           <h2 class="panel-title">🧩 Champ Select — <span id="myRole"></span></h2>
           <div id="laneOpponent" class="lane-opponent"></div>
+
+          <h3 class="sub">🚫 Bans conseillés</h3>
+          <div id="banSuggest" class="ban-suggest"></div>
 
           <h3 class="sub" id="pickHeading">Picks conseillés</h3>
           <div id="pickSuggestions" class="pick-grid"></div>
