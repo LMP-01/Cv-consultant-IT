@@ -11,7 +11,9 @@
     "start": "node src/server.js",
     "mock": "node src/server.js --mock",
     "dev": "node src/server.js",
-    "fetch-counters": "node scripts/fetch-counters.js"
+    "fetch-counters": "node scripts/fetch-counters.js",
+    "fetch-builds": "node scripts/fetch-builds.js",
+    "test": "node test/run.js"
   },
   "keywords": [
     "league-of-legends",

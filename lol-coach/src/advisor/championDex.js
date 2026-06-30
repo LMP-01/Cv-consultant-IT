@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { dataset, classifyDamage } = require('./profile');
+const { getBuild } = require('./builds');
 
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 
@@ -62,7 +63,6 @@ function buildWithIcons(build, ddragon) {
 function buildPoolDex(ddragon) {
   const ds = dataset();
   const pool = readJson('champion-pool.json') || { pool: {} };
-  const builds = (readJson('builds.json') || {}).builds || {};
   const live = readJson('champion-data.json'); // optionnel (généré par le scraper)
   const liveChamps = (live && live.champions) || {};
 
@@ -105,7 +105,7 @@ function buildPoolDex(ddragon) {
         unresolved.push({ champion: entry.champion, role });
         continue;
       }
-      const build = builds[champ.id] || null;
+      const build = getBuild(champ.id, role) || null;
       const liveStats = (liveChamps[champ.id] && liveChamps[champ.id][role]) || null;
 
       // Counters (qui le bat) & champions qu'il bat.

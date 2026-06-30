@@ -88,6 +88,98 @@ function gameCard(g) {
     </article>`;
 }
 
+// Mini graphique linéaire SVG (sans dépendance).
+function lineChart(values, opts) {
+  opts = opts || {};
+  const W = 320, H = 90, P = 18;
+  if (!values.length) return '<div class="dex-none">Pas assez de données.</div>';
+  const min = Math.min(...values, opts.min != null ? opts.min : Infinity);
+  const max = Math.max(...values, opts.max != null ? opts.max : -Infinity);
+  const range = max - min || 1;
+  const n = values.length;
+  const x = (i) => P + (n === 1 ? (W - 2 * P) / 2 : (i * (W - 2 * P)) / (n - 1));
+  const y = (v) => H - P - ((v - min) / range) * (H - 2 * P);
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const dots = values
+    .map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6" fill="${opts.color || '#818cf8'}"/>`)
+    .join('');
+  const last = values[values.length - 1];
+  return `
+    <div class="chart">
+      <div class="chart-head"><span>${esc(opts.label || '')}</span><b style="color:${opts.color || '#818cf8'}">${last}${opts.unit || ''}</b></div>
+      <svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="none">
+        <polyline points="${pts}" fill="none" stroke="${opts.color || '#818cf8'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+      </svg>
+    </div>`;
+}
+
+function renderCharts(games) {
+  const box = $('histCharts');
+  if (!box) return;
+  // Du plus ancien au plus récent pour lire la progression de gauche à droite.
+  const chrono = (games || []).slice().reverse();
+  const deaths = chrono.filter((g) => g.deaths != null).map((g) => g.deaths);
+  const cspm = chrono.filter((g) => g.csPerMin != null).map((g) => g.csPerMin);
+  // Winrate glissant (cumulatif).
+  let w = 0, t = 0;
+  const wr = chrono
+    .filter((g) => g.win === true || g.win === false)
+    .map((g) => { t++; if (g.win === true) w++; return Math.round((w / t) * 100); });
+  if (deaths.length < 2 && cspm.length < 2 && wr.length < 2) { box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <h3 class="sub">📉 Progression (ancien → récent)</h3>
+    <div class="charts-grid">
+      ${lineChart(deaths, { label: 'Morts / partie', color: '#fb7185', unit: '', min: 0 })}
+      ${lineChart(cspm, { label: 'CS / min', color: '#34d399', unit: '' })}
+      ${lineChart(wr, { label: 'Winrate cumulé', color: '#818cf8', unit: '%', min: 0, max: 100 })}
+    </div>`;
+}
+
+// Suivi d'un objectif perso (stocké en localStorage).
+function renderGoal(games) {
+  const box = $('goalTracker');
+  if (!box) return;
+  let goal = null;
+  try { goal = JSON.parse(localStorage.getItem('coach_goal') || 'null'); } catch { goal = null; }
+  const decided = (games || []).filter((g) => g.deaths != null || g.csPerMin != null);
+  let adherence = '';
+  if (goal && decided.length) {
+    const met = decided.filter((g) =>
+      goal.type === 'deaths' ? g.deaths != null && g.deaths <= goal.value : g.csPerMin != null && g.csPerMin >= goal.value
+    ).length;
+    const pct = Math.round((met / decided.length) * 100);
+    const label = goal.type === 'deaths' ? `≤ ${goal.value} morts` : `≥ ${goal.value} CS/min`;
+    adherence = `<div class="goal-adherence"><b>${pct}%</b> de tes ${decided.length} parties respectent ton objectif (<b>${esc(label)}</b>)</div>`;
+  }
+  box.innerHTML = `
+    <h3 class="sub">🎯 Mon objectif</h3>
+    <form id="goalForm" class="goal-form">
+      <select id="goalType" class="tts-select">
+        <option value="deaths">Maximum de morts / partie</option>
+        <option value="cs">Minimum de CS / min</option>
+      </select>
+      <input id="goalValue" class="chat-input" type="number" step="0.1" min="0" placeholder="valeur" style="max-width:110px" />
+      <button class="chat-send" type="submit">Définir</button>
+      ${goal ? '<button id="goalClear" class="tts-btn ghost" type="button">Effacer</button>' : ''}
+    </form>
+    ${adherence}`;
+  if (goal) {
+    $('goalType').value = goal.type === 'deaths' ? 'deaths' : 'cs';
+    $('goalValue').value = goal.value;
+  }
+  $('goalForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const type = $('goalType').value;
+    const value = parseFloat($('goalValue').value);
+    if (isNaN(value)) return;
+    localStorage.setItem('coach_goal', JSON.stringify({ type, value }));
+    renderGoal(games);
+  });
+  const clr = $('goalClear');
+  if (clr) clr.addEventListener('click', () => { localStorage.removeItem('coach_goal'); renderGoal(games); });
+}
+
 function render(data) {
   const stats = data.stats || {};
   const badge = $('statsBadge');
@@ -152,6 +244,8 @@ fetch('/api/history')
   .then((r) => r.json())
   .then((data) => {
     render(data);
+    renderCharts(data.games || []);
+    renderGoal(data.games || []);
     if (data.games && data.games.length) initAnalyze();
     else { const b = $('analyzeBtn'); if (b) b.style.display = 'none'; }
   })

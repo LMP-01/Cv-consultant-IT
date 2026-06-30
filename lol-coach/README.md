@@ -6,8 +6,10 @@ Un agent qui **surveille tes parties de League of Legends en direct** et te donn
 - 🧩 des **suggestions de pick et de build** adaptées à **toute la composition adverse ET à ta propre équipe** (synergie de duo, équilibre des dégâts, **probabilité de win estimée**) pendant le **champ select** ;
 - 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats) + un **build conseillé en jeu** (3 prochains achats avec mini-items, build complet évolutif, runes vs la compo) ;
 - ⏲️ des **timers Flash/ultimes** des ennemis et des **alertes de fenêtre de force** (tempo vs ton adversaire de lane) ;
-- 🗨️ un **chat** pour poser une question à Claude pendant la partie (mort, alt-tab) ;
-- 📈 un **historique** de tes parties avec **critique IA** par game + une **analyse de tes faiblesses récurrentes** sur l’ensemble de tes parties.
+- 🚫 des **bans conseillés** et une **probabilité de win** par pick (ancrée sur les vrais winrates de matchup si tu lances `fetch-counters`) ;
+- 🗨️ un **chat** (avec **dictée vocale**) pour poser une question à Claude pendant la partie (mort, alt-tab) ;
+- 📈 un **historique** avec **critique IA** par game, **courbes de progression**, **suivi d’objectif**, et une **analyse de tes faiblesses récurrentes** ;
+- 🛠️ des **builds high-elo réels** via `npm run fetch-builds`, un **mode compact** (2e écran), un **indicateur d’usage IA**, la **détection du patch**, une **voix HD** optionnelle (serveur Piper) et des **tests** (`npm test`).
 
 Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
 
@@ -214,6 +216,43 @@ Le coach compare en continu ton **niveau** et ton **or d'objets** à ceux de ton
 ### 📊 Analyse de tes faiblesses récurrentes (page Historique)
 
 Sur la page **Historique**, le bouton **« 🔍 Analyser mes faiblesses récurrentes »** envoie tout ton historique à Claude, qui en sort **les patterns récurrents** (pas une seule game : tendances de morts, farm, matchups, résultats par champion…) et **3 chantiers prioritaires** pour progresser. L'analyse prend quelques secondes (appel au modèle).
+
+### 🚫 Bans conseillés & 🎯 probabilité de win
+
+En champ select, le coach propose des **bans** (les champions qui menacent le plus **ta pool** pour ton rôle + les grosses menaces méta) et affiche une **probabilité de win estimée par pick**. Si tu as lancé `npm run fetch-counters`, cette probabilité est **ancrée sur le winrate réel** du matchup vs ton adversaire de lane (sinon c'est une estimation heuristique, clairement étiquetée).
+
+### 🛠️ Builds high-elo réels (`npm run fetch-builds`)
+
+Pour des builds calés sur la **vraie méta des meilleurs joueurs** (par patch) plutôt que les builds curés :
+
+```bash
+npm run fetch-builds                 # ta pool, région monde, emerald+
+node scripts/fetch-builds.js --self-test           # teste le parsing (hors-ligne)
+node scripts/fetch-builds.js --region kr --rank challenger --champions Zoe,Caitlyn
+node scripts/fetch-builds.js --dry-run             # aperçu sans écriture
+```
+
+Le script écrit `data/builds-live.json` (jamais commité). L'app le **préfère automatiquement** s'il existe : il fournit les **objets** (départ/bottes/core/situationnel), tandis que les runes/sorts/profil restent ceux de `data/builds.json`. Le panneau de build affiche alors la **source** (ex. `u.gg world/emerald_plus`). Source tierce **non officielle** : à lancer **chez toi**, et le format peut évoluer (la logique est couverte par `--self-test`).
+
+### 📈 Progression & objectif (page Historique)
+
+En plus de la critique par partie, la page Historique trace des **courbes** (morts/partie, CS/min, winrate cumulé, du plus ancien au plus récent) et un **suivi d'objectif** : fixe un but (ex. « ≤ 5 morts ») et vois le **% de parties** qui le respectent.
+
+### 🗣️ Dictée vocale & voix HD
+
+Le chat a un bouton **🎤** pour **dicter** ta question (reconnaissance vocale du navigateur, Chrome/Edge). Pour une **voix de lecture de meilleure qualité**, le bouton **🎚️ Voix HD** permet de brancher un **serveur TTS local** (ex. [Piper](https://github.com/rhasspy/piper) derrière un petit serveur HTTP qui renvoie de l'audio pour `{"text":"…"}`) ; sinon l'app utilise les voix du navigateur (préférence aux voix neuronales).
+
+### 🖥️ Mode compact, usage IA & patch
+
+- Bouton **🗖/🗗** : bascule un **layout compact** pour un 2e écran (persistant).
+- Badge **IA** : affiche le **nombre d'appels** IA de la session et passe au rouge si le dernier appel a échoué (indicatif — la CLI n'expose pas le quota Max exact).
+- Badge **Patch** : le patch détecté via Data Dragon ; il avertit si les **timings d'objectifs** (vérifiés pour un patch donné) doivent être revus.
+
+### ✅ Tests
+
+```bash
+npm test     # tests des advisors (profil, picks, bans, build, tempo, historique…)
+```
 
 ### ⚡ Latence : pourquoi c'est « vraiment live » maintenant
 

@@ -16,6 +16,19 @@ function loadPool() {
   return POOL;
 }
 
+// Winrates de matchup réels (data/champion-data.json, généré par fetch-counters),
+// pour ancrer la probabilité de win sur des données plutôt que l'heuristique.
+let LIVE = undefined;
+function loadLiveStats() {
+  if (LIVE !== undefined) return LIVE;
+  try {
+    LIVE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'champion-data.json'), 'utf8'));
+  } catch {
+    LIVE = null;
+  }
+  return LIVE;
+}
+
 function formatMastery(n) {
   n = Number(n) || 0;
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -30,9 +43,17 @@ function masteryWeight(n) {
   return Math.min(2, (Math.log10(n + 1) / Math.log10(1000000)) * 2);
 }
 
-// Estimation INDICATIVE de probabilité de victoire d'un pick dans CE contexte.
-// Heuristique transparente (pas une donnée live) bornée à 35–66 %.
-function estimateWinProb({ laneCounter, enemyCounterCount, synergy, balances, mastery, enemyComp }) {
+// Estimation de probabilité de victoire d'un pick dans CE contexte.
+// Si `liveWr` (winrate de matchup réel 0–1) est fourni, on l'utilise comme base
+// (donnée ancrée, bornes plus larges) ; sinon heuristique transparente.
+function estimateWinProb({ laneCounter, enemyCounterCount, synergy, balances, mastery, enemyComp, liveWr }) {
+  if (liveWr != null && liveWr > 0) {
+    let p = liveWr;
+    if (synergy) p += 0.02;
+    if (balances) p += 0.015;
+    p += Math.min(0.02, (masteryWeight(mastery) / 2) * 0.02);
+    return { winProb: Math.round(Math.max(0.3, Math.min(0.72, p)) * 100), grounded: true };
+  }
   let p = 0.5;
   if (laneCounter) p += 0.06;
   p += Math.min(0.06, (enemyCounterCount || 0) * 0.02);
@@ -41,7 +62,7 @@ function estimateWinProb({ laneCounter, enemyCounterCount, synergy, balances, ma
   p += Math.min(0.03, (masteryWeight(mastery) / 2) * 0.03);
   if (enemyComp && enemyComp.burstCount >= 3) p -= 0.02;
   if (enemyComp && enemyComp.ccCount >= 4) p -= 0.02;
-  return Math.round(Math.max(0.35, Math.min(0.66, p)) * 100);
+  return { winProb: Math.round(Math.max(0.35, Math.min(0.66, p)) * 100), grounded: false };
 }
 
 const ROLE_LABEL = {
@@ -212,6 +233,16 @@ function analyzeChampSelect(session, ddragon) {
   const allyComp = myChamps.length ? analyzeComp(myChamps) : null;
   const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
 
+  // Winrate de matchup réel (0–1) d'un pick vs l'adversaire de lane, si dispo.
+  const live = loadLiveStats();
+  const matchupWr = (pickId, role, oppId) => {
+    if (!live || !live.champions || !oppId) return null;
+    const e = live.champions[pickId] && live.champions[pickId][role];
+    if (!e || !Array.isArray(e.matchups)) return null;
+    const m = e.matchups.find((x) => x && (x.id === oppId) && (x.games == null || x.games >= 50));
+    return m && m.wr != null ? m.wr : null;
+  };
+
   const poolEntries = (loadPool().pool || {})[myRole] || [];
   const poolUnresolved = [];
   let poolPicks = [];
@@ -264,15 +295,25 @@ function analyzeChampSelect(session, ddragon) {
       }
       score += masteryWeight(entry.mastery);
       reasons.push(`maîtrise ${formatMastery(entry.mastery)}`);
-      const winProb = estimateWinProb({
+      const liveWr = matchupWr(champ.id, myRole, laneOpponent && laneOpponent.id);
+      const wp = estimateWinProb({
         laneCounter,
         enemyCounterCount,
         synergy: Boolean(ally),
         balances,
         mastery: entry.mastery,
         enemyComp,
+        liveWr,
       });
-      poolPicks.push({ ...champRef(champ), mastery: entry.mastery, score: +score.toFixed(2), reasons, winProb });
+      if (wp.grounded) reasons.push('proba basée sur winrate réel de matchup');
+      poolPicks.push({
+        ...champRef(champ),
+        mastery: entry.mastery,
+        score: +score.toFixed(2),
+        reasons,
+        winProb: wp.winProb,
+        winProbGrounded: wp.grounded,
+      });
     }
     poolPicks.sort((a, b) => b.score - a.score || (b.mastery || 0) - (a.mastery || 0));
   }
@@ -289,9 +330,50 @@ function analyzeChampSelect(session, ddragon) {
     if (enemyComp.profile === 'à dominante AP') runeHints.push('Comp AP : runes de RM (Cuirasse de Vandale) et bottes de Mercure.');
   }
 
+  // ── Bans conseillés : champions qui menacent le plus TA pool pour ce rôle ──
+  const poolForRole = (loadPool().pool || {})[myRole] || [];
+  const myPoolIds = new Set(poolForRole.map((e) => canonId(e.champion)).filter(Boolean));
+  const banScores = new Map();
+  for (const entry of poolForRole) {
+    const champ = ddragon ? ddragon.resolveChampionByName(entry.champion) : null;
+    if (!champ) continue;
+    for (const counterId of counterListOf(champ)) {
+      const cid = canonId(counterId);
+      if (!cid || taken.has(cid) || bannedSet.has(cid) || myPoolIds.has(cid)) continue;
+      const cur = banScores.get(cid) || { score: 0, threatens: [] };
+      cur.score += 2;
+      if (!cur.threatens.includes(champ.id)) cur.threatens.push(champ.id);
+      banScores.set(cid, cur);
+    }
+  }
+  // Menaces méta (burst/CC élevé) légèrement valorisées comme bans.
+  for (const raw of [...(ds.burstThreats || []), ...(ds.ccHeavy || [])]) {
+    const cid = canonId(raw);
+    if (!cid || taken.has(cid) || bannedSet.has(cid) || myPoolIds.has(cid)) continue;
+    const cur = banScores.get(cid) || { score: 0, threatens: [] };
+    cur.score += 0.5;
+    banScores.set(cid, cur);
+  }
+  const banSuggestions = [...banScores.entries()]
+    .map(([id, v]) => {
+      const c = ddragon ? ddragon.championById.get(id) : null;
+      const ref = champRef(c);
+      if (!ref) return null;
+      const threatNames = v.threatens.map((tid) => {
+        const t = ddragon && ddragon.championById.get(tid);
+        return t ? t.displayName || t.name : tid;
+      });
+      const reason = threatNames.length ? `menace ${threatNames.slice(0, 3).join(', ')} de ta pool` : 'grosse menace méta (burst/CC)';
+      return { ...ref, score: +v.score.toFixed(2), reason };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+
   const suggestions = picksFromPool ? poolPicks : pickSuggestions;
   // Proba de win projetée = celle du pick conseillé (top). Estimation indicative.
   const teamWinProb = suggestions.length && suggestions[0].winProb != null ? suggestions[0].winProb : null;
+  const winProbGrounded = suggestions.length ? Boolean(suggestions[0].winProbGrounded) : false;
 
   return {
     myRole,
@@ -305,6 +387,8 @@ function analyzeChampSelect(session, ddragon) {
     picksFromPool,
     poolUnresolved,
     teamWinProb,
+    winProbGrounded,
+    banSuggestions,
     buildSuggestions,
     runeHints,
     timerSeconds: session.timer ? Math.round((session.timer.adjustedTimeLeftInPhase || 0) / 1000) : null,
