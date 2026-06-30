@@ -9,6 +9,8 @@ Un agent qui **surveille tes parties de League of Legends en direct** et te donn
 - 🚫 des **bans conseillés** et une **probabilité de win** par pick (ancrée sur les vrais winrates de matchup si tu lances `fetch-counters`) ;
 - 🗨️ un **chat** (avec **dictée vocale**) pour poser une question à Claude pendant la partie (mort, alt-tab) ;
 - 📈 un **historique** avec **critique IA** par game, **courbes de progression**, **suivi d’objectif**, et une **analyse de tes faiblesses récurrentes** ;
+- 🛰️ des **données live avancées** : **dragon soul**, **counter-build** sur les objets réels adverses, **sorts d’invoc & keystones** ennemis, tes résistances, vision — le tout nourrissant l’IA pour de la **stratégie** ;
+- 🎮 (optionnel) **rang/LP & historique réel** via la **Riot API**, un **coach personnalisé** (tes faiblesses récurrentes), la **voix mains-libres**, et un **lancement 1-clic** (`start.command` / `start.bat`) ;
 - 🛠️ des **builds high-elo réels** via `npm run fetch-builds`, un **mode compact** (2e écran), un **indicateur d’usage IA**, la **détection du patch**, une **voix HD** optionnelle (serveur Piper) et des **tests** (`npm test`).
 
 Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
@@ -253,6 +255,30 @@ Le chat a un bouton **🎤** pour **dicter** ta question (reconnaissance vocale 
 ```bash
 npm test     # tests des advisors (profil, picks, bans, build, tempo, historique…)
 ```
+
+### 🛰️ Données live enrichies & stratégie
+
+Le coach exploite désormais **bien plus** de l'API Live Client locale :
+- **Dragon soul** : suivi des drakes pris par chaque équipe (et leur type) → *« prochain dragon = SOUL, contest obligatoire »*.
+- **Counter-build** sur les **objets réels** de l'adversaire : *« 3 objets d'armure en face → prends de la pénétration »*, *« Cuirasse épineuse → anti-soin sur toi »*.
+- **Sorts d'invocateur** et **keystones** adverses (qui a Flash/TP/Ignite, Électrocution vs Aftershock…).
+- **Tes résistances** (armure/RM/AP/AD/ability haste) et l'état des **tours**.
+- **Vision** : alerte si tu es sous la moyenne de ton équipe.
+Tout ça est aussi **transmis à l'IA**, qui donne des conseils stratégiques (setups d'objectifs, exécution de la win condition, tempo) ancrés dans les vrais chiffres.
+
+> Limite honnête : l'API live **n'expose pas** la position des minions/ennemis ni les cooldowns adverses — ça reste du manuel-assisté (tracker jungler).
+
+### 🧠 Coach personnalisé (« il te connaît »)
+
+En partie, l'IA reçoit ton **profil de faiblesses récurrentes** (calculé depuis ton historique) et adapte ses rappels : *« tu meurs souvent en milieu de partie, repli maintenant »*.
+
+### 🎮 Riot API : rang/LP & historique réel
+
+Avec une **clé dev Riot** (gratuite, **expire toutes les 24 h**) dans `.env` (`RIOT_API_KEY` + `RIOT_ID="Pseudo#TAG"`), la page **Historique** affiche ton **rang/LP** et peut **charger tes vraies parties** (Match-V5 : KDA, CS/min, vision, durée). Régénère la clé chaque jour sur [developer.riotgames.com](https://developer.riotgames.com/). 🔒 La clé reste **dans ton `.env`** (jamais commitée).
+
+### 🗣️ Voix mains-libres
+
+Le bouton 🎤 du chat : tu **dictes** ta question, elle **part toute seule** à la fin, et la **réponse est lue à voix haute** si la voix est active → boucle quasi mains-libres (utile mort / en alt-tab).
 
 ### 🗺️ Plan de lane & win condition (IA, champ select)
 

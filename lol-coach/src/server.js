@@ -7,6 +7,9 @@ const { WebSocketServer } = require('ws');
 const config = require('./config');
 const { CoachLoop } = require('./coachLoop');
 const { buildPoolDex } = require('./advisor/championDex');
+const { RiotApi } = require('./data/riotApi');
+
+const riot = new RiotApi();
 
 const app = express();
 const server = http.createServer(app);
@@ -100,6 +103,27 @@ app.post('/api/cue', (req, res) => {
   if (!cue || !cue.kind) return res.status(400).json({ error: 'kind requis' });
   broadcastRaw({ type: 'cue', payload: cue });
   res.json({ ok: true });
+});
+
+// Riot API : profil + rang/LP (clé dev dans .env, voir README).
+app.get('/api/riot/profile', async (req, res) => {
+  if (!riot.available) return res.json({ enabled: false, hint: 'Ajoute RIOT_API_KEY et RIOT_ID dans .env (clé dev = 24 h).' });
+  try {
+    res.json({ enabled: true, profile: await riot.getProfile(req.query.id) });
+  } catch (e) {
+    res.status(502).json({ enabled: true, error: e.message });
+  }
+});
+
+// Riot API : parties récentes réelles (match-v5).
+app.get('/api/riot/matches', async (req, res) => {
+  if (!riot.available) return res.json({ enabled: false, matches: [] });
+  try {
+    const matches = await riot.getRecentMatches(req.query.id, Math.min(20, parseInt(req.query.count, 10) || 10));
+    res.json({ enabled: true, matches });
+  } catch (e) {
+    res.status(502).json({ enabled: true, error: e.message });
+  }
 });
 
 // Cooldowns (Flash / ultimes) pour le tracker en jeu.

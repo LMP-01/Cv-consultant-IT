@@ -28,7 +28,7 @@ function mockAllGameData(elapsedSeconds) {
     items: [{ itemID: 1056 }, { itemID: 3020 }, { itemID: 6655 }],
   };
 
-  const player = (name, team, position, k, d, a, csv) => ({
+  const player = (name, team, position, k, d, a, csv, opts = {}) => ({
     championName: name,
     riotIdGameName: name + 'Player',
     summonerName: name + 'Player',
@@ -37,29 +37,37 @@ function mockAllGameData(elapsedSeconds) {
     position,
     isDead: false,
     respawnTimer: 0,
-    scores: { kills: k, deaths: d, assists: a, creepScore: csv, wardScore: 6 },
+    scores: { kills: k, deaths: d, assists: a, creepScore: csv, wardScore: opts.ward != null ? opts.ward : 6 },
     summonerSpells: {
       summonerSpellOne: { displayName: 'Flash' },
-      summonerSpellTwo: { displayName: 'Smite' },
+      summonerSpellTwo: { displayName: opts.spell2 || 'Smite' },
     },
-    items: [],
+    runes: { keystone: { displayName: opts.keystone || 'Conquérant' } },
+    items: (opts.items || []).map((id) => ({ itemID: id })),
   });
 
   const allPlayers = [
     me,
-    player('Garen', 'ORDER', 'TOP', 1, 2, 2, Math.round(cs * 0.95)),
-    player('Lee Sin', 'ORDER', 'JUNGLE', 2, 2, 5, Math.round(cs * 0.7)),
-    player('Jinx', 'ORDER', 'BOTTOM', 4, 1, 3, Math.round(cs * 1.05)),
-    player('Leona', 'ORDER', 'UTILITY', 0, 3, 7, 15),
-    player('Darius', 'CHAOS', 'TOP', 2, 1, 1, Math.round(cs * 0.9)),
-    player('Kha\'Zix', 'CHAOS', 'JUNGLE', 3, 2, 2, Math.round(cs * 0.65)),
-    player('Zed', 'CHAOS', 'MIDDLE', 4, 2, 1, Math.round(cs * 0.98)),
-    player('Caitlyn', 'CHAOS', 'BOTTOM', 3, 2, 2, Math.round(cs * 1.1)),
-    player('Thresh', 'CHAOS', 'UTILITY', 1, 2, 6, 20),
+    player('Garen', 'ORDER', 'TOP', 1, 2, 2, Math.round(cs * 0.95), { spell2: 'Teleport', keystone: 'Conquérant', ward: 8 }),
+    player('Lee Sin', 'ORDER', 'JUNGLE', 2, 2, 5, Math.round(cs * 0.7), { keystone: 'Conquérant', ward: 22 }),
+    player('Jinx', 'ORDER', 'BOTTOM', 4, 1, 3, Math.round(cs * 1.05), { spell2: 'Heal', keystone: 'Tempête déchaînée', ward: 10 }),
+    player('Leona', 'ORDER', 'UTILITY', 0, 3, 7, 15, { spell2: 'Ignite', keystone: 'Aftershock', ward: 35 }),
+    // Ennemis avec items réels : Darius tank (armure), Caitlyn crit -> counter-build.
+    player('Darius', 'CHAOS', 'TOP', 2, 1, 1, Math.round(cs * 0.9), { spell2: 'Ghost', keystone: 'Conquérant', items: [3068, 3047, 3075] }), // Sunfire, Tabis, Thornmail
+    player('Kha\'Zix', 'CHAOS', 'JUNGLE', 3, 2, 2, Math.round(cs * 0.65), { keystone: 'Électrocution', items: [6691, 3134] }),
+    player('Zed', 'CHAOS', 'MIDDLE', 4, 2, 1, Math.round(cs * 0.98), { spell2: 'Ignite', keystone: 'Électrocution', items: [6691, 3142] }),
+    player('Caitlyn', 'CHAOS', 'BOTTOM', 3, 2, 2, Math.round(cs * 1.1), { spell2: 'Heal', keystone: 'Coup de grâce', items: [6676, 3006, 3031] }), // Collector, Berserker, IE
+    player('Thresh', 'CHAOS', 'UTILITY', 1, 2, 6, 20, { spell2: 'Ignite', keystone: 'Aftershock', ward: 40 }),
   ];
 
   const events = [{ EventID: 0, EventName: 'GameStart', EventTime: 0 }];
   if (gameTime > 330) events.push({ EventID: 1, EventName: 'FirstBlood', EventTime: 95 });
+  // Objectifs pris (pour soul tracking + état des structures). Les KillerName
+  // correspondent aux riotIdGameName (championName + 'Player'), comme l'API live.
+  if (gameTime > 360) events.push({ EventID: 2, EventName: 'DragonKill', EventTime: 320, KillerName: 'CaitlynPlayer', DragonType: 'Fire' });
+  if (gameTime > 360) events.push({ EventID: 3, EventName: 'TurretKilled', EventTime: 340, KillerName: 'CaitlynPlayer', TurretKilled: 'Turret_T1_C_05_A' });
+  if (gameTime > 500) events.push({ EventID: 4, EventName: 'DragonKill', EventTime: 480, KillerName: "Kha'ZixPlayer", DragonType: 'Earth' });
+  if (gameTime > 560) events.push({ EventID: 5, EventName: 'DragonKill', EventTime: 540, KillerName: 'CaitlynPlayer', DragonType: 'Water' });
 
   return {
     activePlayer: {
@@ -76,7 +84,12 @@ function mockAllGameData(elapsedSeconds) {
         abilityPower: 180,
         armor: 60,
         magicResist: 38,
+        abilityHaste: 25,
+        attackSpeed: 0.9,
+        moveSpeed: 340,
       },
+      abilities: { Q: { abilityLevel: 5 }, W: { abilityLevel: 3 }, E: { abilityLevel: 3 }, R: { abilityLevel: 2 } },
+      fullRunes: { keystone: { displayName: 'Comète arcanique' } },
     },
     allPlayers,
     events: { Events: events },

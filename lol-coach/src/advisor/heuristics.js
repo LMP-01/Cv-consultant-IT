@@ -1,7 +1,54 @@
 'use strict';
 
-const { analyzeComp, defensiveSuggestions } = require('./profile');
+const { analyzeComp, defensiveSuggestions, classifyDamage } = require('./profile');
 const { getBuild } = require('./builds');
+
+// Suivi du dragon soul à partir des events (type + équipe ayant tué).
+function analyzeDragons(events, scoreboard) {
+  const teamByName = {};
+  for (const p of scoreboard.allies) teamByName[p.summoner] = 'ally';
+  for (const p of scoreboard.enemies) teamByName[p.summoner] = 'enemy';
+  const dragons = { ally: [], enemy: [] };
+  for (const e of events) {
+    if (e.EventName !== 'DragonKill') continue;
+    const side = teamByName[e.KillerName];
+    const type = String(e.DragonType || '').replace(/Dragon$/i, '');
+    if (side === 'ally') dragons.ally.push(type);
+    else if (side === 'enemy') dragons.enemy.push(type);
+  }
+  const soulTeam = dragons.ally.length >= 4 ? 'ally' : dragons.enemy.length >= 4 ? 'enemy' : null;
+  const soulPointTeam = !soulTeam && dragons.ally.length === 3 ? 'ally' : !soulTeam && dragons.enemy.length === 3 ? 'enemy' : null;
+  return { ally: dragons.ally, enemy: dragons.enemy, soulTeam, soulPointTeam };
+}
+
+// Conseil de counter-build à partir des OBJETS RÉELS de l'équipe adverse.
+function counterBuildAdvice(scoreboard, ddragon, meChamp) {
+  if (!ddragon) return null;
+  let armor = 0;
+  let mr = 0;
+  let thornmail = false;
+  for (const e of scoreboard.enemies) {
+    for (const id of e.itemIds || []) {
+      const info = ddragon.itemInfo(id);
+      if (!info) continue;
+      const tags = info.tags || [];
+      if (tags.includes('Armor')) armor++;
+      if (tags.includes('SpellBlock')) mr++;
+      if (id === 3075 || /thornmail|cuirasse épineuse/i.test(info.name)) thornmail = true;
+    }
+  }
+  const dmg = meChamp ? classifyDamage(meChamp) : null;
+  if ((dmg === 'AD' || dmg === 'MIXED') && armor >= 2) {
+    return { id: 'cb-armorpen', priority: 'medium', category: 'Build', title: 'Adverses qui montent armure', message: `Au moins ${armor} objets d'armure en face — prends de la pénétration d'armure (Lord Dominik / Serylda) pour rester efficace.` };
+  }
+  if (dmg === 'AP' && mr >= 2) {
+    return { id: 'cb-magicpen', priority: 'medium', category: 'Build', title: 'Adverses qui montent RM', message: `Au moins ${mr} objets de RM en face — Bâton du Vide est obligatoire pour percer leur résistance magique.` };
+  }
+  if (thornmail) {
+    return { id: 'cb-thornmail', priority: 'low', category: 'Build', title: 'Cuirasse épineuse en face', message: 'Anti-soin (Fléau) sur toi : ton lifesteal/soin est réduit de 40%. Évite les trades prolongés contre ce porteur.' };
+  }
+  return null;
+}
 
 // ── Timings des objectifs neutres (Faille de l'invocateur) ────────────────
 // Valeurs vérifiées pour le patch 26.13 (juin 2026). Elles évoluent à chaque
@@ -87,6 +134,10 @@ function buildScoreboard(data, ddragon) {
       items: (p.items || []).map((it) => (ddragon ? ddragon.itemName(it.itemID) || `#${it.itemID}` : `#${it.itemID}`)),
       itemIds: (p.items || []).map((it) => it.itemID),
       itemGold: (p.items || []).reduce((s, it) => s + (ddragon ? ((ddragon.itemInfo(it.itemID) || {}).gold || 0) : 0), 0),
+      summonerSpells: [p.summonerSpells && p.summonerSpells.summonerSpellOne, p.summonerSpells && p.summonerSpells.summonerSpellTwo]
+        .map((s) => (s && s.displayName) || null)
+        .filter(Boolean),
+      keystone: (p.runes && p.runes.keystone && p.runes.keystone.displayName) || null,
     };
   };
 
@@ -163,6 +214,16 @@ function analyzeInGame(data, ddragon) {
     .map((e) => (ddragon ? ddragon.resolveChampionByName(e.champion) : null))
     .filter(Boolean);
   const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
+  const meChamp = me && ddragon ? ddragon.resolveChampionByName(me.champion) : null;
+
+  // Données live enrichies : dragons/soul, structures, vision.
+  const dragons = analyzeDragons(events, scoreboard);
+  const towers = {
+    ally: events.filter((e) => e.EventName === 'TurretKilled' && scoreboard.allies.some((p) => p.summoner === e.KillerName)).length,
+    enemy: events.filter((e) => e.EventName === 'TurretKilled' && scoreboard.enemies.some((p) => p.summoner === e.KillerName)).length,
+  };
+  const myWard = me ? me.wardScore || 0 : 0;
+  const allyWardAvg = scoreboard.allies.length ? scoreboard.allies.reduce((s, p) => s + (p.wardScore || 0), 0) / scoreboard.allies.length : 0;
 
   // ── Règles ──────────────────────────────────────────────────────────────
 
@@ -369,6 +430,42 @@ function analyzeInGame(data, ddragon) {
     }
   }
 
+  // 8c. Dragon soul : point de soul à contester/sécuriser.
+  if (dragons.soulTeam) {
+    advice.push({
+      id: 'dragon-soul',
+      priority: 'high',
+      category: 'Macro',
+      title: dragons.soulTeam === 'ally' ? '🐉 Vous avez le Dragon Soul' : '🐉 L’ennemi a le Dragon Soul',
+      message: dragons.soulTeam === 'ally' ? 'Avantage de teamfight majeur — force les objectifs et les fights groupés.' : 'Désavantage en teamfight prolongé — privilégie les pick et les objectifs rapides, évite les 5v5 à rallonge.',
+    });
+  } else if (dragons.soulPointTeam) {
+    advice.push({
+      id: 'dragon-soulpoint',
+      priority: 'high',
+      category: 'Macro',
+      title: '🐉 Prochain dragon = SOUL',
+      message: dragons.soulPointTeam === 'ally'
+        ? 'Vous êtes à 3 drakes : le prochain donne le Soul. Prends la vision tôt et regroupe pour le sécuriser.'
+        : 'L’ennemi est à 3 drakes : le prochain leur donne le Soul. Vision + contest obligatoire, ou refuse-le proprement.',
+    });
+  }
+
+  // 8d. Counter-build sur les objets réels de l'équipe adverse.
+  const cb = counterBuildAdvice(scoreboard, ddragon, meChamp);
+  if (cb && gameTime > 600) advice.push(cb);
+
+  // 8e. Vision : si tu es sous la moyenne de ton équipe.
+  if (me && gameTime > 360 && allyWardAvg > 0 && myWard < allyWardAvg * 0.6) {
+    advice.push({
+      id: 'low-vision',
+      priority: 'low',
+      category: 'Vision',
+      title: 'Ta vision est faible',
+      message: 'Tu es sous la moyenne de vision de ton équipe — achète une pink, pose tes wards avant les objectifs et balaie avec le balayeur.',
+    });
+  }
+
   // 9. Conseil défensif unique selon la team adverse
   if (enemyComp && gameTime > 60 && gameTime < 900) {
     const sugg = defensiveSuggestions(enemyComp)[0];
@@ -404,11 +501,22 @@ function analyzeInGame(data, ddragon) {
           csPerMin: gameTime > 0 ? +(me.cs / (gameTime / 60)).toFixed(1) : 0,
           gold: active.currentGold != null ? Math.round(active.currentGold) : null,
           hpPct: stats.maxHealth ? pct(stats.currentHealth / stats.maxHealth) : null,
+          stats: {
+            armor: Math.round(stats.armor || 0),
+            mr: Math.round(stats.magicResist || 0),
+            ad: Math.round(stats.attackDamage || 0),
+            ap: Math.round(stats.abilityPower || 0),
+            haste: Math.round(stats.abilityHaste || 0),
+          },
         }
       : null,
     enemyComp,
     teamGold,
     laneGold,
+    dragons,
+    towers,
+    enemyKeystones: scoreboard.enemies.map((e) => ({ champion: e.championDisplay || e.champion, keystone: e.keystone })).filter((x) => x.keystone),
+    enemySpells: scoreboard.enemies.map((e) => ({ champion: e.championDisplay || e.champion, spells: e.summonerSpells })),
   };
 
   return { summary, objectives, scoreboard, advice };

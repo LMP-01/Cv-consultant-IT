@@ -38,6 +38,7 @@ class CoachLoop {
     this.history = new GameHistory();
     this.lastInGame = null; // dernier instantané de partie (chat + historique)
     this.gameFinalized = false; // évite de sauvegarder deux fois la même partie
+    this.playerProfile = null; // profil de faiblesses récurrentes (coach personnalisé)
   }
 
   _emptyState() {
@@ -196,6 +197,7 @@ class CoachLoop {
       this._resetFeed();
       this.prevGame = null;
       this.gameFinalized = false;
+      this.playerProfile = this._computePlayerProfile();
     }
     this.lastPhase = 'ingame';
 
@@ -459,6 +461,7 @@ class CoachLoop {
       kda: `${p.kills}/${p.deaths}/${p.assists}`,
       cs: p.cs,
       level: p.level,
+      items: (p.items || []).slice(0, 6),
     });
     return {
       lang: config.lang,
@@ -477,8 +480,37 @@ class CoachLoop {
             burst: summary.enemyComp.burstLevel,
           }
         : null,
+      // Données live enrichies pour des conseils stratégiques.
+      goldLead: summary.teamGold ? { team: summary.teamGold.diff, lane: summary.laneGold ? summary.laneGold.diff : null } : null,
+      dragons: summary.dragons ? { ally: summary.dragons.ally, enemy: summary.dragons.enemy, soulTeam: summary.dragons.soulTeam, soulPointTeam: summary.dragons.soulPointTeam } : null,
+      towers: summary.towers || null,
+      enemyKeystones: summary.enemyKeystones || [],
+      enemySummonerSpells: summary.enemySpells || [],
+      playerProfile: this.playerProfile || null,
       rulesEngineTips: result.advice.map((a) => a.title),
     };
+  }
+
+  // Profil compact du joueur (faiblesses récurrentes) pour personnaliser l'IA.
+  _computePlayerProfile() {
+    try {
+      const h = this.history.list();
+      if (!h.stats.played) return null;
+      const champs = (h.stats.byChampion || []).slice(0, 3).map((c) => `${c.champion} ${Math.round((c.wins / c.games) * 100)}%`);
+      const recurring = [];
+      for (const g of h.games.slice(0, 8)) {
+        if (g.review && Array.isArray(g.review.toImprove)) recurring.push(...g.review.toImprove);
+      }
+      const top = [...new Set(recurring)].slice(0, 4);
+      return {
+        winrate: h.stats.winrate,
+        avgDeaths: h.stats.avgKda ? h.stats.avgKda.d : null,
+        topChampions: champs,
+        recurringWeaknesses: top,
+      };
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -71,8 +71,9 @@ const config = {
 
   riot: {
     apiKey: process.env.RIOT_API_KEY || '',
-    region: process.env.RIOT_REGION || 'europe',
-    platform: process.env.RIOT_PLATFORM || 'euw1',
+    region: process.env.RIOT_REGION || 'europe', // routing régional : americas / asia / europe
+    platform: process.env.RIOT_PLATFORM || 'euw1', // plateforme : euw1 / na1 / kr ...
+    riotId: process.env.RIOT_ID || '', // "Pseudo#TAG" pour le suivi de rang/historique
     get enabled() {
       return Boolean(this.apiKey);
     },
