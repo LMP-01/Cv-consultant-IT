@@ -5,8 +5,9 @@ Un agent qui **surveille tes parties de League of Legends en direct** et te donn
 - 💬 des **conseils de jeu en temps réel** (macro, objectifs, timings, recall, survie…) pendant la partie, à cadence régulière **et immédiatement sur les moments clés** (mort, chute de PV brutale, kill/objectif) ;
 - 🧩 des **suggestions de pick et de build** adaptées à **toute la composition adverse ET à ta propre équipe** (synergie de duo, équilibre des dégâts, **probabilité de win estimée**) pendant le **champ select** ;
 - 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats) + un **build conseillé en jeu** (3 prochains achats avec mini-items, build complet évolutif, runes vs la compo) ;
+- ⏲️ des **timers Flash/ultimes** des ennemis et des **alertes de fenêtre de force** (tempo vs ton adversaire de lane) ;
 - 🗨️ un **chat** pour poser une question à Claude pendant la partie (mort, alt-tab) ;
-- 📈 un **historique** de tes parties avec **critique IA** (ce que tu as bien/mal fait + axes d’amélioration).
+- 📈 un **historique** de tes parties avec **critique IA** par game + une **analyse de tes faiblesses récurrentes** sur l’ensemble de tes parties.
 
 Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
 
@@ -201,6 +202,18 @@ Sous le flux de conseils, une zone **« Demande à Claude »** permet de poser u
 ### 📈 Historique & bilan des parties (`/history.html`)
 
 À la **fin de chaque partie**, le coach enregistre un récap dans `data/history.json` (local, jamais commité) : champion, rôle, KDA, CS/min, durée, résultat, compositions. Si l'abonnement Claude est actif, Claude génère une **critique** : un résumé, ce que tu as **bien joué**, les **axes d'amélioration**, et **un objectif prioritaire** pour la partie suivante. La page **« 📈 Historique »** liste toutes tes parties avec des **statistiques agrégées** (winrate, KDA moyen, par champion).
+
+### ⏲️ Timers Flash & ultimes ennemis
+
+Sous le tableau de bord, un panneau liste les **adversaires** avec un bouton **Flash** (300 s) et **Ulti** (cooldown approximatif par champion). **Clique quand l'ennemi utilise le sort** → compte à rebours en direct + **rappel vocal** « Flash de X bientôt disponible » quand c'est presque up (si la voix est activée). Clic droit pour annuler. Les cooldowns d'ultimes sont éditables dans **`data/cooldowns.json`**.
+
+### ⚡ Fenêtres de force (tempo)
+
+Le coach compare en continu ton **niveau** et ton **or d'objets** à ceux de ton **adversaire de lane** et te prévient quand le rapport de force bascule : *« ⚡ Fenêtre de force : tu es plus fort que X (+2 niveaux) — cherche un play »* ou *« 🛡️ Adversaire en avance — temporise »*. C'est là que se gagnent/perdent les games.
+
+### 📊 Analyse de tes faiblesses récurrentes (page Historique)
+
+Sur la page **Historique**, le bouton **« 🔍 Analyser mes faiblesses récurrentes »** envoie tout ton historique à Claude, qui en sort **les patterns récurrents** (pas une seule game : tendances de morts, farm, matchups, résultats par champion…) et **3 chantiers prioritaires** pour progresser. L'analyse prend quelques secondes (appel au modèle).
 
 ### ⚡ Latence : pourquoi c'est « vraiment live » maintenant
 

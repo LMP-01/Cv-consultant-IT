@@ -266,6 +266,103 @@ function renderInGame(game) {
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
 
   renderItemPlan(game.itemPlan);
+  renderTimers(game.scoreboard ? game.scoreboard.enemies : []);
+}
+
+// ── Timers Flash / ultimes ennemis ───────────────────────────────────────────
+let cooldowns = { flashSeconds: 300, ult: {} };
+const spellTimers = {}; // `${champId}|flash|ult` -> endsAt (ms)
+const timerAlerted = {};
+let timersSig = '';
+
+function fetchCooldowns() {
+  fetch('/api/cooldowns')
+    .then((r) => r.json())
+    .then((d) => { if (d && d.ult) cooldowns = d; })
+    .catch(() => {});
+}
+
+function renderTimers(enemies) {
+  const list = $('timersList');
+  if (!list) return;
+  enemies = enemies || [];
+  const sig = enemies.map((e) => e.championId || e.champion).join(',');
+  if (sig === timersSig) return; // ne reconstruit que si la liste change
+  timersSig = sig;
+  if (!enemies.length) {
+    list.innerHTML = '<div class="dex-none">En attente des adversaires…</div>';
+    return;
+  }
+  list.innerHTML = enemies
+    .map((e) => {
+      const id = e.championId || e.champion;
+      const name = esc(e.championDisplay || e.champion);
+      const ult = cooldowns.ult && cooldowns.ult[id];
+      return `<div class="timer-row" data-id="${esc(String(id))}">
+        <span class="timer-name">${name}</span>
+        <button class="timer-btn flash" data-key="${esc(id + '|flash')}" data-cd="flash">Flash</button>
+        ${ult ? `<button class="timer-btn ult" data-key="${esc(id + '|ult')}" data-cd="ult" data-secs="${ult}">Ulti</button>` : '<span class="timer-na">ulti —</span>'}
+      </div>`;
+    })
+    .join('');
+}
+
+function updateTimers() {
+  const now = Date.now();
+  document.querySelectorAll('#timersList .timer-btn').forEach((btn) => {
+    const key = btn.dataset.key;
+    const base = btn.dataset.cd === 'flash' ? 'Flash' : 'Ulti';
+    const ends = spellTimers[key];
+    if (!ends) {
+      btn.textContent = base;
+      btn.classList.remove('running', 'ready');
+      return;
+    }
+    const rem = Math.round((ends - now) / 1000);
+    if (rem > 0) {
+      btn.textContent = `${base} ${mmss(rem)}`;
+      btn.classList.add('running');
+      btn.classList.remove('ready');
+      if (rem <= 8 && !timerAlerted[key] && tts.enabled) {
+        timerAlerted[key] = true;
+        const champ = btn.closest('.timer-row').querySelector('.timer-name').textContent;
+        speak(`${base} de ${champ} bientôt disponible`);
+      }
+    } else if (rem > -6) {
+      btn.textContent = `${base} UP`;
+      btn.classList.add('ready');
+      btn.classList.remove('running');
+    } else {
+      delete spellTimers[key];
+      delete timerAlerted[key];
+      btn.textContent = base;
+      btn.classList.remove('running', 'ready');
+    }
+  });
+}
+
+function initTimers() {
+  fetchCooldowns();
+  const list = $('timersList');
+  if (!list) return;
+  // Clic = démarre/redémarre le compte à rebours ; clic droit = annule.
+  list.addEventListener('click', (e) => {
+    const btn = e.target.closest('.timer-btn');
+    if (!btn) return;
+    const key = btn.dataset.key;
+    const secs = btn.dataset.cd === 'flash' ? cooldowns.flashSeconds || 300 : Number(btn.dataset.secs || 100);
+    spellTimers[key] = Date.now() + secs * 1000;
+    timerAlerted[key] = false;
+    updateTimers();
+  });
+  list.addEventListener('contextmenu', (e) => {
+    const btn = e.target.closest('.timer-btn');
+    if (!btn) return;
+    e.preventDefault();
+    delete spellTimers[btn.dataset.key];
+    delete timerAlerted[btn.dataset.key];
+    updateTimers();
+  });
 }
 
 // Icône d'item (objet {name, icon}) + nom, avec repli texte si pas d'icône.
@@ -581,8 +678,10 @@ function esc(str) {
 setInterval(() => {
   if (latestObjectives.length) renderObjectives();
   updateRelTimes();
+  updateTimers();
 }, 1000);
 
 initTts();
 initChat();
+initTimers();
 connect();

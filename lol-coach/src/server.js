@@ -75,6 +75,30 @@ app.get('/api/history', (_req, res) => {
   }
 });
 
+// Analyse des faiblesses récurrentes sur l'ensemble de l'historique (Claude).
+app.get('/api/history/analysis', async (_req, res) => {
+  if (!loop.ai.available) {
+    return res.json({ analysis: null, ai: false, hint: "Active l'abonnement Claude pour analyser tes parties." });
+  }
+  try {
+    const analysis = await loop.ai.analyzeHistory(loop.history.list());
+    res.json({ analysis: analysis || null, ai: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Cooldowns (Flash / ultimes) pour le tracker en jeu.
+let COOLDOWNS = null;
+app.get('/api/cooldowns', (_req, res) => {
+  try {
+    if (!COOLDOWNS) COOLDOWNS = require('../data/cooldowns.json');
+    res.json(COOLDOWNS);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 wss.on('connection', (ws) => {
   // Envoie immédiatement le dernier état connu au nouveau client.
   if (lastState) {

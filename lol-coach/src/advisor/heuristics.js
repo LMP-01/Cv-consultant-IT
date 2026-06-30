@@ -68,6 +68,7 @@ function buildScoreboard(data, ddragon) {
       isYou: me ? p === me : false,
       items: (p.items || []).map((it) => (ddragon ? ddragon.itemName(it.itemID) || `#${it.itemID}` : `#${it.itemID}`)),
       itemIds: (p.items || []).map((it) => it.itemID),
+      itemGold: (p.items || []).reduce((s, it) => s + (ddragon ? ((ddragon.itemInfo(it.itemID) || {}).gold || 0) : 0), 0),
     };
   };
 
@@ -271,6 +272,36 @@ function analyzeInGame(data, ddragon) {
         title: 'Baron pris',
         message: 'Baron actif sur la map — joue ultra groupé, sécurise la vision et évite les pick isolés.',
       });
+    }
+  }
+
+  // 8b. Tempo : force relative vs l'adversaire de lane (niveau + or d'objets).
+  if (me && gameTime > 120 && !me.isDead) {
+    const laneOpp = me.position ? scoreboard.enemies.find((e) => e.position === me.position) : null;
+    if (laneOpp) {
+      const lvlDiff = (me.level || 0) - (laneOpp.level || 0);
+      const goldDiff = (me.itemGold || 0) - (laneOpp.itemGold || 0);
+      const oppName = laneOpp.championDisplay || laneOpp.champion;
+      if (goldDiff >= 450 || lvlDiff >= 2) {
+        const bits = [];
+        if (lvlDiff >= 1) bits.push(`+${lvlDiff} niveau${lvlDiff > 1 ? 'x' : ''}`);
+        if (goldDiff >= 450) bits.push(`+${goldDiff} or d'objets`);
+        advice.push({
+          id: 'tempo-ahead',
+          priority: 'medium',
+          category: 'Tempo',
+          title: '⚡ Fenêtre de force',
+          message: `Tu es plus fort que ${oppName} (${bits.join(', ')}). Cherche un trade/all-in ou un play sur la map avant qu'il rattrape.`,
+        });
+      } else if (goldDiff <= -550 || lvlDiff <= -2) {
+        advice.push({
+          id: 'tempo-behind',
+          priority: 'medium',
+          category: 'Tempo',
+          title: '🛡️ Adversaire en avance',
+          message: `${oppName} a un spike d'avance — temporise, farm en sécurité, et évite les trades prolongés jusqu'à ton prochain objet.`,
+        });
+      }
     }
   }
 
