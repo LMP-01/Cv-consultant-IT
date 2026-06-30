@@ -62,7 +62,20 @@ Le « temps réel » n'est possible que là où la consommation est mesurable :
 > lire tes discussions sur l'app web claude.ai — Anthropic ne fournit pas cette
 > donnée.
 
-## Utilisation
+## Le plus simple : `dashboard.html` (zéro installation)
+
+Ouvre simplement **`dashboard.html`** dans ton navigateur (double-clic). Pas de
+Python, pas de serveur. Glisse-dépose tes fichiers de logs Claude Code
+(`~/.claude/projects/<projet>/<session>.jsonl`, ou tout le dossier `projects`) :
+toute l'analyse — fenêtres de 5 h, tâches, conseils — se fait **dans la page**,
+rien n'est envoyé nulle part. Un sélecteur de palier (Pro / Max 5x / Max 20x)
+recalcule la jauge en direct.
+
+> Comme un navigateur ne peut pas lire tes fichiers automatiquement, c'est toi
+> qui les déposes (le seul « clic » nécessaire). C'est le pendant 100% local du
+> dashboard Python ci-dessous.
+
+## Version Python (rapport texte + dashboard live)
 
 Aucune installation, aucune dépendance (Python 3.9+ de la lib standard).
 

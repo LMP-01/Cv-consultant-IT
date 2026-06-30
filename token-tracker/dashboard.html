@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suivi tokens Claude — abonnement</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a2129; --accent:#e07a5f; --text:#e8e6e1;
+          --muted:#8a94a0; --line:#2a333d; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+         background:var(--bg); color:var(--text); }
+  header { padding:18px 24px; border-bottom:1px solid var(--line);
+           display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:18px; margin:0; font-weight:600; }
+  .sub { font-size:12px; color:var(--muted); }
+  main { padding:24px; max-width:1100px; margin:0 auto; }
+  select, button { background:#222a33; color:var(--text); border:1px solid var(--line);
+                   border-radius:8px; padding:8px 12px; font-size:14px; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#1a1209;
+                   font-weight:600; }
+  .controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+              margin-bottom:20px; }
+  .controls label { font-size:13px; color:var(--muted); }
+  #drop { border:2px dashed var(--line); border-radius:14px; padding:34px 24px;
+          text-align:center; color:var(--muted); margin-bottom:22px; transition:.2s;
+          background:#141b22; }
+  #drop.hover { border-color:var(--accent); color:var(--text); background:#1a232c; }
+  #drop b { color:var(--text); }
+  #drop .hint { font-size:12px; margin-top:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+           gap:14px; margin-bottom:22px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:16px; }
+  .card .k { font-size:12px; color:var(--muted); text-transform:uppercase;
+             letter-spacing:.04em; }
+  .card .v { font-size:22px; font-weight:600; margin-top:6px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px;
+            padding:18px 20px; margin-bottom:20px; }
+  h2 { font-size:14px; text-transform:uppercase; letter-spacing:.05em;
+       color:var(--muted); margin:0 0 14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+           vertical-align:top; }
+  th { color:var(--muted); font-weight:500; font-size:12px; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .bar { height:6px; background:var(--accent); border-radius:3px; }
+  .tag { display:inline-block; background:#252e38; color:var(--muted);
+         padding:1px 7px; border-radius:5px; font-size:11px; margin:1px 4px 1px 0; }
+  .tip { border-left:3px solid var(--accent); padding:8px 12px; margin:8px 0;
+         background:#222a33; border-radius:0 6px 6px 0; }
+  .tip .t { font-weight:600; font-size:14px; }
+  .tip .d { color:var(--muted); font-size:13px; margin-top:3px; }
+  .empty { color:var(--muted); padding:20px; text-align:center; }
+  .gain { color:#5fb37a; font-size:12px; }
+  .window { background:linear-gradient(135deg,#1c2530,#161d26);
+            border:1px solid var(--line); border-radius:12px; padding:20px 22px;
+            margin-bottom:22px; }
+  .window .top { display:flex; justify-content:space-between; align-items:baseline;
+                 flex-wrap:wrap; gap:8px; }
+  .window .pct { font-size:30px; font-weight:700; }
+  .window .meta { color:var(--muted); font-size:13px; margin-top:4px; }
+  .gauge { height:14px; background:#0d1217; border-radius:7px; margin:14px 0 4px;
+           overflow:hidden; }
+  .gauge > div { height:100%; border-radius:7px; transition:width .6s; }
+  .g-ok { background:#5fb37a; } .g-warn { background:#e0a85f; } .g-hot { background:#e0604f; }
+  .reset { font-size:13px; } .reset b { color:var(--accent); }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5; }
+  code { background:#222a33; padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Suivi de consommation de tokens Claude</h1>
+  <span class="sub">abonnement · fenêtres glissantes de 5 h · 100% local (rien n'est envoyé)</span>
+</header>
+<main>
+  <div class="controls">
+    <label>Palier :</label>
+    <select id="plan">
+      <option value="pro">Pro</option>
+      <option value="max_5x" selected>Max 5x</option>
+      <option value="max_20x">Max 20x</option>
+    </select>
+    <button id="pick" class="primary">Choisir des fichiers .jsonl</button>
+    <button id="pickdir">Choisir le dossier projects</button>
+    <input id="files" type="file" accept=".jsonl" multiple hidden>
+    <input id="dir" type="file" hidden webkitdirectory directory>
+  </div>
+
+  <div id="drop">
+    <b>Glisse-dépose ici tes fichiers de logs Claude Code</b>
+    <div class="hint">Ils se trouvent dans <code>~/.claude/projects/&lt;projet&gt;/&lt;session&gt;.jsonl</code>
+      &nbsp;(Windows : <code>%USERPROFILE%\.claude\projects</code>).
+      Tu peux déposer tout le dossier <code>projects</code>.</div>
+    <div class="hint">Tout est analysé dans cette page — aucune donnée ne quitte ton navigateur.</div>
+  </div>
+
+  <div id="result"></div>
+</main>
+
+<script>
+/* ---------- Tarifs (USD / million de tokens) ---------- */
+const PRICES = {
+  "claude-fable-5":{i:10,o:50}, "claude-mythos-5":{i:10,o:50},
+  "claude-opus-4-8":{i:5,o:25}, "claude-opus-4-7":{i:5,o:25}, "claude-opus-4-6":{i:5,o:25},
+  "claude-opus-4-5":{i:5,o:25}, "claude-opus-4-1":{i:15,o:75}, "claude-opus-4-0":{i:15,o:75},
+  "claude-sonnet-4-6":{i:3,o:15}, "claude-sonnet-4-5":{i:3,o:15}, "claude-sonnet-4-0":{i:3,o:15},
+  "claude-haiku-4-5":{i:1,o:5}, "claude-3-5-haiku":{i:0.8,o:4}, "claude-3-haiku":{i:0.25,o:1.25}
+};
+const CACHE_READ=0.10, CACHE_W5=1.25, CACHE_W1H=2.0;
+const PLANS = {
+  pro:{label:"Pro", window:10, weekly:120},
+  max_5x:{label:"Max 5x", window:50, weekly:600},
+  max_20x:{label:"Max 20x", window:200, weekly:2400}
+};
+const WINDOW_MS = 5*3600*1000;
+const SIMPLE=["classe","classifie","catégorise","trie","résume","resume","reformule",
+  "réécris","reecris","traduis","traduit","corrige","renomme","extrait","extrais","liste",
+  "formate","convertis","orthographe","synonyme","titre","tag","étiquette","lint"];
+const COMPLEX=["architecture","refactor","débogue","debug","conçois","concois","implémente",
+  "implemente","migration","optimise","raisonne","démontre","demontre","stratégie"];
+const CMD_PREFIX=["<command-name>","<command-message>","<local-command","<bash-","caveat:","<user-"];
+
+function tier(m){ m=(m||"").toLowerCase();
+  if(m.includes("fable")||m.includes("mythos"))return 4;
+  if(m.includes("opus"))return 3; if(m.includes("sonnet"))return 2;
+  if(m.includes("haiku"))return 1; return 3; }
+function rate(model){ if(PRICES[model])return PRICES[model];
+  const m=(model||"").toLowerCase();
+  for(const k in PRICES){ if(m.startsWith(k)||m.includes(k))return PRICES[k]; }
+  return {i:5,o:25}; }
+
+function cost(u, model){
+  const r=rate(model), inR=r.i/1e6, outR=r.o/1e6;
+  const it=+(u.input_tokens||0), ot=+(u.output_tokens||0), cr=+(u.cache_read_input_tokens||0);
+  const cc=u.cache_creation||{}; let w5=+(cc.ephemeral_5m_input_tokens||0),
+      w1=+(cc.ephemeral_1h_input_tokens||0);
+  if(!u.cache_creation) w5=+(u.cache_creation_input_tokens||0);
+  const cInput=it*inR, cOut=ot*outR, cRead=cr*inR*CACHE_READ,
+        cWrite=w5*inR*CACHE_W5 + w1*inR*CACHE_W1H;
+  return {total:cInput+cOut+cRead+cWrite, input_tokens:it, output_tokens:ot,
+          cache_read_tokens:cr, cache_write_tokens:w5+w1};
+}
+
+function userPrompt(ev){
+  if(ev.type!=="user"||ev.isMeta)return null;
+  const c=(ev.message||{}).content; let text=null;
+  if(typeof c==="string")text=c;
+  else if(Array.isArray(c)){
+    for(const b of c){ if(b&&b.type==="tool_result")return null; }
+    for(const b of c){ if(b&&b.type==="text"){text=b.text;break;} }
+  }
+  if(!text||!text.trim())return null;
+  const low=text.trimStart().toLowerCase();
+  for(const p of CMD_PREFIX){ if(low.startsWith(p))return null; }
+  return text.trim();
+}
+function label(t){ const f=t.replace(/\s+/g," ").trim();
+  return f.length>90? f.slice(0,90)+"…" : f; }
+
+function parseFiles(fileList){
+  const records=[];
+  for(const {name,text} of fileList){
+    const session=name.replace(/\.jsonl$/,"");
+    let idx=0, lab="(début de session)", started=null;
+    for(const line of text.split(/\r?\n/)){
+      const s=line.trim(); if(!s)continue;
+      let ev; try{ev=JSON.parse(s);}catch(e){continue;}
+      const p=userPrompt(ev);
+      if(p!==null){ idx++; lab=label(p); started=ev.timestamp; continue; }
+      if(ev.type!=="assistant")continue;
+      const msg=ev.message||{}, u=msg.usage; if(!u)continue;
+      const model=msg.model||"inconnu";
+      if(model.startsWith("<synthetic"))continue;
+      records.push(Object.assign({timestamp:ev.timestamp, model:model,
+        task_id:session+"#"+idx, task_label:lab}, cost(u,model)));
+    }
+  }
+  return records;
+}
+
+function ts(v){ if(!v)return null; const d=new Date(v); return isNaN(d)?null:d.getTime(); }
+
+function buildWindows(records){
+  const timed=records.map(r=>[ts(r.timestamp),r]).filter(x=>x[0]!=null)
+                     .sort((a,b)=>a[0]-b[0]);
+  const wins=[]; let cur=null;
+  for(const [t,r] of timed){
+    if(!cur || t>=cur.start+WINDOW_MS){
+      cur={start:t, total:0, messages:0, input_tokens:0, output_tokens:0,
+           cache_read_tokens:0, tasks:{}, models:{}}; wins.push(cur);
+    }
+    cur.total+=r.total; cur.messages++; cur.input_tokens+=r.input_tokens;
+    cur.output_tokens+=r.output_tokens; cur.cache_read_tokens+=r.cache_read_tokens;
+    cur.tasks[r.task_label]=(cur.tasks[r.task_label]||0)+r.total;
+    cur.models[r.model]=(cur.models[r.model]||0)+r.total;
+  }
+  for(const w of wins){
+    w.reset=w.start+WINDOW_MS;
+    w.top_tasks=Object.entries(w.tasks).map(([label,total])=>({label,total}))
+                 .sort((a,b)=>b.total-a.total).slice(0,5);
+    w.top_models=Object.entries(w.models).map(([model,total])=>({model,total}))
+                  .sort((a,b)=>b.total-a.total);
+  }
+  return wins;
+}
+
+function summarize(records, plan){
+  const totals={total:0,messages:0,input_tokens:0,output_tokens:0,
+                cache_read_tokens:0,cache_write_tokens:0};
+  const byTask={}, byModel={};
+  for(const r of records){
+    totals.total+=r.total; totals.messages++; totals.input_tokens+=r.input_tokens;
+    totals.output_tokens+=r.output_tokens; totals.cache_read_tokens+=r.cache_read_tokens;
+    totals.cache_write_tokens+=r.cache_write_tokens;
+    if(!byTask[r.task_id]) byTask[r.task_id]={total:0,output_tokens:0,messages:0,
+        cache_write_tokens:0,cache_read_tokens:0,label:r.task_label,models:new Set()};
+    const t=byTask[r.task_id]; t.total+=r.total; t.output_tokens+=r.output_tokens;
+    t.messages++; t.cache_write_tokens+=r.cache_write_tokens;
+    t.cache_read_tokens+=r.cache_read_tokens; t.models.add(r.model);
+    byModel[r.model]=byModel[r.model]||{total:0,messages:0};
+    byModel[r.model].total+=r.total; byModel[r.model].messages++;
+  }
+  const tasks=Object.values(byTask).map(t=>({...t,models:[...t.models]}))
+               .sort((a,b)=>b.total-a.total);
+  const models=Object.entries(byModel).map(([model,v])=>({model,...v}))
+               .sort((a,b)=>b.total-a.total);
+
+  const wins=buildWindows(records);
+  const now=Date.now();
+  let current=null, completedPeak=0;
+  if(wins.length){
+    const last=wins[wins.length-1];
+    const active=now<last.reset;
+    for(let i=0;i<wins.length;i++){
+      if(i===wins.length-1 && active)continue;
+      completedPeak=Math.max(completedPeak, wins[i].total);
+    }
+    const reference=Math.max(plan.window, completedPeak);
+    current={consumed:last.total, reference, pct:reference?last.total/reference:0,
+      active, reset_in:Math.max(0,last.reset-now), since:Math.max(0,now-last.reset),
+      messages:last.messages, top_tasks:last.top_tasks, top_models:last.top_models,
+      auto: completedPeak>plan.window};
+  }
+  const weekAgo=now-7*24*3600*1000;
+  let weekly=0;
+  for(const r of records){ const t=ts(r.timestamp); if(t&&t>=weekAgo)weekly+=r.total; }
+
+  return {totals,tasks,models,current,
+    weekly:{consumed:weekly,budget:plan.weekly,pct:plan.weekly?weekly/plan.weekly:0}};
+}
+
+/* ---------- Conseils ---------- */
+function looksSimple(l){ l=l.toLowerCase();
+  if(COMPLEX.some(h=>l.includes(h)))return false; return SIMPLE.some(h=>l.includes(h)); }
+function taskTips(t){
+  const tips=[]; const m=t.models[0]||"inconnu"; const cur=tier(m);
+  if(cur>1 && (looksSimple(t.label) || (cur>=3 && !COMPLEX.some(h=>t.label.toLowerCase().includes(h))))){
+    const target=looksSimple(t.label)?1:2;
+    const names={1:"Haiku 4.5",2:"Sonnet 4.6"};
+    tips.push({t:`Passer à ${names[target]} pour cette tâche`,
+      d:`Tâche apparemment simple traitée avec ${m}. Un modèle plus léger préserve ta fenêtre.`});
+  }
+  if(t.cache_write_tokens>50000 && t.cache_read_tokens<t.cache_write_tokens*0.5)
+    tips.push({t:"Réutiliser le contexte (cache peu exploité)",
+      d:"Enchaîne les questions dans la même session plutôt que d'en rouvrir une."});
+  if(t.output_tokens>20000)
+    tips.push({t:"Cadrer la demande pour réduire la sortie",
+      d:"Précise le format attendu (« en 5 puces », « code seul », « max 200 mots »)."});
+  if(t.messages>30)
+    tips.push({t:"Spécifier la tâche en amont (boucle longue)",
+      d:"Donne tout le contexte dès le premier message pour réduire les tours de boucle."});
+  return tips;
+}
+function advice(sum){
+  const general=[]; const c=sum.current;
+  if(c && c.active){
+    const pct=c.pct, p=Math.round(pct*100), reset=dur(c.reset_in);
+    if(pct>=0.85) general.push({t:`⚠️ Fenêtre de 5 h presque épuisée (${p}%)`,
+      d:`Réinitialisation dans ${reset}. Mets en pause les grosses tâches ou bascule les demandes simples sur Sonnet/Haiku pour tenir.`});
+    else if(pct>=0.6) general.push({t:`Fenêtre de 5 h bien entamée (${p}%)`,
+      d:`Réinitialisation dans ${reset}. Garde Opus pour ce qui le justifie.`});
+    if(c.top_tasks.length && c.consumed>0){
+      const share=c.top_tasks[0].total/c.consumed;
+      if(share>=0.4) general.push({t:"Une tâche domine ta fenêtre actuelle",
+        d:`« ${c.top_tasks[0].label} » = ${Math.round(share*100)}% de ta consommation des 5 dernières heures.`});
+    }
+    if(c.top_models.length && tier(c.top_models[0].model)>=3)
+      general.push({t:"Opus consomme ta fenêtre ~5× plus vite que Haiku",
+        d:"Réserve Opus/Fable aux tâches complexes ; classer, résumer, reformuler, traduire → Sonnet/Haiku."});
+  }
+  if(sum.weekly.pct>=0.75)
+    general.push({t:`Plafond hebdomadaire bien entamé (${Math.round(sum.weekly.pct*100)}%)`,
+      d:"Ton abonnement a aussi une limite sur 7 jours glissants. Lève le pied en fin de semaine."});
+  const perTask=[];
+  for(const t of sum.tasks.slice(0,12)){ const tips=taskTips(t);
+    if(tips.length) perTask.push({label:t.label,total:t.total,tips}); }
+  return {general,perTask};
+}
+
+/* ---------- Rendu ---------- */
+const money=v=>"$"+(v||0).toLocaleString("fr-FR",{minimumFractionDigits:4,maximumFractionDigits:4});
+const num=v=>(v||0).toLocaleString("fr-FR");
+function dur(ms){ let s=Math.floor(ms/1000); const h=Math.floor(s/3600),
+  m=Math.floor((s%3600)/60); return h? h+" h "+String(m).padStart(2,"0")+" min" : m+" min"; }
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const barEl=f=>`<div class="bar" style="width:${Math.max(2,Math.round((f||0)*100))}%"></div>`;
+
+function render(records){
+  const plan=PLANS[document.getElementById("plan").value];
+  const sum=summarize(records, plan);
+  const el=document.getElementById("result");
+  if(!records.length){ el.innerHTML='<div class="empty">Aucun message exploitable dans ces fichiers.</div>'; return; }
+  const c=sum.current, t=sum.totals, a=advice(sum);
+
+  let win="";
+  if(c){
+    const p=Math.round(c.pct*100), cls=c.pct>=0.85?"g-hot":(c.pct>=0.6?"g-warn":"g-ok");
+    const cal=c.auto?" · repère auto-calibré":"";
+    const resetTxt=c.active? `Réinitialisation dans <b>${dur(c.reset_in)}</b>`
+                           : `Dernière fenêtre (terminée il y a ${dur(c.since)})`;
+    win=`<div class="window"><div class="top"><div>
+      <div class="sub" style="text-transform:uppercase;letter-spacing:.05em">
+        Fenêtre de 5 h ${c.active?"en cours":"la plus récente"} · ${esc(plan.label)}</div>
+      <div class="meta">${money(c.consumed)} éq. API / repère ~${money(c.reference)}${cal}</div>
+      </div><div class="pct">${p}%</div></div>
+      <div class="gauge"><div class="${cls}" style="width:${Math.min(100,p)}%"></div></div>
+      <div class="reset">${resetTxt} · ${num(c.messages)} messages dans cette fenêtre</div></div>`;
+  }
+
+  const cards=[
+    ["Sur 7 jours", money(sum.weekly.consumed)+" / ~"+money(sum.weekly.budget)],
+    ["Consommation totale", money(t.total)],
+    ["Messages", num(t.messages)],
+    ["Tokens sortie", num(t.output_tokens)],
+    ["Cache lu", num(t.cache_read_tokens)]
+  ].map(([k,v])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+
+  const maxM=Math.max(...sum.models.map(m=>m.total),1e-9);
+  const modelTable='<table><tr><th>Modèle</th><th class="num">Conso (éq.$)</th><th class="num">Msg</th><th style="width:30%"></th></tr>'+
+    sum.models.map(m=>`<tr><td>${esc(m.model)}</td><td class="num">${money(m.total)}</td>
+      <td class="num">${num(m.messages)}</td><td>${barEl(m.total/maxM)}</td></tr>`).join("")+"</table>";
+
+  const maxT=Math.max(...sum.tasks.map(x=>x.total),1e-9);
+  const taskTable='<table><tr><th>Tâche (premier prompt)</th><th>Modèle(s)</th><th class="num">Conso (éq.$)</th><th style="width:22%"></th></tr>'+
+    sum.tasks.slice(0,15).map(x=>`<tr><td>${esc(x.label)}</td>
+      <td>${x.models.map(m=>'<span class="tag">'+esc(m)+'</span>').join("")}</td>
+      <td class="num">${money(x.total)}</td><td>${barEl(x.total/maxT)}</td></tr>`).join("")+"</table>";
+
+  let adv=a.general.map(g=>`<div class="tip"><div class="t">${esc(g.t)}</div><div class="d">${esc(g.d)}</div></div>`).join("");
+  a.perTask.forEach(it=>{ adv+=`<div style="margin-top:14px"><b>${esc(it.label)}</b> <span class="gain">(${money(it.total)})</span></div>`;
+    it.tips.forEach(tp=>{ adv+=`<div class="tip"><div class="t">${esc(tp.t)}</div><div class="d">${esc(tp.d)}</div></div>`; }); });
+  if(!adv) adv='<div class="empty">Consommation déjà bien optimisée.</div>';
+
+  el.innerHTML = win +
+    `<div class="cards">${cards}</div>`+
+    `<section><h2>Consommation par modèle</h2>${modelTable}</section>`+
+    `<section><h2>Tâches qui consomment le plus de quota</h2>${taskTable}</section>`+
+    `<section><h2>Conseils d'optimisation</h2>${adv}</section>`+
+    `<div class="note">Repère = max(estimation du palier, ta fenêtre la plus chargée observée).
+      Les plafonds exacts ne sont pas publiés par Anthropic : ajuste le palier ci-dessus,
+      et recharge tes logs régulièrement pour suivre ta fenêtre en cours.</div>`;
+}
+
+/* ---------- Lecture des fichiers ---------- */
+let LAST=[];
+function ingest(fileObjs){
+  const jsonl=[...fileObjs].filter(f=>f.name.endsWith(".jsonl"));
+  if(!jsonl.length){ document.getElementById("result").innerHTML=
+    '<div class="empty">Aucun fichier .jsonl trouvé dans la sélection.</div>'; return; }
+  Promise.all(jsonl.map(f=>f.text().then(text=>({name:f.name,text}))))
+    .then(arr=>{ LAST=parseFiles(arr); render(LAST); });
+}
+document.getElementById("pick").onclick=()=>document.getElementById("files").click();
+document.getElementById("pickdir").onclick=()=>document.getElementById("dir").click();
+document.getElementById("files").onchange=e=>ingest(e.target.files);
+document.getElementById("dir").onchange=e=>ingest(e.target.files);
+document.getElementById("plan").onchange=()=>{ if(LAST.length)render(LAST); };
+
+const drop=document.getElementById("drop");
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("hover");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("hover");}));
+drop.addEventListener("drop",e=>{
+  const items=e.dataTransfer.items, files=[];
+  if(items && items.length && items[0].webkitGetAsEntry){
+    const entries=[...items].map(i=>i.webkitGetAsEntry()).filter(Boolean);
+    const walk=entry=>new Promise(res=>{
+      if(entry.isFile)entry.file(f=>res([f]));
+      else{ const rd=entry.createReader(); rd.readEntries(ents=>{
+        Promise.all(ents.map(walk)).then(a=>res(a.flat())); }); }
+    });
+    Promise.all(entries.map(walk)).then(a=>ingest(a.flat()));
+  } else ingest(e.dataTransfer.files);
+});
+</script>
+</body>
+</html>
