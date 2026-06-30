@@ -29,9 +29,9 @@
       </div>
       <div class="status-row">
         <span class="badge dim" id="statsBadge">—</span>
-        <a class="nav-link" href="mid.html">📖 Mid</a>
-        <a class="nav-link" href="adc.html">📖 ADC</a>
-        <a class="nav-link" href="index.html">← Coach en direct</a>
+        <a class="nav-link" href="mid.html"><span class="ic" data-ic="book"></span> Mid</a>
+        <a class="nav-link" href="adc.html"><span class="ic" data-ic="book"></span> ADC</a>
+        <a class="nav-link" href="index.html"><span class="ic" data-ic="arrowLeft"></span> Coach en direct</a>
       </div>
     </header>
 
@@ -41,13 +41,13 @@
       <div id="histStats" class="hist-stats"></div>
       <div id="oneTrick"></div>
       <div class="hist-toolbar">
-        <button id="exportCsv" class="tts-btn ghost" type="button">⬇️ Export CSV</button>
-        <button id="loadRiot" class="tts-btn ghost" type="button">🎮 Charger mes parties Riot</button>
+        <button id="exportCsv" class="tts-btn ghost" type="button"><span class="ic" data-ic="download"></span> Export CSV</button>
+        <button id="loadRiot" class="tts-btn ghost" type="button"><span class="ic" data-ic="gamepad"></span> Charger mes parties Riot</button>
       </div>
       <div id="goalTracker" class="goal-tracker"></div>
       <div id="histCharts" class="hist-charts"></div>
       <div class="hist-analyze">
-        <button id="analyzeBtn" class="analyze-btn">🔍 Analyser mes faiblesses récurrentes</button>
+        <button id="analyzeBtn" class="analyze-btn"><span class="ic" data-ic="search"></span> Analyser mes faiblesses récurrentes</button>
         <div id="analysisResult" class="analysis-result"></div>
       </div>
       <div id="histRoot"><div class="empty">Chargement…</div></div>
@@ -56,6 +56,8 @@
     <footer class="footer">
       <span>Parties sauvegardées localement dans <code>data/history.json</code> · critique générée par Claude en fin de partie.</span>
     </footer>
+
+    <script src="icons.js"></script>
 
     <script src="history.js"></script>
   </body>

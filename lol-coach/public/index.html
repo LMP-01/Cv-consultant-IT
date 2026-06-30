@@ -34,19 +34,19 @@
         <span class="badge dim" id="aiBadge">IA</span>
         <span class="badge dim" id="wsBadge">Serveur</span>
         <span class="badge dim" id="patchBadge" title="Patch détecté (Data Dragon)">Patch —</span>
-        <a class="nav-link" href="mid.html">📖 Mid</a>
-        <a class="nav-link" href="adc.html">📖 ADC</a>
-        <a class="nav-link" href="history.html">📈 Historique</a>
-        <button class="nav-link" id="compactToggle" type="button" title="Mode compact (2e écran)">🗖 Normal</button>
+        <a class="nav-link" href="mid.html"><span class="ic" data-ic="book"></span> Mid</a>
+        <a class="nav-link" href="adc.html"><span class="ic" data-ic="book"></span> ADC</a>
+        <a class="nav-link" href="history.html"><span class="ic" data-ic="trend"></span> Historique</a>
+        <button class="nav-link" id="compactToggle" type="button" title="Mode compact (2e écran)"><span class="ic" data-ic="maximize"></span> Normal</button>
       </div>
     </header>
 
     <main class="layout">
       <!-- Colonne flux de coaching -->
       <section class="panel feed-panel">
-        <h2 class="panel-title">💬 Conseils en direct</h2>
+        <h2 class="panel-title"><span class="ic" data-ic="chat"></span> Conseils en direct</h2>
         <div class="tts-bar" id="ttsBar">
-          <button id="ttsToggle" class="tts-btn" aria-pressed="false" title="Activer / couper la voix">🔈 Voix off</button>
+          <button id="ttsToggle" class="tts-btn" aria-pressed="false" title="Activer / couper la voix"><span class="ic" data-ic="volumeOff"></span> Voix off</button>
           <select id="ttsVoice" class="tts-select" title="Choisir la voix"></select>
           <select id="ttsScope" class="tts-select" title="Quels conseils lire à voix haute">
             <option value="important">Important</option>
@@ -59,7 +59,7 @@
             <option value="micro">Micro</option>
           </select>
           <button id="ttsTest" class="tts-btn ghost" title="Écouter un exemple">▶︎ Test</button>
-          <button id="ttsServerBtn" class="tts-btn ghost" title="Voix serveur optionnelle (Piper, etc.) — meilleure qualité">🎚️ Voix HD</button>
+          <button id="ttsServerBtn" class="tts-btn ghost" title="Voix serveur optionnelle (Piper, etc.) — meilleure qualité"><span class="ic" data-ic="sliders"></span> Voix HD</button>
         </div>
         <div id="feed" class="feed">
           <div class="empty" id="feedEmpty">
@@ -69,13 +69,13 @@
 
         <!-- Chat avec Claude (utile mort / en alt-tab) -->
         <div class="chat" id="chatBox">
-          <h3 class="sub chat-title">💬 Demande à Claude</h3>
+          <h3 class="sub chat-title"><span class="ic" data-ic="chat"></span> Demande à Claude</h3>
           <div id="chatLog" class="chat-log">
             <div class="chat-hint" id="chatHint">Pose une question pendant ta partie (build, match-up, que faire maintenant…). Réponse basée sur l’état du jeu en cours.</div>
           </div>
           <form id="chatForm" class="chat-form" autocomplete="off">
             <input id="chatInput" class="chat-input" type="text" placeholder="Ta question…" maxlength="500" />
-            <button id="chatMic" class="chat-mic" type="button" title="Dicter la question (micro)">🎤</button>
+            <button id="chatMic" class="chat-mic" type="button" title="Dicter la question (micro)"><span class="ic" data-ic="mic"></span></button>
             <button id="chatSend" class="chat-send" type="submit">Envoyer</button>
           </form>
         </div>
@@ -85,7 +85,7 @@
       <section class="context">
         <!-- État inactif -->
         <div id="idleCard" class="panel">
-          <h2 class="panel-title">👋 Bienvenue</h2>
+          <h2 class="panel-title"><span class="ic" data-ic="hand"></span> Bienvenue</h2>
           <div class="idle-body" id="idleBody">
             <p>Lance ce coach <strong>sur ton PC de jeu</strong>, à côté de League of Legends.</p>
             <ul>
@@ -98,10 +98,10 @@
 
         <!-- Champ select -->
         <div id="champSelect" class="panel hidden">
-          <h2 class="panel-title">🧩 Champ Select — <span id="myRole"></span></h2>
+          <h2 class="panel-title"><span class="ic" data-ic="draft"></span> Champ Select — <span id="myRole"></span></h2>
           <div id="laneOpponent" class="lane-opponent"></div>
 
-          <h3 class="sub">🚫 Bans conseillés</h3>
+          <h3 class="sub"><span class="ic" data-ic="ban"></span> Bans conseillés</h3>
           <div id="banSuggest" class="ban-suggest"></div>
 
           <h3 class="sub" id="pickHeading">Picks conseillés</h3>
@@ -124,12 +124,12 @@
         <!-- In game -->
         <div id="inGame" class="hidden">
           <div class="panel">
-            <h2 class="panel-title">⏱️ Objectifs</h2>
+            <h2 class="panel-title"><span class="ic" data-ic="clock"></span> Objectifs</h2>
             <div id="objectives" class="objectives"></div>
           </div>
 
           <div class="panel">
-            <h2 class="panel-title">📊 Tableau de bord — <span id="gameTime"></span></h2>
+            <h2 class="panel-title"><span class="ic" data-ic="dashboard"></span> Tableau de bord — <span id="gameTime"></span></h2>
             <div id="myStats" class="my-stats"></div>
             <div id="goldLead" class="gold-lead"></div>
             <div class="scoreboard">
@@ -146,10 +146,10 @@
 
           <!-- Timers Flash / ultimes ennemis -->
           <div class="panel" id="timersPanel">
-            <h2 class="panel-title">⏲️ Timers ennemis — Flash / Ulti</h2>
+            <h2 class="panel-title"><span class="ic" data-ic="timer"></span> Timers ennemis — Flash / Ulti</h2>
             <div id="goWindow" class="go-window hidden"></div>
             <div class="jungler-track">
-              <span class="jt-label">🌳 Jungler adverse</span>
+              <span class="jt-label"><span class="ic" data-ic="tree"></span> Jungler adverse</span>
               <button id="jgSeen" class="timer-btn" type="button" title="Marquer le jungler comme vu maintenant">Vu maintenant</button>
               <span id="jgStatus" class="jt-status">—</span>
             </div>
@@ -159,11 +159,11 @@
 
           <!-- Build conseillé en jeu : prochains achats + build complet + runes -->
           <div class="panel" id="itemPlanPanel">
-            <h2 class="panel-title">🛒 Build conseillé — <span id="itemPlanChamp"></span></h2>
+            <h2 class="panel-title"><span class="ic" data-ic="cart"></span> Build conseillé — <span id="itemPlanChamp"></span></h2>
             <div id="itemPlanRunes" class="plan-runes"></div>
-            <h3 class="sub">🎯 Prochains achats</h3>
+            <h3 class="sub"><span class="ic" data-ic="target"></span> Prochains achats</h3>
             <div id="itemPlanNext" class="plan-next"></div>
-            <h3 class="sub">🧱 Build complet (évolutif)</h3>
+            <h3 class="sub"><span class="ic" data-ic="grid"></span> Build complet (évolutif)</h3>
             <div id="itemPlanFull" class="plan-full"></div>
             <div id="itemPlanStrategy" class="plan-strategy"></div>
           </div>
@@ -174,6 +174,8 @@
     <footer class="footer">
       <span id="footStatus">Coach local — aucune donnée n’est envoyée ailleurs que vers les API locales de Riot et, si configuré, l’API Claude.</span>
     </footer>
+
+    <script src="icons.js"></script>
 
     <script src="app.js"></script>
   </body>

@@ -53,10 +53,10 @@ function reviewBlock(review) {
     <div class="hist-review">
       ${review.summary ? `<p class="hist-summary">${esc(review.summary)}</p>` : ''}
       <div class="hist-cols">
-        <div class="hist-col good"><h4>✅ Bien joué</h4><ul>${did || '<li>—</li>'}</ul></div>
-        <div class="hist-col bad"><h4>🎯 À améliorer</h4><ul>${imp || '<li>—</li>'}</ul></div>
+        <div class="hist-col good"><h4>${iconSvg('check','ic-good')} Bien joué</h4><ul>${did || '<li>—</li>'}</ul></div>
+        <div class="hist-col bad"><h4>${iconSvg('target','ic-amber')} À améliorer</h4><ul>${imp || '<li>—</li>'}</ul></div>
       </div>
-      ${review.focusNextGame ? `<div class="hist-focus">🧭 Objectif prochaine partie : <b>${esc(review.focusNextGame)}</b></div>` : ''}
+      ${review.focusNextGame ? `<div class="hist-focus">${iconSvg('compass')} Objectif prochaine partie : <b>${esc(review.focusNextGame)}</b></div>` : ''}
     </div>`;
 }
 
@@ -128,7 +128,7 @@ function renderCharts(games) {
     .map((g) => { t++; if (g.win === true) w++; return Math.round((w / t) * 100); });
   if (deaths.length < 2 && cspm.length < 2 && wr.length < 2) { box.innerHTML = ''; return; }
   box.innerHTML = `
-    <h3 class="sub">📉 Progression (ancien → récent)</h3>
+    <h3 class="sub">${iconSvg('trendDown')} Progression (ancien → récent)</h3>
     <div class="charts-grid">
       ${lineChart(deaths, { label: 'Morts / partie', color: '#fb7185', unit: '', min: 0 })}
       ${lineChart(cspm, { label: 'CS / min', color: '#34d399', unit: '' })}
@@ -153,7 +153,7 @@ function renderGoal(games) {
     adherence = `<div class="goal-adherence"><b>${pct}%</b> de tes ${decided.length} parties respectent ton objectif (<b>${esc(label)}</b>)</div>`;
   }
   box.innerHTML = `
-    <h3 class="sub">🎯 Mon objectif</h3>
+    <h3 class="sub">${iconSvg('target')} Mon objectif</h3>
     <form id="goalForm" class="goal-form">
       <select id="goalType" class="tts-select">
         <option value="deaths">Maximum de morts / partie</option>
@@ -192,13 +192,13 @@ function renderTilt(games) {
   if (streak >= 3) {
     box.innerHTML = `
       <div class="tilt-banner">
-        <div class="tilt-head">🛑 ${streak} défaites d'affilée — fais une pause.</div>
+        <div class="tilt-head">${iconSvg('alert','ic-bad')} ${streak} défaites d'affilée — fais une pause.</div>
         <div class="tilt-body">Le tilt coûte plus de LP que n'importe quel matchup. Avant de relancer :</div>
         <ul class="tilt-list">
-          <li>⏸️ 15-20 min loin de l'écran (eau, marche, étirements).</li>
-          <li>🎯 1 seul objectif simple la prochaine game (ex. &lt; 5 morts).</li>
-          <li>🧘 Respire : la prochaine partie ne récupère pas les précédentes.</li>
-          <li>🔇 Mute si besoin, joue ta propre game.</li>
+          <li>${iconSvg('pause')} 15-20 min loin de l'écran (eau, marche, étirements).</li>
+          <li>${iconSvg('target')} 1 seul objectif simple la prochaine game (ex. &lt; 5 morts).</li>
+          <li>Respire : la prochaine partie ne récupère pas les précédentes.</li>
+          <li>${iconSvg('volumeOff')} Mute si besoin, joue ta propre game.</li>
         </ul>
       </div>`;
   } else {
@@ -220,7 +220,7 @@ function renderOneTrick(stats) {
   if (cands.length > 1 && worst.wr < 45) {
     msg += ` À l'inverse, <b>${esc(worst.champion)}</b> (${worst.wr}%) te coûte des games — évite-le en ranked tant qu'il n'est pas travaillé.`;
   }
-  box.innerHTML = `<div class="onetrick"><span class="ot-ico">🏆</span><div>${msg}</div></div>`;
+  box.innerHTML = `<div class="onetrick"><span class="ot-ico">${iconSvg('trophy','ic-gold ic-lg')}</span><div>${msg}</div></div>`;
 }
 
 function gamesToCsv(games) {
@@ -287,8 +287,8 @@ function renderAnalysis(data) {
   box.innerHTML = `
     <div class="analysis-card">
       ${a.summary ? `<p class="hist-summary">${esc(a.summary)}</p>` : ''}
-      ${patterns ? `<h4 class="an-h">🔁 Faiblesses récurrentes</h4><ul class="an-list">${patterns}</ul>` : ''}
-      ${prio ? `<h4 class="an-h">🧭 Chantiers prioritaires</h4><ol class="an-list">${prio}</ol>` : ''}
+      ${patterns ? `<h4 class="an-h">${iconSvg('repeat')} Faiblesses récurrentes</h4><ul class="an-list">${patterns}</ul>` : ''}
+      ${prio ? `<h4 class="an-h">${iconSvg('compass')} Chantiers prioritaires</h4><ol class="an-list">${prio}</ol>` : ''}
     </div>`;
 }
 
@@ -298,7 +298,7 @@ function initAnalyze() {
   btn.addEventListener('click', () => {
     btn.disabled = true;
     const prev = btn.textContent;
-    btn.textContent = '⏳ Analyse en cours…';
+    btn.textContent = 'Analyse en cours…';
     $('analysisResult').innerHTML = '<div class="hist-review pending">Claude analyse tes parties…</div>';
     fetch('/api/history/analysis')
       .then((r) => r.json())
@@ -322,7 +322,7 @@ function renderRiotProfile() {
   fetch('/api/riot/profile')
     .then((r) => r.json())
     .then((d) => {
-      if (!d.enabled) { box.innerHTML = `<div class="riot-card off">🎮 Riot API non configurée — ajoute <code>RIOT_API_KEY</code> et <code>RIOT_ID</code> dans <code>.env</code> pour le rang/LP et l'historique réel.</div>`; return; }
+      if (!d.enabled) { box.innerHTML = `<div class="riot-card off">${iconSvg('gamepad')} Riot API non configurée — ajoute <code>RIOT_API_KEY</code> et <code>RIOT_ID</code> dans <code>.env</code> pour le rang/LP et l'historique réel.</div>`; return; }
       if (d.error) { box.innerHTML = `<div class="riot-card off">Riot API : ${esc(d.error)}</div>`; return; }
       const p = d.profile;
       if (!p) { box.innerHTML = ''; return; }
@@ -341,7 +341,7 @@ function renderRiotProfile() {
           <div class="riot-meta">
             <span>${esc(p.riotId)}</span>
             <span>${r.wins}V / ${r.losses}D · <b class="${wr >= 50 ? 'wr-good' : 'wr-bad'}">${wr}%</b></span>
-            ${toNext != null ? `<span>🎯 ${toNext} LP avant ${esc(TIER_FR[nextTier] || 'la division suivante')}${nextTier ? '' : ''} (palier de division)</span>` : ''}
+            ${toNext != null ? `<span>${iconSvg('target')} ${toNext} LP avant ${esc(TIER_FR[nextTier] || 'la division suivante')}${nextTier ? '' : ''} (palier de division)</span>` : ''}
           </div>
         </div>`;
     })
@@ -354,7 +354,7 @@ function initRiotMatches() {
   btn.addEventListener('click', () => {
     btn.disabled = true;
     const prev = btn.textContent;
-    btn.textContent = '⏳ Chargement…';
+    btn.textContent = 'Chargement…';
     fetch('/api/riot/matches?count=10')
       .then((r) => r.json())
       .then((d) => {
@@ -362,7 +362,7 @@ function initRiotMatches() {
         if (d.error) { alert('Riot API : ' + d.error); return; }
         const root = $('histRoot');
         if (!d.matches || !d.matches.length) { root.innerHTML = '<div class="empty">Aucune partie Riot récente trouvée.</div>'; return; }
-        root.innerHTML = '<h3 class="sub">🎮 Parties Riot récentes (réelles)</h3>' + d.matches.map(gameCard).join('');
+        root.innerHTML = '<h3 class="sub">' + iconSvg('gamepad') + ' Parties Riot r\u00e9centes (r\u00e9elles)</h3>' + d.matches.map(gameCard).join('');
         renderCharts(d.matches);
       })
       .catch((e) => alert('Erreur : ' + e.message))

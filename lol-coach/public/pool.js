@@ -73,7 +73,7 @@ function buildBlock(b) {
       <div class="build-row"><span class="build-k">Bottes</span><span class="item-line">${itemPill(b.boots)}</span></div>
       <div class="build-row"><span class="build-k">Situationnel</span><span class="item-line">${itemPills(b.situational)}</span></div>
     </div>
-    ${b.note ? `<div class="build-note">💡 ${esc(b.note)}</div>` : ''}`;
+    ${b.note ? `<div class="build-note">${iconSvg('bulb','ic-gold')} ${esc(b.note)}</div>` : ''}`;
 }
 
 function championCard(c) {
@@ -104,16 +104,16 @@ function championCard(c) {
       </div>
       ${prof.description ? `<p class="dex-desc">${esc(prof.description)}</p>` : ''}
 
-      <h4 class="dex-sub">⚔️ Build conseillé</h4>
+      <h4 class="dex-sub">${iconSvg('swords')} Build conseillé</h4>
       ${buildBlock(c.build)}
 
       <div class="mu-cols">
         <div>
-          <h4 class="dex-sub bad">🛑 Le counter (ses pires match-ups)</h4>
+          <h4 class="dex-sub bad">${iconSvg('x','ic-bad')} Le counter (ses pires match-ups)</h4>
           <div class="mu-list">${matchupChips(c.counters)}</div>
         </div>
         <div>
-          <h4 class="dex-sub good">✅ Il counter (ses meilleurs match-ups)</h4>
+          <h4 class="dex-sub good">${iconSvg('check','ic-good')} Il counter (ses meilleurs match-ups)</h4>
           <div class="mu-list">${matchupChips(c.countered)}</div>
         </div>
       </div>
@@ -123,7 +123,7 @@ function championCard(c) {
 function render(data) {
   const badge = $('statsBadge');
   if (badge) {
-    badge.textContent = data.hasLiveStats ? 'Stats : winrates live ✓' : 'Stats : counters (winrates : lance fetch-counters)';
+    badge.textContent = data.hasLiveStats ? 'Stats : winrates live' : 'Stats : counters (winrates : lance fetch-counters)';
     badge.className = 'badge ' + (data.hasLiveStats ? 'ok' : 'dim');
   }
 
