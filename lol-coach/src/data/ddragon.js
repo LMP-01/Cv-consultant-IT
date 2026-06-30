@@ -207,11 +207,11 @@ class DataDragon {
     return it ? { id, name: it.name, icon: this.itemIconUrl(id) } : null;
   }
 
-  // Infos complètes d'un item par id : { id, name, icon, gold, from:[ids] }.
+  // Infos complètes d'un item par id : { id, name, icon, gold, from, tags }.
   itemInfo(itemId) {
     const it = this.itemById.get(Number(itemId));
     if (!it) return null;
-    return { id: it.id, name: it.name, icon: this.itemIconUrl(it.id), gold: it.gold, from: it.from || [] };
+    return { id: it.id, name: it.name, icon: this.itemIconUrl(it.id), gold: it.gold, from: it.from || [], tags: it.tags || [] };
   }
 
   // Composants (mini-items) d'un item -> [{ id, name, icon, gold }].

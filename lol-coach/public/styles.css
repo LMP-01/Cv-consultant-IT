@@ -1269,3 +1269,13 @@ body.overlay .topbar, body.overlay .footer, body.overlay .tts-bar { display: non
 body.overlay .layout { padding: 6px; max-width: 100%; }
 body.overlay .panel { background: rgba(10, 12, 18, 0.82); backdrop-filter: blur(10px); }
 body.overlay .feed-panel { max-height: 100vh; }
+
+/* ── Carte de rang (Riot API) ─────────────────────────────────────────────── */
+.riot-card { background: var(--surface); border: 1px solid rgba(56,189,248,.28); border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.riot-card.off { color: var(--muted); font-size: 13px; display: block; border-color: var(--border); }
+.riot-card code { background: var(--card-2); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+.riot-rank { text-align: center; }
+.riot-tier { font-size: 18px; font-weight: 800; color: var(--blue); }
+.riot-lp { font-size: 12px; color: var(--muted); }
+.riot-meta { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--muted); }
+.riot-meta b { font-size: 14px; }

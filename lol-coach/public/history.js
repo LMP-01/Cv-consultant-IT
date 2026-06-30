@@ -313,6 +313,66 @@ function initAnalyze() {
   });
 }
 
+// Carte de rang (Riot API) + objectif de climb.
+const TIER_ORDER = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+const TIER_FR = { IRON: 'Fer', BRONZE: 'Bronze', SILVER: 'Argent', GOLD: 'Or', PLATINUM: 'Platine', EMERALD: 'Émeraude', DIAMOND: 'Diamant', MASTER: 'Maître', GRANDMASTER: 'Grand Maître', CHALLENGER: 'Challenger' };
+function renderRiotProfile() {
+  const box = $('riotProfile');
+  if (!box) return;
+  fetch('/api/riot/profile')
+    .then((r) => r.json())
+    .then((d) => {
+      if (!d.enabled) { box.innerHTML = `<div class="riot-card off">🎮 Riot API non configurée — ajoute <code>RIOT_API_KEY</code> et <code>RIOT_ID</code> dans <code>.env</code> pour le rang/LP et l'historique réel.</div>`; return; }
+      if (d.error) { box.innerHTML = `<div class="riot-card off">Riot API : ${esc(d.error)}</div>`; return; }
+      const p = d.profile;
+      if (!p) { box.innerHTML = ''; return; }
+      const r = p.rank;
+      if (!r) { box.innerHTML = `<div class="riot-card"><b>${esc(p.riotId)}</b> · non classé cette saison</div>`; return; }
+      const games = r.wins + r.losses;
+      const wr = games ? Math.round((r.wins / games) * 100) : 0;
+      const nextTier = TIER_ORDER[TIER_ORDER.indexOf(r.tier) + 1];
+      const toNext = ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? null : 100 - r.lp;
+      box.innerHTML = `
+        <div class="riot-card">
+          <div class="riot-rank">
+            <div class="riot-tier">${esc(TIER_FR[r.tier] || r.tier)} ${esc(r.rank || '')}</div>
+            <div class="riot-lp">${r.lp} LP</div>
+          </div>
+          <div class="riot-meta">
+            <span>${esc(p.riotId)}</span>
+            <span>${r.wins}V / ${r.losses}D · <b class="${wr >= 50 ? 'wr-good' : 'wr-bad'}">${wr}%</b></span>
+            ${toNext != null ? `<span>🎯 ${toNext} LP avant ${esc(TIER_FR[nextTier] || 'la division suivante')}${nextTier ? '' : ''} (palier de division)</span>` : ''}
+          </div>
+        </div>`;
+    })
+    .catch(() => { box.innerHTML = ''; });
+}
+
+function initRiotMatches() {
+  const btn = $('loadRiot');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '⏳ Chargement…';
+    fetch('/api/riot/matches?count=10')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.enabled) { alert('Configure RIOT_API_KEY + RIOT_ID dans .env.'); return; }
+        if (d.error) { alert('Riot API : ' + d.error); return; }
+        const root = $('histRoot');
+        if (!d.matches || !d.matches.length) { root.innerHTML = '<div class="empty">Aucune partie Riot récente trouvée.</div>'; return; }
+        root.innerHTML = '<h3 class="sub">🎮 Parties Riot récentes (réelles)</h3>' + d.matches.map(gameCard).join('');
+        renderCharts(d.matches);
+      })
+      .catch((e) => alert('Erreur : ' + e.message))
+      .finally(() => { btn.disabled = false; btn.textContent = prev; });
+  });
+}
+
+renderRiotProfile();
+initRiotMatches();
+
 fetch('/api/history')
   .then((r) => r.json())
   .then((data) => {

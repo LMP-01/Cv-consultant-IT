@@ -967,7 +967,14 @@ function initVoiceInput() {
     rec.onend = () => {
       listening = false;
       mic.classList.remove('listening');
-      input.focus();
+      // Boucle mains-libres : si on a dicté quelque chose, on envoie tout seul
+      // (la réponse est lue à voix haute si la voix est active).
+      if ((input.value || '').trim()) {
+        const form = $('chatForm');
+        if (form) (form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true })));
+      } else {
+        input.focus();
+      }
     };
     rec.onerror = () => {
       listening = false;

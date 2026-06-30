@@ -136,6 +136,34 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(raw.situationalIds[0] === 3036, 'première option du 4e item');
   });
 
+  await test('live data : dragons soul + keystones + tes stats', () => {
+    const r = analyzeInGame(mockAllGameData(620), dd);
+    assert(r.summary.dragons && r.summary.dragons.enemy.length === 3, 'ennemi à 3 drakes');
+    assert(r.summary.dragons.soulPointTeam === 'enemy', 'point de soul ennemi détecté');
+    assert(r.advice.some((a) => a.id === 'dragon-soulpoint'), 'conseil soul émis');
+    assert(r.summary.enemyKeystones.length >= 4, 'keystones ennemis lus');
+    assert(r.summary.me.stats && r.summary.me.stats.ap === 180, 'tes stats complètes (AP)');
+    assert(r.summary.enemySpells.some((s) => (s.spells || []).includes('Flash')), 'sorts d’invoc ennemis lus');
+  });
+
+  await test('CoachLoop._computePlayerProfile : profil de faiblesses', () => {
+    const loop = new CoachLoop();
+    loop.history.games = [
+      { win: true, kills: 8, deaths: 2, assists: 5, champion: 'Zoe', review: { toImprove: ['vision tardive'] } },
+      { win: false, kills: 3, deaths: 7, assists: 4, champion: 'Katarina', review: { toImprove: ['all-ins forcés'] } },
+    ];
+    const p = loop._computePlayerProfile();
+    assert(p && p.winrate === 50, 'winrate calculé');
+    assert(p.recurringWeaknesses.includes('vision tardive'), 'faiblesses récurrentes extraites');
+  });
+
+  await test('RiotApi : disponibilité selon la clé', () => {
+    const { RiotApi } = require('../src/data/riotApi');
+    const api = new RiotApi();
+    assert(typeof api.available === 'boolean', 'available est un booléen');
+    assert(typeof api.getProfile === 'function' && typeof api.getRecentMatches === 'function', 'méthodes présentes');
+  });
+
   console.log(`\n${pass} assertions OK, ${fail} échec(s).`);
   if (fail) {
     console.log('\nÉCHECS :');
