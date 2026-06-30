@@ -1152,3 +1152,34 @@ body {
 .hist-focus { margin-top: 10px; font-size: 12.5px; color: #d6c9ff; background: var(--grad-soft); border: 1px solid rgba(139,92,246,.25); border-radius: 9px; padding: 8px 11px; }
 .hist-comp { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 11.5px; color: var(--faint); }
 .hist-side.allies { color: var(--muted); }
+
+/* ── Timers Flash / ultimes ───────────────────────────────────────────────── */
+.timers-list { display: flex; flex-direction: column; gap: 6px; }
+.timer-row { display: flex; align-items: center; gap: 8px; }
+.timer-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.timer-btn {
+  min-width: 92px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 5px 9px; border-radius: 8px; cursor: pointer;
+  background: var(--card-2); border: 1px solid var(--border-strong); color: var(--muted);
+}
+.timer-btn.flash:hover, .timer-btn.ult:hover { border-color: var(--primary-2); color: var(--text); }
+.timer-btn.running { background: rgba(56, 189, 248, 0.12); border-color: rgba(56,189,248,.4); color: var(--blue); }
+.timer-btn.ready { background: rgba(52, 211, 153, 0.16); border-color: rgba(52,211,153,.5); color: var(--green); animation: timerPulse 1s ease-in-out infinite; }
+@keyframes timerPulse { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
+.timer-na { min-width: 92px; font-size: 11px; color: var(--faint); text-align: center; }
+.timers-hint { margin-top: 9px; font-size: 11px; color: var(--faint); line-height: 1.4; }
+
+/* ── Analyse de l'historique ──────────────────────────────────────────────── */
+.hist-analyze { margin-bottom: 18px; }
+.analyze-btn {
+  background: var(--grad); color: #0b0d12; font-weight: 700; border: none; border-radius: 10px;
+  padding: 11px 18px; font-size: 13.5px; cursor: pointer;
+}
+.analyze-btn:hover { filter: brightness(1.08); }
+.analyze-btn:disabled { opacity: .6; cursor: default; }
+.analysis-result { margin-top: 12px; }
+.analysis-card { background: var(--surface); border: 1px solid rgba(139,92,246,.3); border-radius: 14px; padding: 16px 18px; }
+.an-h { font-size: 12px; margin: 12px 0 6px; color: var(--text); }
+.an-list { margin: 0; padding-left: 20px; }
+.an-list li { font-size: 12.5px; line-height: 1.55; color: var(--muted); margin-bottom: 5px; }
+.an-list b { color: var(--text); }

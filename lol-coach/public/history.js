@@ -103,9 +103,58 @@ function render(data) {
   root.innerHTML = data.games.map(gameCard).join('');
 }
 
+function renderAnalysis(data) {
+  const box = $('analysisResult');
+  if (!box) return;
+  if (!data || (!data.analysis && !data.hint)) {
+    box.innerHTML = '<div class="hist-review pending">Aucune analyse disponible.</div>';
+    return;
+  }
+  if (!data.analysis) {
+    box.innerHTML = `<div class="hist-review pending">${esc(data.hint || 'IA indisponible.')}</div>`;
+    return;
+  }
+  const a = data.analysis;
+  const patterns = (a.patterns || [])
+    .map((p) => `<li><b>${esc(p.title)}</b> — ${esc(p.detail)}</li>`)
+    .join('');
+  const prio = (a.priorities || []).map((x) => `<li>${esc(x)}</li>`).join('');
+  box.innerHTML = `
+    <div class="analysis-card">
+      ${a.summary ? `<p class="hist-summary">${esc(a.summary)}</p>` : ''}
+      ${patterns ? `<h4 class="an-h">🔁 Faiblesses récurrentes</h4><ul class="an-list">${patterns}</ul>` : ''}
+      ${prio ? `<h4 class="an-h">🧭 Chantiers prioritaires</h4><ol class="an-list">${prio}</ol>` : ''}
+    </div>`;
+}
+
+function initAnalyze() {
+  const btn = $('analyzeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = '⏳ Analyse en cours…';
+    $('analysisResult').innerHTML = '<div class="hist-review pending">Claude analyse tes parties…</div>';
+    fetch('/api/history/analysis')
+      .then((r) => r.json())
+      .then(renderAnalysis)
+      .catch((e) => {
+        $('analysisResult').innerHTML = `<div class="hist-review pending">Erreur : ${esc(e.message)}</div>`;
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = prev;
+      });
+  });
+}
+
 fetch('/api/history')
   .then((r) => r.json())
-  .then(render)
+  .then((data) => {
+    render(data);
+    if (data.games && data.games.length) initAnalyze();
+    else { const b = $('analyzeBtn'); if (b) b.style.display = 'none'; }
+  })
   .catch((e) => {
     $('histRoot').innerHTML = `<div class="empty">Erreur de chargement : ${esc(e.message)}</div>`;
   });

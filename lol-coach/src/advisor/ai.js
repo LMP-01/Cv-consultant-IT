@@ -107,6 +107,44 @@ Reply ONLY with a JSON object:
 - "focusNextGame": ONE priority goal for the next game.
 Do not invent facts absent from the summary. In English, no text around the JSON.`;
 
+// Schéma de l'analyse de l'historique (faiblesses récurrentes).
+const HISTORY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'patterns', 'priorities'],
+  properties: {
+    summary: { type: 'string' },
+    patterns: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'detail'],
+        properties: { title: { type: 'string' }, detail: { type: 'string' } },
+      },
+    },
+    priorities: { type: 'array', items: { type: 'string' } },
+  },
+};
+
+const HISTORY_FR = `Tu es un coach de League of Legends qui analyse l'HISTORIQUE de parties d'un joueur pour identifier ses FAIBLESSES RÉCURRENTES et l'aider à monter en Challenger.
+On te donne des statistiques agrégées et la liste de ses parties (champion, rôle, résultat, KDA, morts, CS/min, profil adverse, et axes d'amélioration déjà notés).
+Identifie les PATTERNS récurrents (pas une seule partie) : tendances de morts, farm, choix de champion/matchup, écarts de résultats par champion, etc.
+Réponds UNIQUEMENT avec un objet JSON :
+{"summary":"...","patterns":[{"title":"...","detail":"..."}],"priorities":["..."]}
+- "patterns" : 3 à 5 faiblesses récurrentes concrètes, chiffrées quand c'est possible.
+- "priorities" : les 3 chantiers prioritaires pour progresser, par ordre d'impact.
+Base-toi UNIQUEMENT sur les données fournies (n'invente pas). En français, sans aucun texte autour du JSON.`;
+
+const HISTORY_EN = `You are a League of Legends coach analyzing a player's GAME HISTORY to find RECURRING WEAKNESSES and help them climb to Challenger.
+You receive aggregate stats and the list of games (champion, role, result, KDA, deaths, CS/min, enemy profile, and already-noted improvement areas).
+Identify RECURRING patterns (not a single game): death trends, farm, champion/matchup choices, result gaps per champion, etc.
+Reply ONLY with a JSON object:
+{"summary":"...","patterns":[{"title":"...","detail":"..."}],"priorities":["..."]}
+- "patterns": 3-5 concrete recurring weaknesses, quantified when possible.
+- "priorities": the top 3 focus areas to improve, ordered by impact.
+Use ONLY the provided data (don't invent). In English, no text around the JSON.`;
+
 const CHAT_FR = `Tu es un coach expert de League of Legends qui répond au joueur PENDANT sa partie (il est peut-être mort, en attente de respawn, ou en alt-tab).
 On te donne sa question et un contexte de jeu JSON.
 Réponds de façon CONCISE (2 à 4 phrases), concrète et actionnable. Appuie-toi sur le contexte (chiffres, champions, objectifs) quand c'est pertinent. Si l'info n'est pas dans le contexte, donne ton meilleur conseil sans inventer de données précises.
@@ -353,6 +391,36 @@ class AiAdvisor {
         didWell: Array.isArray(parsed.didWell) ? parsed.didWell.slice(0, 6) : [],
         toImprove: Array.isArray(parsed.toImprove) ? parsed.toImprove.slice(0, 6) : [],
         focusNextGame: parsed.focusNextGame || null,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Analyse de l'historique : faiblesses récurrentes + chantiers prioritaires.
+  async analyzeHistory(history) {
+    if (!this.available) return null;
+    const games = (history.games || []).slice(0, 30).map((g) => ({
+      champion: g.champion,
+      role: g.role,
+      win: g.win,
+      kda: g.kda,
+      deaths: g.deaths,
+      csPerMin: g.csPerMin,
+      duration: g.durationText,
+      enemyProfile: g.enemyProfile,
+      toImprove: g.review ? g.review.toImprove : undefined,
+    }));
+    const payload = { stats: history.stats, games };
+    const system = config.lang === 'en' ? HISTORY_EN : HISTORY_FR;
+    try {
+      const text = await this.backend.generate(system, JSON.stringify(payload), { schema: HISTORY_SCHEMA, maxTokens: 900 });
+      const p = parseTips(text);
+      if (!p || !Array.isArray(p.patterns)) return null;
+      return {
+        summary: p.summary || null,
+        patterns: p.patterns.slice(0, 6),
+        priorities: Array.isArray(p.priorities) ? p.priorities.slice(0, 3) : [],
       };
     } catch {
       return null;
