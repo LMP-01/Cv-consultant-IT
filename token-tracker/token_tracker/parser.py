@@ -134,6 +134,11 @@ def parse_logs(roots: list[str] | None = None,
                 continue
 
             model = message.get("model") or "inconnu"
+            # Les messages « synthétiques » sont générés localement par le
+            # harnais (interruptions, etc.) : ce ne sont pas de vrais appels
+            # facturables, on les ignore.
+            if model.startswith("<synthetic"):
+                continue
             cost = pricing.compute_cost(usage, model, prices)
             cwd = event.get("cwd") or ""
             project = os.path.basename(cwd) if cwd else session_id
