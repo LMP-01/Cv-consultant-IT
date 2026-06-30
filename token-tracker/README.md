@@ -1,10 +1,52 @@
-# Suivi de tokens Claude
+# Suivi de tokens Claude (abonnement)
 
 Petite application **Python sans dépendance** qui analyse en direct la
-consommation de tokens de tes conversations **Claude Code**, identifie les
-**tâches les plus coûteuses** et propose des **conseils d'optimisation**
-(reformuler la demande, changer de modèle quand Opus 4.8 n'est pas nécessaire,
-mieux exploiter le cache).
+consommation de tokens de tes conversations **Claude Code**, raisonne en
+**fenêtres glissantes de 5 h** (le quota d'un abonnement Pro/Max), identifie les
+**tâches qui consomment le plus de quota** et propose des **conseils
+d'optimisation** (reformuler la demande, changer de modèle quand Opus 4.8 n'est
+pas nécessaire, mieux exploiter le cache).
+
+## Pensée pour un abonnement (Pro / Max)
+
+Avec un abonnement, tu ne paies pas au token : tu disposes d'un **quota qui se
+réinitialise toutes les 5 h** (fenêtre glissante), plus un **plafond
+hebdomadaire**. La métrique utile n'est donc pas le coût en dollars mais
+**quelle part de ta fenêtre de 5 h chaque tâche consomme**, pour ne pas taper
+la limite.
+
+L'app affiche en tête une **jauge de fenêtre de 5 h** avec le pourcentage
+consommé et le temps avant réinitialisation. L'unité de mesure est
+l'**équivalent-$ d'API** (déjà calculé par modèle/entrée/sortie/cache) : il
+pondère correctement Opus vs Sonnet vs Haiku, et suit de près la façon dont un
+quota d'abonnement se vide.
+
+> ⚠️ **Honnêteté sur les chiffres** : Anthropic ne publie pas les plafonds
+> exacts (ils sont dynamiques). Les budgets par fenêtre sont des **estimations**
+> par palier (cf. `config.json`). Avec `auto_calibrate`, la jauge se cale aussi
+> sur ta **fenêtre la plus chargée réellement observée** — donc plus tu
+> l'utilises, plus le repère devient juste. Si tu te fais throttler à un moment,
+> note la valeur affichée et reporte-la comme `window_budget` dans `config.json`.
+
+### Configuration (`config.json`)
+
+```json
+{
+  "plan": "max_5x",
+  "window_hours": 5,
+  "auto_calibrate": true,
+  "plans": {
+    "pro":     { "label": "Pro",     "window_budget": 10,  "weekly_budget": 120 },
+    "max_5x":  { "label": "Max 5x",  "window_budget": 50,  "weekly_budget": 600 },
+    "max_20x": { "label": "Max 20x", "window_budget": 200, "weekly_budget": 2400 }
+  }
+}
+```
+
+- `plan` : ton palier (`pro`, `max_5x`, `max_20x`).
+- `window_budget` / `weekly_budget` : budget estimé (équiv-$ API) par fenêtre de
+  5 h et par 7 jours glissants — à ajuster selon ton ressenti réel.
+- `auto_calibrate` : complète l'estimation avec ta fenêtre la plus chargée.
 
 ## Ce que ça suit (et ce que ça ne peut pas suivre)
 
@@ -74,12 +116,15 @@ un fichier `pricing.json` à la racine du dossier `token-tracker/` :
 
 ```
 token_tracker/
-  pricing.py    Tarifs des modèles + calcul du coût d'un appel
+  pricing.py    Tarifs des modèles + calcul du coût (unité = équiv-$ API)
   parser.py     Lecture des logs Claude Code, rattachement aux tâches
-  aggregate.py  Agrégations (tâche, modèle, projet, session, jour)
-  advisor.py    Conseils d'optimisation
+  windows.py    Fenêtres glissantes de 5 h + état de la fenêtre courante
+  config.py     Palier d'abonnement, budgets, auto-calibrage
+  aggregate.py  Agrégations (tâche, modèle, projet, session, jour, fenêtre)
+  advisor.py    Conseils d'optimisation (fenêtre 5 h + reformulation/modèle)
   cli.py        Rapport en ligne de commande
   server.py     Dashboard web temps réel (http.server de la lib standard)
+config.json     Configuration de l'abonnement (éditable)
 ```
 
 Une « tâche » correspond à un vrai prompt utilisateur : les résultats d'outils,

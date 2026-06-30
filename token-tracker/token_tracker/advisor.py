@@ -131,13 +131,93 @@ def advise_task(task: dict[str, Any]) -> list[dict[str, Any]]:
     return tips
 
 
+def _fmt_duration(seconds: float) -> str:
+    seconds = int(max(0, seconds))
+    h, m = seconds // 3600, (seconds % 3600) // 60
+    if h:
+        return f"{h} h {m:02d} min"
+    return f"{m} min"
+
+
+def _window_advice(status: dict[str, Any]) -> list[dict[str, Any]]:
+    """Conseils centrés sur la fenêtre glissante de 5 h (abonnement)."""
+    out: list[dict[str, Any]] = []
+    current = status.get("current")
+    if not current:
+        return out
+
+    pct = current["pct"]
+    reset = _fmt_duration(current["reset_in_seconds"])
+    pct_txt = f"{pct * 100:.0f}%"
+
+    if pct >= 0.85:
+        out.append({
+            "titre": f"⚠️ Fenêtre de 5 h presque épuisée ({pct_txt})",
+            "detail": (
+                f"Tu approches ta limite de fenêtre (réinitialisation dans {reset}). "
+                "Mets en pause les grosses tâches, ou bascule les demandes simples "
+                "sur Sonnet/Haiku pour tenir jusqu'au reset."
+            ),
+        })
+    elif pct >= 0.6:
+        out.append({
+            "titre": f"Fenêtre de 5 h bien entamée ({pct_txt})",
+            "detail": (
+                f"Réinitialisation dans {reset}. Garde Opus pour les tâches qui "
+                "le justifient vraiment et passe le reste sur un modèle plus léger."
+            ),
+        })
+
+    # La tâche qui pèse le plus dans la fenêtre courante.
+    top = current.get("top_tasks") or []
+    if top and current["consumed"] > 0:
+        share = top[0]["total"] / current["consumed"]
+        if share >= 0.4:
+            out.append({
+                "titre": "Une tâche domine ta fenêtre actuelle",
+                "detail": (
+                    f"« {top[0]['label']} » représente {share * 100:.0f}% de ta "
+                    "consommation des 5 dernières heures. C'est le premier levier "
+                    "à optimiser (reformulation ou modèle plus léger)."
+                ),
+            })
+
+    # Opus brûle la fenêtre plus vite que Sonnet.
+    models = current.get("top_models") or []
+    if models and tier_of(models[0]["model"]) >= 3:
+        out.append({
+            "titre": "Opus consomme ta fenêtre ~5× plus vite que Haiku",
+            "detail": (
+                "À tokens égaux, un modèle haut de gamme vide ton quota de 5 h "
+                "beaucoup plus vite. Réserve Opus/Fable aux tâches complexes ; "
+                "pour classer, résumer, reformuler ou traduire, Sonnet ou Haiku "
+                "préservent ta fenêtre."
+            ),
+        })
+    return out
+
+
 def global_advice(summary: dict[str, Any], top_n: int = 10) -> dict[str, Any]:
-    """Construit l'ensemble des conseils : globaux + par tâche coûteuse."""
+    """Construit l'ensemble des conseils : fenêtre 5 h + globaux + par tâche."""
     tasks = summary.get("tasks", [])
     totals = summary.get("totals", {})
     by_model = summary.get("by_model", [])
 
     general: list[dict[str, Any]] = []
+
+    status = summary.get("window_status")
+    if status:
+        general.extend(_window_advice(status))
+        weekly = status.get("weekly", {})
+        if weekly.get("pct", 0) >= 0.75:
+            general.append({
+                "titre": f"Plafond hebdomadaire bien entamé ({weekly['pct'] * 100:.0f}%)",
+                "detail": (
+                    "Au-delà des fenêtres de 5 h, ton abonnement a aussi une limite "
+                    "sur 7 jours glissants. Lève le pied sur les modèles haut de gamme "
+                    "en fin de semaine."
+                ),
+            })
 
     # Part des coûts dûe aux modèles haut de gamme.
     high_tier_cost = sum(m["total"] for m in by_model if tier_of(m["model"]) >= 3)

@@ -15,15 +15,18 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-from . import advisor, aggregate, parser
+from . import advisor, aggregate, config, parser
 
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def build_payload() -> dict[str, Any]:
+    cfg = config.load_config(_PROJECT_ROOT)
+    plan = config.plan_settings(cfg)
     records = parser.parse_logs(project_root=_PROJECT_ROOT)
-    summary = aggregate.summarize(records)
+    summary = aggregate.summarize(records, plan=plan)
     summary["advice"] = advisor.global_advice(summary, top_n=12)
+    summary["plan"] = plan
     return summary
 
 
@@ -72,6 +75,20 @@ INDEX_HTML = """<!DOCTYPE html>
   .task-label { color:var(--text); }
   .empty { color:var(--muted); padding:20px; text-align:center; }
   .gain { color:#5fb37a; font-size:12px; }
+  .window { background:linear-gradient(135deg,#1c2530,#161d26);
+            border:1px solid var(--line); border-radius:12px; padding:20px 22px;
+            margin-bottom:22px; }
+  .window .top { display:flex; justify-content:space-between; align-items:baseline;
+                 flex-wrap:wrap; gap:8px; }
+  .window .pct { font-size:30px; font-weight:700; }
+  .window .meta { color:var(--muted); font-size:13px; margin-top:4px; }
+  .gauge { height:14px; background:#0d1217; border-radius:7px; margin:14px 0 4px;
+           overflow:hidden; }
+  .gauge > div { height:100%; border-radius:7px; transition:width .6s; }
+  .g-ok { background:#5fb37a; } .g-warn { background:#e0a85f; }
+  .g-hot { background:#e0604f; }
+  .reset { font-size:13px; color:var(--text); }
+  .reset b { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -81,9 +98,10 @@ INDEX_HTML = """<!DOCTYPE html>
         · <span id="updated">—</span></span>
 </header>
 <main>
+  <div id="window"></div>
   <div class="cards" id="cards"></div>
-  <section><h2>Coût par modèle</h2><div id="by-model"></div></section>
-  <section><h2>Tâches les plus coûteuses</h2><div id="tasks"></div></section>
+  <section><h2>Consommation par modèle</h2><div id="by-model"></div></section>
+  <section><h2>Tâches qui consomment le plus de quota</h2><div id="tasks"></div></section>
   <section><h2>Conseils d'optimisation</h2><div id="advice"></div></section>
 </main>
 <script>
@@ -94,15 +112,44 @@ const num = v => (v||0).toLocaleString('fr-FR');
 function bar(frac){ return '<div class="bar" style="width:'+
   Math.max(2, Math.round((frac||0)*100))+'%"></div>'; }
 
+function dur(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600),
+  m=Math.floor((s%3600)/60); return h? h+' h '+String(m).padStart(2,'0')+' min' : m+' min'; }
+
+function renderWindow(d){
+  const el = document.getElementById('window');
+  const st = d.window_status; const plan = d.plan || {};
+  if(!st || !st.current){ el.innerHTML = ''; return; }
+  const c = st.current, pct = c.pct, p100 = Math.round(pct*100);
+  const cls = pct>=0.85?'g-hot':(pct>=0.6?'g-warn':'g-ok');
+  const cal = st.auto_calibrated ? ' · repère auto-calibré' : '';
+  el.innerHTML = `<div class="window">
+    <div class="top">
+      <div>
+        <div style="font-size:13px;color:var(--muted);text-transform:uppercase;
+             letter-spacing:.05em">Fenêtre de ${Math.round(st.window_hours)} h en cours
+             · ${esc(plan.label||'')}</div>
+        <div class="meta">${money(c.consumed)} éq. API consommés
+             / repère ~${money(c.reference)}${cal}</div>
+      </div>
+      <div class="pct">${p100}%</div>
+    </div>
+    <div class="gauge"><div class="${cls}" style="width:${Math.min(100,p100)}%"></div></div>
+    <div class="reset">Réinitialisation dans <b>${dur(c.reset_in_seconds)}</b>
+         · ${num(c.messages)} messages dans cette fenêtre</div>
+  </div>`;
+}
+
 function render(d){
   document.getElementById('updated').textContent =
     new Date().toLocaleTimeString('fr-FR');
+  renderWindow(d);
   const t = d.totals || {};
+  const wk = (d.window_status||{}).weekly || {};
   document.getElementById('cards').innerHTML = [
-    ['Coût total', money(t.total)],
+    ['Sur 7 jours', money(wk.consumed||0) + ' / ~' + money(wk.budget||0)],
+    ['Consommation totale', money(t.total)],
     ['Messages', num(t.messages)],
     ['Tokens sortie', num(t.output_tokens)],
-    ['Tokens entrée', num(t.input_tokens)],
     ['Cache lu', num(t.cache_read_tokens)],
   ].map(([k,v])=>`<div class="card"><div class="k">${k}</div>
        <div class="v">${v}</div></div>`).join('');
@@ -117,7 +164,7 @@ function render(d){
 
   const maxM = Math.max(...(d.by_model||[]).map(m=>m.total), 1e-9);
   document.getElementById('by-model').innerHTML =
-    '<table><tr><th>Modèle</th><th class="num">Coût</th>'+
+    '<table><tr><th>Modèle</th><th class="num">Conso (éq.$)</th>'+
     '<th class="num">Msg</th><th style="width:30%"></th></tr>'+
     (d.by_model||[]).map(m=>`<tr><td>${m.model}</td>
        <td class="num">${money(m.total)}</td>
@@ -127,7 +174,7 @@ function render(d){
   const maxT = Math.max(...(d.tasks||[]).map(x=>x.total), 1e-9);
   document.getElementById('tasks').innerHTML =
     '<table><tr><th>Tâche (premier prompt)</th><th>Modèle(s)</th>'+
-    '<th class="num">Coût</th><th style="width:22%"></th></tr>'+
+    '<th class="num">Conso (éq.$)</th><th style="width:22%"></th></tr>'+
     (d.tasks||[]).slice(0,15).map(x=>`<tr>
        <td class="task-label">${esc(x.task_label)}</td>
        <td>${(x.models||[]).map(m=>'<span class="tag">'+esc(m)+'</span>').join('')}</td>

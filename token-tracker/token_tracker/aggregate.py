@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from . import windows
+
 
 def _blank() -> dict[str, Any]:
     return {
@@ -41,8 +43,13 @@ def _group_by(records: list[dict[str, Any]], key: str) -> dict[str, dict[str, An
     return groups
 
 
-def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Construit un résumé complet, prêt à afficher ou à servir en JSON."""
+def summarize(records: list[dict[str, Any]],
+              plan: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Construit un résumé complet, prêt à afficher ou à servir en JSON.
+
+    Si ``plan`` (réglages d'abonnement) est fourni, ajoute l'état de la
+    fenêtre glissante de 5 h sous la clé ``window_status``.
+    """
     totals = _blank()
     for rec in records:
         _add(totals, rec)
@@ -80,7 +87,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
 
     by_day = _day_groups(records)
 
-    return {
+    result = {
         "totals": totals,
         "tasks": tasks,
         "by_model": _listify(_group_by(records, "model"), "model"),
@@ -89,6 +96,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         "by_day": by_day,
         "record_count": len(records),
     }
+    if plan is not None:
+        result["window_status"] = windows.window_status(records, plan)
+    return result
 
 
 def _day_groups(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
