@@ -26,10 +26,59 @@ function connect() {
     try {
       const msg = JSON.parse(ev.data);
       if (msg.type === 'state') applyState(msg.payload);
+      else if (msg.type === 'cue') handleCue(msg.payload);
     } catch (e) {
       /* ignore */
     }
   };
+}
+
+// Bip court (Web Audio) — fonctionne même onglet en arrière-plan.
+let audioCtx = null;
+function beep(freq, ms) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.value = freq || 880;
+    g.gain.value = 0.06;
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + (ms || 180) / 1000);
+  } catch {
+    /* audio indispo */
+  }
+}
+
+function notify(title, body) {
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body, silent: true });
+    }
+  } catch {
+    /* notifications indispo */
+  }
+}
+
+// Déclencheur externe (via /api/cue) : timer Flash, bip, ou note.
+function handleCue(cue) {
+  if (!cue || !cue.kind) return;
+  if (cue.kind === 'beep') {
+    beep(cue.freq, cue.ms);
+  } else if (cue.kind === 'note' && cue.text) {
+    if (tts.enabled) speak(cue.text);
+  } else if ((cue.kind === 'flash' || cue.kind === 'ult') && cue.champ) {
+    const want = String(cue.champ).toLowerCase();
+    document.querySelectorAll('#timersList .timer-row').forEach((row) => {
+      const name = (row.querySelector('.timer-name') || {}).textContent || '';
+      if (name.toLowerCase().includes(want)) {
+        const btn = row.querySelector('.timer-btn.' + (cue.kind === 'ult' ? 'ult' : 'flash'));
+        if (btn) btn.click();
+      }
+    });
+  }
 }
 
 function setBadge(id, text, cls) {
@@ -119,11 +168,29 @@ function addFeedItems(feed) {
 
 const PRIO_LABEL = { high: 'Urgent', medium: 'Important', low: 'Conseil', info: 'Info' };
 
+// Filtre macro/micro du flux.
+const MACRO_CATS = ['Macro', 'Objectif', 'Tempo', 'Économie', 'Build', 'Draft IA', 'Vision'];
+const MICRO_CATS = ['Survie', 'Farm', 'Spike', 'Trade', 'Combat'];
+let feedFocus = 'all';
+function adviceVisible(cat) {
+  if (feedFocus === 'all') return true;
+  if (cat === 'Coach IA') return true; // les conseils IA généraux restent visibles
+  if (feedFocus === 'macro') return MACRO_CATS.includes(cat);
+  return MICRO_CATS.includes(cat);
+}
+function applyFeedFilter() {
+  document.querySelectorAll('#feed .advice').forEach((el) => {
+    el.style.display = adviceVisible(el.dataset.cat || '') ? '' : 'none';
+  });
+}
+
 function buildAdviceEl(a) {
   const el = document.createElement('div');
   const isAi = a.source === 'ai';
   el.className = 'advice ' + (isAi ? 'ai' : a.priority || 'info');
   el.dataset.at = a.at;
+  el.dataset.cat = a.category || '';
+  if (!adviceVisible(a.category || '')) el.style.display = 'none';
   const prio = isAi ? 'IA' : PRIO_LABEL[a.priority] || 'Info';
   el.innerHTML = `
     <div class="advice-accent"></div>
@@ -179,6 +246,26 @@ function renderChampSelect(pick) {
           )
           .join('')
       : '<span class="profile-line">En attente des picks adverses…</span>';
+  }
+
+  // Plan de lane détaillé (IA) — apparaît dès qu'il est prêt.
+  const mp = $('matchupPlan');
+  if (mp) {
+    const p = pick.matchupPlan;
+    if (p) {
+      const dangers = (p.dangers || []).map((d) => `<li>${esc(d)}</li>`).join('');
+      mp.innerHTML = `
+        <h3 class="sub">🗺️ Plan de lane (IA)</h3>
+        <div class="mplan-card">
+          <div class="mplan-row"><span class="mplan-k">Lane</span><span>${esc(p.lanePlan)}</span></div>
+          ${p.runes ? `<div class="mplan-row"><span class="mplan-k">Runes</span><span>${esc(p.runes)}</span></div>` : ''}
+          ${p.winCondition ? `<div class="mplan-row"><span class="mplan-k">Win condition</span><span>${esc(p.winCondition)}</span></div>` : ''}
+          ${p.powerSpikes ? `<div class="mplan-row"><span class="mplan-k">Spikes</span><span>${esc(p.powerSpikes)}</span></div>` : ''}
+          ${dangers ? `<div class="mplan-danger"><b>⚠️ Dangers</b><ul>${dangers}</ul></div>` : ''}
+        </div>`;
+    } else {
+      mp.innerHTML = '';
+    }
   }
 
   const heading = $('pickHeading');
@@ -287,6 +374,7 @@ function renderInGame(game) {
     });
   }
 
+  renderGoldLead(game.summary);
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
 
@@ -332,11 +420,14 @@ function renderTimers(enemies) {
     .join('');
 }
 
+let junglerSeenAt = 0;
 function updateTimers() {
   const now = Date.now();
+  const running = {}; // champId -> {flash, ult}
   document.querySelectorAll('#timersList .timer-btn').forEach((btn) => {
     const key = btn.dataset.key;
     const base = btn.dataset.cd === 'flash' ? 'Flash' : 'Ulti';
+    const champId = key.split('|')[0];
     const ends = spellTimers[key];
     if (!ends) {
       btn.textContent = base;
@@ -348,6 +439,7 @@ function updateTimers() {
       btn.textContent = `${base} ${mmss(rem)}`;
       btn.classList.add('running');
       btn.classList.remove('ready');
+      (running[champId] = running[champId] || {})[btn.dataset.cd] = true;
       if (rem <= 8 && !timerAlerted[key] && tts.enabled) {
         timerAlerted[key] = true;
         const champ = btn.closest('.timer-row').querySelector('.timer-name').textContent;
@@ -364,6 +456,36 @@ function updateTimers() {
       btn.classList.remove('running', 'ready');
     }
   });
+
+  // Fenêtre d'engage : un ennemi dont Flash ET Ulti sont down est tuable.
+  const go = $('goWindow');
+  if (go) {
+    const targets = [];
+    document.querySelectorAll('#timersList .timer-row').forEach((row) => {
+      const id = row.dataset.id;
+      if (running[id] && running[id].flash && running[id].ult) {
+        targets.push(row.querySelector('.timer-name').textContent);
+      }
+    });
+    if (targets.length) {
+      go.classList.remove('hidden');
+      go.innerHTML = `🟢 Fenêtre d'engage : <b>${targets.map(esc).join(', ')}</b> sans Flash ni Ulti — go si tu as l'avantage.`;
+    } else {
+      go.classList.add('hidden');
+    }
+  }
+
+  // Jungler : statut de disparition.
+  const jg = $('jgStatus');
+  if (jg) {
+    if (!junglerSeenAt) jg.textContent = 'pas encore repéré';
+    else {
+      const s = Math.round((now - junglerSeenAt) / 1000);
+      jg.textContent = `vu il y a ${s < 60 ? s + 's' : Math.floor(s / 60) + 'm' + (s % 60) + 's'}`;
+      jg.className = 'jt-status' + (s >= 30 ? ' warn' : '');
+      if (s === 35 && tts.enabled) speak('Jungler adverse invisible, attention aux ganks');
+    }
+  }
 }
 
 function initTimers() {
@@ -388,6 +510,8 @@ function initTimers() {
     delete timerAlerted[btn.dataset.key];
     updateTimers();
   });
+  const jgBtn = $('jgSeen');
+  if (jgBtn) jgBtn.addEventListener('click', () => { junglerSeenAt = Date.now(); updateTimers(); });
 }
 
 // Icône d'item (objet {name, icon}) + nom, avec repli texte si pas d'icône.
@@ -419,6 +543,7 @@ function renderItemPlan(plan) {
     rparts.push(`<div class="plan-rune-line"><span class="plan-k">Runes</span> ${k}${sec}</div>`);
   }
   if (plan.summoners) rparts.push(`<div class="plan-rune-line"><span class="plan-k">Sorts</span> ${esc(plan.summoners)}</div>`);
+  if (plan.skillOrder) rparts.push(`<div class="plan-rune-line"><span class="plan-k">Sorts max</span> ${esc(plan.skillOrder)}</div>`);
   (plan.runeHints || []).forEach((h) => rparts.push(`<div class="plan-rune-hint">🛡️ ${esc(h)}</div>`));
   runesEl.innerHTML = rparts.join('');
 
@@ -450,6 +575,46 @@ function renderItemPlan(plan) {
   $('itemPlanStrategy').textContent = plan.strategy || '';
 }
 
+// Avance économique d'équipe : barre + sparkline du différentiel dans le temps.
+let goldDiffHistory = [];
+let goldDiffGame = '';
+function sparkline(values, color) {
+  if (values.length < 2) return '';
+  const W = 120, H = 26;
+  const max = Math.max(1, ...values.map((v) => Math.abs(v)));
+  const x = (i) => (i * W) / (values.length - 1);
+  const y = (v) => H / 2 - (v / max) * (H / 2 - 2);
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" class="gl-spark" preserveAspectRatio="none"><line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="rgba(255,255,255,.12)" stroke-width="1"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6"/></svg>`;
+}
+function renderGoldLead(summary) {
+  const el = $('goldLead');
+  if (!el) return;
+  const tg = summary && summary.teamGold;
+  if (!tg) { el.innerHTML = ''; return; }
+  // reset l'historique sparkline à chaque nouvelle partie
+  const gameKey = summary.gameTimeText && summary.gameTime < 60 ? 'new' : goldDiffGame;
+  if (summary.gameTime != null && summary.gameTime < 30) goldDiffHistory = [];
+  goldDiffGame = gameKey;
+  if (!goldDiffHistory.length || goldDiffHistory[goldDiffHistory.length - 1] !== tg.diff) {
+    goldDiffHistory.push(tg.diff);
+    if (goldDiffHistory.length > 60) goldDiffHistory.shift();
+  }
+  const total = tg.allies + tg.enemies || 1;
+  const allyPct = Math.round((tg.allies / total) * 100);
+  const ahead = tg.diff >= 0;
+  const k = (n) => (n >= 0 ? '+' : '') + (Math.round(n / 100) / 10) + 'k';
+  const lane = summary.laneGold;
+  el.innerHTML = `
+    <div class="gl-head">
+      <span>Or d'équipe (estimé)</span>
+      <b class="${ahead ? 'wp-good' : 'wp-bad'}">${k(tg.diff)}</b>
+      ${sparkline(goldDiffHistory, ahead ? '#34d399' : '#fb7185')}
+    </div>
+    <div class="gl-bar"><div class="gl-fill" style="width:${allyPct}%"></div></div>
+    ${lane ? `<div class="gl-lane">Ta lane : <b class="${lane.diff >= 0 ? 'wp-good' : 'wp-bad'}">${k(lane.diff)}</b> vs ton adversaire</div>` : ''}`;
+}
+
 function renderTeam(id, players) {
   const c = $(id);
   c.innerHTML = '';
@@ -466,6 +631,7 @@ function renderTeam(id, players) {
   });
 }
 
+const objAlerted = {};
 function renderObjectives() {
   const c = $('objectives');
   if (!c) return;
@@ -474,6 +640,13 @@ function renderObjectives() {
   latestObjectives.forEach((o) => {
     const eta = Math.max(0, Math.round(o.etaSeconds - elapsed));
     const cls = eta === 0 ? 'ready' : eta <= 45 ? 'soon' : '';
+    // Alerte sonore + notif quand un objectif majeur devient disponible (1x).
+    const akey = o.name + ':' + (o.spawnAt != null ? o.spawnAt : '');
+    if (eta === 0 && !objAlerted[akey] && (o.name === 'Dragon' || o.name === 'Baron' || o.name === 'Héraut' || o.name === 'Voidgrubs')) {
+      objAlerted[akey] = true;
+      beep(o.name === 'Baron' ? 660 : 880, 200);
+      notify(`${o.name} disponible`, 'Prends la vision et regroupe pour le contester.');
+    }
     const el = document.createElement('div');
     el.className = 'obj ' + cls;
     el.innerHTML = `
@@ -618,6 +791,11 @@ function setTtsEnabled(on) {
   tts.enabled = on;
   tts.enabledAt = Date.now();
   localStorage.setItem('tts_enabled', on ? '1' : '0');
+  if (on) {
+    // Geste utilisateur : on en profite pour autoriser notifications + audio.
+    try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {}
+  }
   const btn = $('ttsToggle');
   if (btn) {
     btn.textContent = on ? '🔊 Voix on' : '🔈 Voix off';
@@ -695,6 +873,18 @@ function initTts() {
     });
 
   if (localStorage.getItem('tts_enabled') === '1') setTtsEnabled(true);
+
+  // Filtre macro/micro du flux.
+  feedFocus = localStorage.getItem('feed_focus') || 'all';
+  const focusSel = $('feedFocus');
+  if (focusSel) {
+    focusSel.value = feedFocus;
+    focusSel.addEventListener('change', (e) => {
+      feedFocus = e.target.value;
+      localStorage.setItem('feed_focus', feedFocus);
+      applyFeedFilter();
+    });
+  }
 }
 
 // ── Chat avec Claude ─────────────────────────────────────────────────────────
@@ -813,6 +1003,10 @@ setInterval(() => {
 
 // Mode compact (2e écran) : bascule une classe sur <body>, persistée.
 function initCompact() {
+  // ?overlay=1 (fenêtre Electron / source OBS) : rendu transparent + compact.
+  if (new URLSearchParams(location.search).has('overlay')) {
+    document.body.classList.add('overlay', 'compact');
+  }
   const btn = $('compactToggle');
   const apply = (on) => {
     document.body.classList.toggle('compact', on);

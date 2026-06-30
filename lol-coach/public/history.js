@@ -180,6 +180,79 @@ function renderGoal(games) {
   if (clr) clr.addEventListener('click', () => { localStorage.removeItem('coach_goal'); renderGoal(games); });
 }
 
+// Détecteur de tilt : défaites consécutives récentes -> suggestion de pause.
+function renderTilt(games) {
+  const box = $('tiltBanner');
+  if (!box) return;
+  let streak = 0;
+  for (const g of games) {
+    if (g.win === false) streak++;
+    else if (g.win === true) break;
+  }
+  if (streak >= 3) {
+    box.innerHTML = `
+      <div class="tilt-banner">
+        <div class="tilt-head">🛑 ${streak} défaites d'affilée — fais une pause.</div>
+        <div class="tilt-body">Le tilt coûte plus de LP que n'importe quel matchup. Avant de relancer :</div>
+        <ul class="tilt-list">
+          <li>⏸️ 15-20 min loin de l'écran (eau, marche, étirements).</li>
+          <li>🎯 1 seul objectif simple la prochaine game (ex. &lt; 5 morts).</li>
+          <li>🧘 Respire : la prochaine partie ne récupère pas les précédentes.</li>
+          <li>🔇 Mute si besoin, joue ta propre game.</li>
+        </ul>
+      </div>`;
+  } else {
+    box.innerHTML = '';
+  }
+}
+
+// Reco one-trick : meilleur champion par winrate (≥ 2 parties).
+function renderOneTrick(stats) {
+  const box = $('oneTrick');
+  if (!box) return;
+  const cands = (stats.byChampion || []).filter((c) => c.games >= 2);
+  if (!cands.length) { box.innerHTML = ''; return; }
+  cands.forEach((c) => (c.wr = Math.round((c.wins / c.games) * 100)));
+  cands.sort((a, b) => b.wr - a.wr || b.games - a.games);
+  const best = cands[0];
+  const worst = cands[cands.length - 1];
+  let msg = `Ton meilleur winrate : <b>${esc(best.champion)}</b> (${best.wr}% sur ${best.games}). Pour grimper, <b>spam ce champion</b> et réduis ta pool.`;
+  if (cands.length > 1 && worst.wr < 45) {
+    msg += ` À l'inverse, <b>${esc(worst.champion)}</b> (${worst.wr}%) te coûte des games — évite-le en ranked tant qu'il n'est pas travaillé.`;
+  }
+  box.innerHTML = `<div class="onetrick"><span class="ot-ico">🏆</span><div>${msg}</div></div>`;
+}
+
+function gamesToCsv(games) {
+  const cols = ['date', 'champion', 'role', 'win', 'kills', 'deaths', 'assists', 'csPerMin', 'durationText', 'enemyProfile'];
+  const head = cols.join(',');
+  const rows = games.map((g) =>
+    cols
+      .map((c) => {
+        let v = g[c];
+        if (v == null) v = '';
+        v = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(v) ? `"${v}"` : v;
+      })
+      .join(',')
+  );
+  return [head, ...rows].join('\n');
+}
+function initCsv(games) {
+  const btn = $('exportCsv');
+  if (!btn) return;
+  if (!games.length) { btn.style.display = 'none'; return; }
+  btn.addEventListener('click', () => {
+    const blob = new Blob([gamesToCsv(games)], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lol-coach-historique.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
 function render(data) {
   const stats = data.stats || {};
   const badge = $('statsBadge');
@@ -244,8 +317,11 @@ fetch('/api/history')
   .then((r) => r.json())
   .then((data) => {
     render(data);
+    renderTilt(data.games || []);
+    renderOneTrick(data.stats || {});
     renderCharts(data.games || []);
     renderGoal(data.games || []);
+    initCsv(data.games || []);
     if (data.games && data.games.length) initAnalyze();
     else { const b = $('analyzeBtn'); if (b) b.style.display = 'none'; }
   })

@@ -13,6 +13,7 @@
     "dev": "node src/server.js",
     "fetch-counters": "node scripts/fetch-counters.js",
     "fetch-builds": "node scripts/fetch-builds.js",
+    "overlay": "electron electron/main.js",
     "test": "node test/run.js"
   },
   "keywords": [

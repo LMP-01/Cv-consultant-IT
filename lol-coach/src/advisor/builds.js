@@ -54,6 +54,7 @@ function getBuild(champId, role) {
     boots: liveEntry.boots || (curated && curated.boots) || null,
     core: nonEmpty(liveEntry.core) ? liveEntry.core : curated && curated.core,
     situational: nonEmpty(liveEntry.situational) ? liveEntry.situational : curated && curated.situational,
+    skillOrder: liveEntry.skillOrder || (curated && curated.skillOrder) || null,
     note: curated ? curated.note : null,
     source: liveEntry.source || null,
   };

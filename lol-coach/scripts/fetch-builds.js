@@ -44,7 +44,9 @@ const UGG = {
   ITEM_4: 4,
   ITEM_5: 5,
   ITEM_6: 6,
+  SKILLS: 7,
 };
+const SKILL_LETTER = { 1: 'Q', 2: 'W', 3: 'E', 4: 'R' };
 // Identifiants région/rang u.gg (par défaut : monde, emerald+).
 const UGG_REGION = { world: 12, kr: 2, euw: 1, na: 3 };
 const UGG_RANK = { emerald_plus: 10, diamond_plus: 9, master_plus: 11, challenger: 7 };
@@ -119,7 +121,36 @@ function firstOption(block) {
   return ids.length ? ids[0] : null;
 }
 
-// Transforme un bloc de rôle u.gg en build brut (itemIds).
+// Ordre de montée des sorts : déduit la PRIORITÉ Q/W/E depuis la séquence de
+// niveaux (tableau d'entiers 1=Q,2=W,3=E,4=R). Renvoie "Q → E → W" ou null.
+function extractSkillOrder(block) {
+  if (!Array.isArray(block)) return null;
+  let levels = null;
+  const scan = (arr) => {
+    if (!Array.isArray(arr)) return;
+    if (arr.length >= 10 && arr.every((x) => Number.isInteger(x) && x >= 1 && x <= 4)) {
+      levels = arr;
+      return;
+    }
+    for (const el of arr) if (!levels) scan(el);
+  };
+  scan(block);
+  if (!levels) return null;
+  const firstIdx = {};
+  const count = { 1: 0, 2: 0, 3: 0 };
+  levels.forEach((s, i) => {
+    if (s >= 1 && s <= 3) {
+      if (firstIdx[s] == null) firstIdx[s] = i;
+      count[s]++;
+    }
+  });
+  const skills = [1, 2, 3].filter((s) => firstIdx[s] != null);
+  if (!skills.length) return null;
+  skills.sort((a, b) => count[b] - count[a] || firstIdx[a] - firstIdx[b]);
+  return skills.map((s) => SKILL_LETTER[s]).join(' → ');
+}
+
+// Transforme un bloc de rôle u.gg en build brut (itemIds + ordre des sorts).
 function buildFromUggRole(roleBlock) {
   if (!Array.isArray(roleBlock)) return null;
   const start = extractItemIds(roleBlock[UGG.STARTING_ITEMS]).slice(0, 2);
@@ -127,8 +158,9 @@ function buildFromUggRole(roleBlock) {
   const situational = [roleBlock[UGG.ITEM_4], roleBlock[UGG.ITEM_5], roleBlock[UGG.ITEM_6]]
     .map(firstOption)
     .filter(Boolean);
+  const skillOrder = extractSkillOrder(roleBlock[UGG.SKILLS]);
   if (!core.length) return null;
-  return { startIds: start, coreIds: core, situationalIds: situational };
+  return { startIds: start, coreIds: core, situationalIds: situational, skillOrder };
 }
 
 // Sépare bottes vs objets dans une liste d'itemIds, via l'ensemble des bottes connues.
@@ -147,7 +179,11 @@ function selfTest() {
   fakeRole[UGG.ITEM_4] = [[3036, 200], [3072, 150]]; // options 4e : LDR en tête
   fakeRole[UGG.ITEM_5] = [[3139], [3026]];
   fakeRole[UGG.ITEM_6] = [];
+  // Séquence de niveaux : Q max (priorité), puis E, puis W.
+  fakeRole[UGG.SKILLS] = [10, 20, [1, 3, 1, 2, 1, 4, 1, 3, 1, 3, 4, 3, 2, 2, 4, 2, 3, 2]];
   const raw = buildFromUggRole(fakeRole);
+  const skillOk = raw.skillOrder === 'Q → E → W';
+  console.log('skillOrder:', raw.skillOrder, skillOk ? '(OK)' : '(ATTENDU Q → E → W)');
   const bootsSet = new Set([3006, 3020, 3047, 3111, 3117, 3158]);
   const { boots, rest } = splitBoots(raw.coreIds, bootsSet);
   const ok =
@@ -282,6 +318,7 @@ async function main() {
         boots: boots ? nameOf(boots) : null,
         core,
         situational,
+        skillOrder: raw.skillOrder || null,
         source: `u.gg ${opts.region}/${opts.rank}`,
       };
       okCount++;
@@ -310,4 +347,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { extractItemIds, firstOption, buildFromUggRole, splitBoots, findRoleBlock };
+module.exports = { extractItemIds, firstOption, buildFromUggRole, splitBoots, findRoleBlock, extractSkillOrder };

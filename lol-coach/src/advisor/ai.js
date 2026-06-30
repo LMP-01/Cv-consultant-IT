@@ -145,6 +145,44 @@ Reply ONLY with a JSON object:
 - "priorities": the top 3 focus areas to improve, ordered by impact.
 Use ONLY the provided data (don't invent). In English, no text around the JSON.`;
 
+// Schéma du plan de lane / matchup (champ select).
+const MATCHUP_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['lanePlan', 'winCondition'],
+  properties: {
+    lanePlan: { type: 'string' },
+    runes: { type: 'string' },
+    winCondition: { type: 'string' },
+    powerSpikes: { type: 'string' },
+    dangers: { type: 'array', items: { type: 'string' } },
+  },
+};
+
+const MATCHUP_FR = `Tu es un coach de League of Legends de très haut niveau qui prépare un joueur AVANT la partie.
+On te donne ton champion probable, ton adversaire de lane DIRECT, ton rôle, et les deux compositions.
+Donne un plan concret et spécifique à CE matchup (pas de généralités).
+Réponds UNIQUEMENT avec un objet JSON :
+{"lanePlan":"...","runes":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
+- "lanePlan" : comment jouer la lane (trades à prendre/éviter, gestion de vague, niveaux clés, timings de recall).
+- "runes" : la page de runes conseillée POUR ce matchup (keystone + secondaires, 1 ligne).
+- "winCondition" : comment TON équipe gagne la partie (déduit des deux compos).
+- "powerSpikes" : tes fenêtres de force à jouer (niveaux/objets).
+- "dangers" : 2 à 3 pièges concrets de l'adversaire (son combo, son spike, ce qu'il build/fait contre toi).
+N'invente pas de champions absents. En français, sans aucun texte autour du JSON.`;
+
+const MATCHUP_EN = `You are a top-level League of Legends coach preparing a player BEFORE the game.
+You receive their likely champion, their DIRECT lane opponent, their role, and both compositions.
+Give a concrete plan specific to THIS matchup (no generalities).
+Reply ONLY with a JSON object:
+{"lanePlan":"...","runes":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
+- "lanePlan": how to play lane (trades to take/avoid, wave management, key levels, recall timings).
+- "runes": the recommended rune page FOR this matchup (keystone + secondaries, 1 line).
+- "winCondition": how YOUR team wins the game (from both comps).
+- "powerSpikes": your strength windows to play (levels/items).
+- "dangers": 2-3 concrete opponent threats (combo, spike, what they build/do against you).
+Do not invent absent champions. In English, no text around the JSON.`;
+
 const CHAT_FR = `Tu es un coach expert de League of Legends qui répond au joueur PENDANT sa partie (il est peut-être mort, en attente de respawn, ou en alt-tab).
 On te donne sa question et un contexte de jeu JSON.
 Réponds de façon CONCISE (2 à 4 phrases), concrète et actionnable. Appuie-toi sur le contexte (chiffres, champions, objectifs) quand c'est pertinent. Si l'info n'est pas dans le contexte, donne ton meilleur conseil sans inventer de données précises.
@@ -415,7 +453,7 @@ class AiAdvisor {
     if (!this.available) return null;
     const system = config.lang === 'en' ? REVIEW_EN : REVIEW_FR;
     try {
-      const text = await this._call(system, JSON.stringify(record), { schema: REVIEW_SCHEMA, maxTokens: 800 });
+      const text = await this._call(system, JSON.stringify(record), { schema: REVIEW_SCHEMA, maxTokens: 800, timeoutMs: 45000 });
       const parsed = parseTips(text);
       if (!parsed || !parsed.summary) return null;
       return {
@@ -447,13 +485,33 @@ class AiAdvisor {
     const payload = { stats: history.stats, games };
     const system = config.lang === 'en' ? HISTORY_EN : HISTORY_FR;
     try {
-      const text = await this._call(system, JSON.stringify(payload), { schema: HISTORY_SCHEMA, maxTokens: 900 });
+      const text = await this._call(system, JSON.stringify(payload), { schema: HISTORY_SCHEMA, maxTokens: 900, timeoutMs: 60000 });
       const p = parseTips(text);
       if (!p || !Array.isArray(p.patterns)) return null;
       return {
         summary: p.summary || null,
         patterns: p.patterns.slice(0, 6),
         priorities: Array.isArray(p.priorities) ? p.priorities.slice(0, 3) : [],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Plan de lane / win condition pour un matchup donné (champ select).
+  async getMatchupPlan(context) {
+    if (!this.available) return null;
+    const system = config.lang === 'en' ? MATCHUP_EN : MATCHUP_FR;
+    try {
+      const text = await this._call(system, JSON.stringify(context), { schema: MATCHUP_SCHEMA, maxTokens: 800, timeoutMs: 60000 });
+      const p = parseTips(text);
+      if (!p || !p.lanePlan) return null;
+      return {
+        lanePlan: String(p.lanePlan),
+        runes: p.runes || null,
+        winCondition: p.winCondition || null,
+        powerSpikes: p.powerSpikes || null,
+        dangers: Array.isArray(p.dangers) ? p.dangers.slice(0, 4) : [],
       };
     } catch {
       return null;

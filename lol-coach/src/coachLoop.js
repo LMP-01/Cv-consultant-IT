@@ -27,11 +27,14 @@ class CoachLoop {
     this.state = this._emptyState();
     this.feed = []; // conseils récents, plus récent en tête
     this.emittedAt = new Map(); // id de conseil -> timestamp d'émission
+    this.recentAiMsgs = new Map(); // contenu IA récent -> timestamp (anti-doublon)
     this.lastPhase = 'offline';
     this.mockStart = Date.now();
     this.timer = null;
     this.prevGame = null; // état précédent (PV/mort/events) pour les déclencheurs IA
     this.prevDraftSig = null; // signature du draft précédent (picks/bans) pour rafraîchir l'IA
+    this.prevMatchupSig = null; // signature (pick vs lane) du dernier plan de lane demandé
+    this.matchupPlan = null; // { sig, data } plan de lane IA en cache
     this.history = new GameHistory();
     this.lastInGame = null; // dernier instantané de partie (chat + historique)
     this.gameFinalized = false; // évite de sauvegarder deux fois la même partie
@@ -71,7 +74,7 @@ class CoachLoop {
     this.timer = setTimeout(() => this.tick(), ms);
   }
 
-  // Ajoute des conseils au flux en respectant les cooldowns.
+  // Ajoute des conseils au flux en respectant les cooldowns + dédoublonnage IA.
   _pushAdvice(adviceList) {
     const now = Date.now();
     let changed = false;
@@ -80,6 +83,16 @@ class CoachLoop {
       const cooldown = (COOLDOWN_OVERRIDES[a.id] != null ? COOLDOWN_OVERRIDES[a.id] : DEFAULT_COOLDOWN) * 1000;
       const last = this.emittedAt.get(a.id);
       if (!isAi && last && now - last < cooldown) continue;
+      // Cache IA : évite de réafficher un conseil IA au contenu identique (45 s).
+      if (isAi) {
+        const sig = (a.message || a.title || '').trim().toLowerCase().slice(0, 120);
+        const seen = this.recentAiMsgs.get(sig);
+        if (seen && now - seen < 45000) continue;
+        this.recentAiMsgs.set(sig, now);
+        if (this.recentAiMsgs.size > 50) {
+          for (const [k, t] of this.recentAiMsgs) if (now - t > 120000) this.recentAiMsgs.delete(k);
+        }
+      }
       this.emittedAt.set(a.id, now);
       this.feed.unshift({ ...a, at: now });
       changed = true;
@@ -241,10 +254,17 @@ class CoachLoop {
       this._finalizeGameIfNeeded();
       this._resetFeed();
       this.prevDraftSig = null;
+      this.prevMatchupSig = null;
+      this.matchupPlan = null;
     }
     this.lastPhase = 'champselect';
 
     const pick = analyzeChampSelect(session, this.ddragon);
+
+    // Plan de lane IA (en cache) : on l'attache si le matchup courant correspond.
+    const topPick = pick.pickSuggestions && pick.pickSuggestions[0];
+    const matchupSig = pick.laneOpponent && topPick ? `${topPick.id}|${pick.laneOpponent.id}` : null;
+    if (this.matchupPlan && this.matchupPlan.sig === matchupSig) pick.matchupPlan = this.matchupPlan.data;
 
     // 1) Diffuse IMMÉDIATEMENT les picks/build — pas d'attente sur l'IA.
     this.state = {
@@ -257,13 +277,34 @@ class CoachLoop {
     };
     this._broadcast();
 
-    // 2) Conseils IA de draft EN ARRIÈRE-PLAN : on rafraîchit dès que le draft
-    // change (nouveau pick/ban), avec un plancher de cadence (quota Claude Max).
+    // 2) Conseils IA de draft EN ARRIÈRE-PLAN : on rafraîchit dès que le draft change.
     if (this.ai.available) {
       const sig = this._draftSignature(pick);
       const changed = sig !== this.prevDraftSig;
       this.prevDraftSig = sig;
       this._fireAi(() => this.ai.getChampSelectTips(this._draftSnapshot(pick), { force: changed }));
+
+      // 3) Plan de lane détaillé : 1 appel par matchup (pick vs adversaire de lane).
+      if (matchupSig && matchupSig !== this.prevMatchupSig) {
+        this.prevMatchupSig = matchupSig;
+        const ctx = {
+          lang: config.lang,
+          yourRole: pick.myRoleLabel,
+          yourPick: topPick.name,
+          laneOpponent: pick.laneOpponent.name,
+          enemyTeam: (pick.enemyChamps || []).map((c) => c.name),
+          yourTeam: (pick.myChamps || []).map((c) => c.name),
+        };
+        Promise.resolve()
+          .then(() => this.ai.getMatchupPlan(ctx))
+          .then((plan) => {
+            if (!plan) return;
+            this.matchupPlan = { sig: matchupSig, data: plan };
+            if (this.state.pick) this.state.pick.matchupPlan = plan;
+            this._broadcast();
+          })
+          .catch(() => {});
+      }
     }
   }
 
