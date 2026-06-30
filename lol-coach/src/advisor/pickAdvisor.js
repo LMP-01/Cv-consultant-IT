@@ -30,6 +30,20 @@ function masteryWeight(n) {
   return Math.min(2, (Math.log10(n + 1) / Math.log10(1000000)) * 2);
 }
 
+// Estimation INDICATIVE de probabilité de victoire d'un pick dans CE contexte.
+// Heuristique transparente (pas une donnée live) bornée à 35–66 %.
+function estimateWinProb({ laneCounter, enemyCounterCount, synergy, balances, mastery, enemyComp }) {
+  let p = 0.5;
+  if (laneCounter) p += 0.06;
+  p += Math.min(0.06, (enemyCounterCount || 0) * 0.02);
+  if (synergy) p += 0.03;
+  if (balances) p += 0.02;
+  p += Math.min(0.03, (masteryWeight(mastery) / 2) * 0.03);
+  if (enemyComp && enemyComp.burstCount >= 3) p -= 0.02;
+  if (enemyComp && enemyComp.ccCount >= 4) p -= 0.02;
+  return Math.round(Math.max(0.35, Math.min(0.66, p)) * 100);
+}
+
 const ROLE_LABEL = {
   TOP: 'Top',
   JUNGLE: 'Jungle',
@@ -120,10 +134,27 @@ function analyzeChampSelect(session, ddragon) {
   const countersByNorm = new Map();
   for (const key of Object.keys(ds.counters || {})) countersByNorm.set(norm(key), ds.counters[key]);
   const counterListOf = (champ) => countersByNorm.get(norm(champ.id)) || [];
+  // Index normalisé des synergies (duo bot, combos d'engage).
+  const synergyByNorm = new Map();
+  for (const key of Object.keys(ds.synergies || {})) synergyByNorm.set(norm(key), ds.synergies[key]);
+  const synergyListOf = (champ) => synergyByNorm.get(norm(champ.id || champ)) || [];
   // Résout un id brut du dataset vers l'id canonique Data Dragon.
   const canonId = (raw) => {
     const e = ddragon ? ddragon.resolveChampionByName(raw) : null;
     return e ? e.id : null;
+  };
+  // Vrai si `champId` (canonique) fait une bonne synergie avec un allié déjà pické.
+  // Vérifié dans les deux sens (allié→pick et pick→allié). Renvoie l'allié concerné.
+  const synergyAlly = (champId) => {
+    for (const ally of myChamps) {
+      const allySyn = new Set(synergyListOf(ally).map(canonId).filter(Boolean));
+      if (allySyn.has(champId)) return ally;
+    }
+    const mySyn = new Set(synergyListOf(champId).map(canonId).filter(Boolean));
+    for (const ally of myChamps) {
+      if (mySyn.has(ally.id)) return ally;
+    }
+    return null;
   };
 
   const scores = new Map(); // champId canonique -> {score, reasons}
@@ -149,27 +180,37 @@ function analyzeChampSelect(session, ddragon) {
     }
   }
 
+  // Synergies avec tes alliés déjà choisis (duo bot, combos d'engage).
+  for (const ally of myChamps) {
+    for (const synId of synergyListOf(ally)) {
+      bump(synId, 1.5, `synergie avec ${ally.displayName || ally.name}`);
+    }
+  }
+
   // Picks solides/sûrs de ton rôle (poids faible, pour combler).
   const rolePool = myRole && ds.rolePicks[myRole] ? ds.rolePicks[myRole] : [];
   for (const champId of rolePool) {
     bump(champId, 0.5, 'pick solide pour ton rôle');
   }
 
+  // Proba de win INDICATIVE pour les suggestions génériques (à partir du score).
+  const coarseWinProb = (score) => Math.round(Math.max(40, Math.min(64, 50 + Math.min(14, (score || 0) * 2.5))));
+
   const pickSuggestions = [...scores.entries()]
     .map(([id, v]) => {
       const champ = ddragon ? ddragon.championById.get(id) : null;
       const ref = champRef(champ);
-      return ref
-        ? { ...ref, score: v.score, reasons: v.reasons }
-        : { id, name: id, key: null, portrait: null, score: v.score, reasons: v.reasons };
+      const base = { score: v.score, reasons: v.reasons, winProb: coarseWinProb(v.score) };
+      return ref ? { ...ref, ...base } : { id, name: id, key: null, portrait: null, ...base };
     })
     .filter((p) => p.key) // on ne garde que les champions reconnus par Data Dragon
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
   // ── Picks issus de TA pool (prioritaires si configurée pour ton rôle) ──────
-  // Composition de TON équipe (alliés déjà choisis) pour la synergie/équilibre.
+  // Compositions des deux équipes (pour synergie/équilibre et proba de win).
   const allyComp = myChamps.length ? analyzeComp(myChamps) : null;
+  const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
 
   const poolEntries = (loadPool().pool || {})[myRole] || [];
   const poolUnresolved = [];
@@ -188,37 +229,56 @@ function analyzeChampSelect(session, ddragon) {
       if (taken.has(champ.id) || bannedSet.has(champ.id)) continue;
       let score = 0;
       const reasons = [];
-      if (laneSet.has(champ.id)) {
+      const laneCounter = laneSet.has(champ.id);
+      if (laneCounter) {
         score += 3;
         reasons.push(`counter de ${laneOpponent.displayName || laneOpponent.name} (ta lane)`);
       }
+      let enemyCounterCount = 0;
       for (const { e, set } of enemySets) {
         if (set.has(champ.id)) {
           score += 1;
+          enemyCounterCount++;
           reasons.push(`fort contre ${e.displayName || e.name}`);
         }
       }
-      // Synergie d'équipe : bonus si le pick équilibre les dégâts de TON équipe.
+      // Équilibre des dégâts de TON équipe.
+      let balances = false;
       if (allyComp) {
         const dmg = classifyDamage(champ);
         if (allyComp.profile === 'à dominante AP' && (dmg === 'AD' || dmg === 'MIXED')) {
           score += 1;
+          balances = true;
           reasons.push('équilibre les dégâts (ton équipe est AP)');
         } else if (allyComp.profile === 'à dominante AD' && dmg === 'AP') {
           score += 1;
+          balances = true;
           reasons.push('équilibre les dégâts (ton équipe est AD)');
         }
       }
+      // Synergie de duo / combo avec un allié déjà choisi (ex: support → ADC).
+      const ally = synergyAlly(champ.id);
+      if (ally) {
+        score += 1.5;
+        reasons.push(`synergie avec ${ally.displayName || ally.name}`);
+      }
       score += masteryWeight(entry.mastery);
       reasons.push(`maîtrise ${formatMastery(entry.mastery)}`);
-      poolPicks.push({ ...champRef(champ), mastery: entry.mastery, score: +score.toFixed(2), reasons });
+      const winProb = estimateWinProb({
+        laneCounter,
+        enemyCounterCount,
+        synergy: Boolean(ally),
+        balances,
+        mastery: entry.mastery,
+        enemyComp,
+      });
+      poolPicks.push({ ...champRef(champ), mastery: entry.mastery, score: +score.toFixed(2), reasons, winProb });
     }
     poolPicks.sort((a, b) => b.score - a.score || (b.mastery || 0) - (a.mastery || 0));
   }
   const picksFromPool = poolPicks.length > 0;
 
   // ── Build / runes vs composition adverse ──────────────────────────────────
-  const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
   const buildSuggestions = enemyComp ? defensiveSuggestions(enemyComp) : [];
 
   const runeHints = [];
@@ -229,6 +289,10 @@ function analyzeChampSelect(session, ddragon) {
     if (enemyComp.profile === 'à dominante AP') runeHints.push('Comp AP : runes de RM (Cuirasse de Vandale) et bottes de Mercure.');
   }
 
+  const suggestions = picksFromPool ? poolPicks : pickSuggestions;
+  // Proba de win projetée = celle du pick conseillé (top). Estimation indicative.
+  const teamWinProb = suggestions.length && suggestions[0].winProb != null ? suggestions[0].winProb : null;
+
   return {
     myRole,
     myRoleLabel: ROLE_LABEL[myRole] || myRole || 'Inconnu',
@@ -237,9 +301,10 @@ function analyzeChampSelect(session, ddragon) {
     enemyChamps: enemyChamps.map(champRef),
     enemyComp,
     teamComp: allyComp,
-    pickSuggestions: picksFromPool ? poolPicks : pickSuggestions,
+    pickSuggestions: suggestions,
     picksFromPool,
     poolUnresolved,
+    teamWinProb,
     buildSuggestions,
     runeHints,
     timerSeconds: session.timer ? Math.round((session.timer.adjustedTimeLeftInPhase || 0) / 1000) : null,

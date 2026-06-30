@@ -3,8 +3,10 @@
 Un agent qui **surveille tes parties de League of Legends en direct** et te donne, dans une **appli web locale (HTML + Node.js)** :
 
 - 💬 des **conseils de jeu en temps réel** (macro, objectifs, timings, recall, survie…) pendant la partie, à cadence régulière **et immédiatement sur les moments clés** (mort, chute de PV brutale, kill/objectif) ;
-- 🧩 des **suggestions de pick et de build** adaptées à **toute la composition adverse ET à ta propre équipe** (synergie/équilibre des dégâts) pendant le **champ select** ;
-- 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats).
+- 🧩 des **suggestions de pick et de build** adaptées à **toute la composition adverse ET à ta propre équipe** (synergie de duo, équilibre des dégâts, **probabilité de win estimée**) pendant le **champ select** ;
+- 📊 un **tableau de bord** live (timers d’objectifs, scoreboard, tes stats) + un **build conseillé en jeu** (3 prochains achats avec mini-items, build complet évolutif, runes vs la compo) ;
+- 🗨️ un **chat** pour poser une question à Claude pendant la partie (mort, alt-tab) ;
+- 📈 un **historique** de tes parties avec **critique IA** (ce que tu as bien/mal fait + axes d’amélioration).
 
 Le moteur de conseils fonctionne **sans aucune clé API** grâce à des règles locales, et devient encore plus intelligent si tu fournis une clé **Claude (Anthropic)**.
 
@@ -94,6 +96,7 @@ Toutes les variables sont optionnelles (voir `.env.example`) :
 | `RIOT_API_KEY` | (Optionnel) enrichissement Riot API | — |
 | `DDRAGON_LOCALE` | Locale des noms (`fr_FR`, `en_US`…) | `fr_FR` |
 | `LEAGUE_PATH` | Chemin d’install de League (sinon autodétection) | — |
+| `POLL_CHAMPSELECT_MS` | Cadence de rafraîchissement du champ select (ms) | `1000` |
 | `MOCK_CHAMPSELECT_SECONDS` | Durée du champ select en mode démo | `30` |
 
 ### 🤖 Activer les conseils IA avec ton abonnement Claude Max/Pro (sans clé API)
@@ -181,6 +184,27 @@ Depuis l'interface, les boutons **« 📖 Mid »** (`/mid.html`) et **« 📖 AD
 > Les objets de `data/builds.json` sont en **noms anglais Data Dragon** pour permettre la résolution de l'icône. Un item renommé/retiré s'affiche en texte sans icône. Les builds sont **les builds méta cohérents** (cœur d'objets + situationnels) — ajuste-les librement en éditant `data/builds.json`.
 
 Les **winrates live** proviennent de `data/champion-data.json`, généré par `npm run fetch-counters` (sur ta machine). Sans ce fichier, la page affiche les caractéristiques, le build et les counters curés ; les winrates apparaissent dès que tu lances le scraper.
+
+### 🛒 Build conseillé en jeu (sous le tableau de bord)
+
+Pendant la partie, sous le tableau de bord, un panneau **« Build conseillé »** affiche :
+- les **runes/sorts** conseillés pour ton champion + des **ajustements selon la compo adverse** (RM vs AP, armure vs AD, anti-CC, survie vs burst) ;
+- les **3 prochains achats** (objets finis non encore possédés) avec, pour chacun, les **mini-items / composants** à acheter d'abord (avec icônes) ;
+- le **build complet ordonné** (départ → bottes → core → situationnel), **évolutif** : l'ordre du situationnel s'adapte à la menace adverse dominante.
+
+Le plan se base sur `data/builds.json` + tes objets actuels (lus via la Live Client Data API) + la composition adverse. Si tu joues un champion absent de `data/builds.json`, le panneau ne s'affiche pas (ajoute-y le champion pour l'activer).
+
+### 🗨️ Chat avec Claude pendant la partie
+
+Sous le flux de conseils, une zone **« Demande à Claude »** permet de poser une question (utile **quand tu es mort / en alt-tab**). La réponse s'appuie sur l'**état du jeu en cours** (temps, tes stats, objectifs imminents, compositions). Nécessite l'abonnement Claude actif (CLI `claude`) ; sinon un message t'invite à l'activer. Les réponses prennent quelques secondes (appel au modèle).
+
+### 📈 Historique & bilan des parties (`/history.html`)
+
+À la **fin de chaque partie**, le coach enregistre un récap dans `data/history.json` (local, jamais commité) : champion, rôle, KDA, CS/min, durée, résultat, compositions. Si l'abonnement Claude est actif, Claude génère une **critique** : un résumé, ce que tu as **bien joué**, les **axes d'amélioration**, et **un objectif prioritaire** pour la partie suivante. La page **« 📈 Historique »** liste toutes tes parties avec des **statistiques agrégées** (winrate, KDA moyen, par champion).
+
+### ⚡ Latence : pourquoi c'est « vraiment live » maintenant
+
+Le tableau de bord et les picks sont **diffusés immédiatement** à chaque tick ; les appels à l'IA (qui peuvent prendre plusieurs secondes) tournent **en arrière-plan** et n'attendent jamais l'affichage. Avant, l'attente de la réponse IA bloquait l'UI (d'où des retards de 30 s–1 min) — ce n'est plus le cas, en partie **comme en champ select**.
 
 ### 📥 Remplir `counters` avec des données réelles (winrate)
 

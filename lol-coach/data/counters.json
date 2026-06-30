@@ -1,5 +1,32 @@
 {
-  "_comment": "Dataset éditable. Les clés de champions sont les identifiants Data Dragon (ex: 'MonkeyKing' = Wukong, 'Chogath' = Cho'Gath, 'KaiSa', 'KhaZix', 'Belveth'). 'damageOverride' corrige la classification AD/AP/MIXED/TRUE quand les tags Data Dragon induisent en erreur. 'counters[X]' = champions forts CONTRE X (counter-picks). 'rolePicks' = pool de picks solides/sûrs par rôle.",
+  "_comment": "Dataset éditable. Les clés de champions sont les identifiants Data Dragon (ex: 'MonkeyKing' = Wukong, 'Chogath' = Cho'Gath, 'KaiSa', 'KhaZix', 'Belveth'). 'damageOverride' corrige la classification AD/AP/MIXED/TRUE quand les tags Data Dragon induisent en erreur. 'counters[X]' = champions forts CONTRE X (counter-picks). 'rolePicks' = pool de picks solides/sûrs par rôle. 'synergies[X]' = champions qui font une bonne synergie avec X (duo bot, combos d'engage). Vérifié dans les deux sens.",
+
+  "synergies": {
+    "Draven": ["Thresh", "Nautilus", "Leona", "Pyke", "Blitzcrank", "Rell"],
+    "MissFortune": ["Leona", "Amumu", "Nautilus", "Thresh", "Rell", "Pyke"],
+    "Caitlyn": ["Lux", "Morgana", "Karma", "Nautilus", "Leona"],
+    "Vayne": ["Janna", "Lulu", "Milio", "Nami", "Leona", "Nautilus", "Thresh"],
+    "Ezreal": ["Karma", "Lux", "Yuumi", "Bard", "Nami"],
+    "Jinx": ["Thresh", "Lulu", "Leona", "Nautilus", "Milio"],
+    "KaiSa": ["Nautilus", "Leona", "Thresh", "Rell", "Pyke"],
+    "Kalista": ["Thresh", "Rakan", "Taric"],
+    "Twitch": ["Lulu", "Yuumi", "Janna"],
+    "Leona": ["Draven", "MissFortune", "Caitlyn", "Jinx", "KaiSa", "Lucian"],
+    "Thresh": ["Draven", "Vayne", "Jinx", "Caitlyn", "KaiSa", "Kalista"],
+    "Nautilus": ["Draven", "MissFortune", "Caitlyn", "Vayne", "Jinx", "KaiSa"],
+    "Lulu": ["Vayne", "Jinx", "KogMaw", "Twitch"],
+    "Janna": ["Vayne", "Twitch", "KogMaw", "Ezreal"],
+    "Milio": ["Vayne", "Jinx", "Nilah"],
+    "Karma": ["Ezreal", "Caitlyn", "Lucian"],
+    "Lux": ["Caitlyn", "Ezreal", "MissFortune"],
+    "Yuumi": ["Ezreal", "Jinx", "KogMaw"],
+    "Nami": ["Vayne", "Ezreal", "Lucian"],
+    "Morgana": ["Caitlyn", "Jinx"],
+    "Pyke": ["Draven", "MissFortune", "KaiSa"],
+    "Rell": ["MissFortune", "Draven", "KaiSa"],
+    "Orianna": ["Yasuo", "MasterYi", "Wukong", "Malphite"],
+    "Malphite": ["Yasuo", "Orianna", "Veigar"]
+  },
 
   "damageOverride": {
     "Akali": "AP", "Diana": "AP", "Ekko": "AP", "Fizz": "AP", "Katarina": "AP",

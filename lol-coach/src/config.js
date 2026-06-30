@@ -83,6 +83,7 @@ const config = {
 
   // Cadence des sondages (ms).
   pollIntervalInGameMs: intEnv('POLL_INGAME_MS', 1000),
+  pollIntervalChampSelectMs: intEnv('POLL_CHAMPSELECT_MS', 1000),
   pollIntervalLobbyMs: intEnv('POLL_LOBBY_MS', 2000),
 
   // Démo : durée de la phase champ select avant de basculer en partie (s).

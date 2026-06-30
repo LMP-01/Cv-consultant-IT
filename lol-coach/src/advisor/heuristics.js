@@ -67,6 +67,7 @@ function buildScoreboard(data, ddragon) {
       position: p.position || '',
       isYou: me ? p === me : false,
       items: (p.items || []).map((it) => (ddragon ? ddragon.itemName(it.itemID) || `#${it.itemID}` : `#${it.itemID}`)),
+      itemIds: (p.items || []).map((it) => it.itemID),
     };
   };
 

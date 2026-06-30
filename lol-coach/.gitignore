@@ -5,3 +5,4 @@ node_modules/
 npm-debug.log*
 data/counters.backup-*.json
 data/champion-data.json
+data/history.json

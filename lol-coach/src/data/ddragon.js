@@ -118,6 +118,7 @@ class DataDragon {
             name: it.name,
             image: it.image && it.image.full ? it.image.full : `${itemId}.png`,
             gold: it.gold ? it.gold.total : 0,
+            from: (it.from || []).map((x) => parseInt(x, 10)).filter(Boolean), // composants
             tags: it.tags || [],
           });
           this.itemNameIndex.set(normName(it.name), num);
@@ -204,6 +205,25 @@ class DataDragon {
     if (!id) return null;
     const it = this.itemById.get(id);
     return it ? { id, name: it.name, icon: this.itemIconUrl(id) } : null;
+  }
+
+  // Infos complètes d'un item par id : { id, name, icon, gold, from:[ids] }.
+  itemInfo(itemId) {
+    const it = this.itemById.get(Number(itemId));
+    if (!it) return null;
+    return { id: it.id, name: it.name, icon: this.itemIconUrl(it.id), gold: it.gold, from: it.from || [] };
+  }
+
+  // Composants (mini-items) d'un item -> [{ id, name, icon, gold }].
+  itemComponents(itemId) {
+    const it = this.itemById.get(Number(itemId));
+    if (!it || !it.from || !it.from.length) return [];
+    return it.from
+      .map((cid) => {
+        const c = this.itemById.get(Number(cid));
+        return c ? { id: c.id, name: c.name, icon: this.itemIconUrl(c.id), gold: c.gold } : null;
+      })
+      .filter(Boolean);
   }
 
   squarePortraitUrl(championIdStr) {

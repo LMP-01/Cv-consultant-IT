@@ -35,6 +35,7 @@
         <span class="badge dim" id="wsBadge">Serveur</span>
         <a class="nav-link" href="mid.html">📖 Mid</a>
         <a class="nav-link" href="adc.html">📖 ADC</a>
+        <a class="nav-link" href="history.html">📈 Historique</a>
       </div>
     </header>
 
@@ -56,6 +57,18 @@
           <div class="empty" id="feedEmpty">
             En attente d’une partie ou d’un champ select…
           </div>
+        </div>
+
+        <!-- Chat avec Claude (utile mort / en alt-tab) -->
+        <div class="chat" id="chatBox">
+          <h3 class="sub chat-title">💬 Demande à Claude</h3>
+          <div id="chatLog" class="chat-log">
+            <div class="chat-hint" id="chatHint">Pose une question pendant ta partie (build, match-up, que faire maintenant…). Réponse basée sur l’état du jeu en cours.</div>
+          </div>
+          <form id="chatForm" class="chat-form" autocomplete="off">
+            <input id="chatInput" class="chat-input" type="text" placeholder="Ta question…" maxlength="500" />
+            <button id="chatSend" class="chat-send" type="submit">Envoyer</button>
+          </form>
         </div>
       </section>
 
@@ -81,6 +94,7 @@
 
           <h3 class="sub" id="pickHeading">Picks conseillés</h3>
           <div id="pickSuggestions" class="pick-grid"></div>
+          <div id="teamWinProb" class="team-winprob"></div>
           <div id="poolUnresolved" class="profile-line"></div>
 
           <h3 class="sub">Composition adverse</h3>
@@ -113,6 +127,17 @@
                 <div id="enemies"></div>
               </div>
             </div>
+          </div>
+
+          <!-- Build conseillé en jeu : prochains achats + build complet + runes -->
+          <div class="panel" id="itemPlanPanel">
+            <h2 class="panel-title">🛒 Build conseillé — <span id="itemPlanChamp"></span></h2>
+            <div id="itemPlanRunes" class="plan-runes"></div>
+            <h3 class="sub">🎯 Prochains achats</h3>
+            <div id="itemPlanNext" class="plan-next"></div>
+            <h3 class="sub">🧱 Build complet (évolutif)</h3>
+            <div id="itemPlanFull" class="plan-full"></div>
+            <div id="itemPlanStrategy" class="plan-strategy"></div>
           </div>
         </div>
       </section>

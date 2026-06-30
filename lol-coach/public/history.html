@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pool ADC — LoL Coach IA</title>
+    <title>Historique — LoL Coach IA</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>" />
   </head>
@@ -23,29 +23,27 @@
           </svg>
         </span>
         <div>
-          <h1>Pool <span class="brand-accent">ADC</span></h1>
-          <p class="tagline">Fiches champions · build · counters · winrates</p>
+          <h1>Historique <span class="brand-accent">& bilan</span></h1>
+          <p class="tagline">Tes parties · critique IA · axes d'amélioration</p>
         </div>
       </div>
       <div class="status-row">
-        <span class="badge dim" id="statsBadge">Stats : —</span>
+        <span class="badge dim" id="statsBadge">—</span>
         <a class="nav-link" href="mid.html">📖 Mid</a>
-        <a class="nav-link" href="history.html">📈 Historique</a>
+        <a class="nav-link" href="adc.html">📖 ADC</a>
         <a class="nav-link" href="index.html">← Coach en direct</a>
       </div>
     </header>
 
     <main class="pool-main">
-      <div id="poolRoot"><div class="empty">Chargement…</div></div>
+      <div id="histStats" class="hist-stats"></div>
+      <div id="histRoot"><div class="empty">Chargement…</div></div>
     </main>
 
     <footer class="footer">
-      <span>Caractéristiques via Data Dragon · build éditable dans <code>data/builds.json</code> · winrates via <code>npm run fetch-counters</code></span>
+      <span>Parties sauvegardées localement dans <code>data/history.json</code> · critique générée par Claude en fin de partie.</span>
     </footer>
 
-    <script>
-      window.DEX_ROLE = 'BOTTOM';
-    </script>
-    <script src="pool.js"></script>
+    <script src="history.js"></script>
   </body>
 </html>
