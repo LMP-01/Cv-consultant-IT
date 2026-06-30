@@ -53,6 +53,11 @@
             <option value="all">Tout</option>
             <option value="ai">IA seulement</option>
           </select>
+          <select id="feedFocus" class="tts-select" title="Filtrer les conseils affichés">
+            <option value="all">Conseils : tout</option>
+            <option value="macro">Macro</option>
+            <option value="micro">Micro</option>
+          </select>
           <button id="ttsTest" class="tts-btn ghost" title="Écouter un exemple">▶︎ Test</button>
           <button id="ttsServerBtn" class="tts-btn ghost" title="Voix serveur optionnelle (Piper, etc.) — meilleure qualité">🎚️ Voix HD</button>
         </div>
@@ -104,6 +109,8 @@
           <div id="teamWinProb" class="team-winprob"></div>
           <div id="poolUnresolved" class="profile-line"></div>
 
+          <div id="matchupPlan" class="matchup-plan"></div>
+
           <h3 class="sub">Composition adverse</h3>
           <div id="enemyChamps" class="champ-row"></div>
           <div id="enemyProfile" class="profile-line"></div>
@@ -124,6 +131,7 @@
           <div class="panel">
             <h2 class="panel-title">📊 Tableau de bord — <span id="gameTime"></span></h2>
             <div id="myStats" class="my-stats"></div>
+            <div id="goldLead" class="gold-lead"></div>
             <div class="scoreboard">
               <div class="team team-allies">
                 <h3 class="sub">Ton équipe</h3>
@@ -139,8 +147,14 @@
           <!-- Timers Flash / ultimes ennemis -->
           <div class="panel" id="timersPanel">
             <h2 class="panel-title">⏲️ Timers ennemis — Flash / Ulti</h2>
+            <div id="goWindow" class="go-window hidden"></div>
+            <div class="jungler-track">
+              <span class="jt-label">🌳 Jungler adverse</span>
+              <button id="jgSeen" class="timer-btn" type="button" title="Marquer le jungler comme vu maintenant">Vu maintenant</button>
+              <span id="jgStatus" class="jt-status">—</span>
+            </div>
             <div id="timersList" class="timers-list"></div>
-            <p class="timers-hint">Clique sur <b>Flash</b> ou <b>Ulti</b> quand l’ennemi l’utilise → compte à rebours + rappel vocal quand c’est bientôt up. CD ulti approximatif.</p>
+            <p class="timers-hint">Clique sur <b>Flash</b> ou <b>Ulti</b> quand l’ennemi l’utilise → compte à rebours + rappel vocal quand c’est bientôt up. CD ulti approximatif. Marque le jungler « vu » pour suivre sa disparition.</p>
           </div>
 
           <!-- Build conseillé en jeu : prochains achats + build complet + runes -->

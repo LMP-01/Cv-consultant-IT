@@ -1,6 +1,7 @@
 'use strict';
 
 const { analyzeComp, defensiveSuggestions } = require('./profile');
+const { getBuild } = require('./builds');
 
 // ── Timings des objectifs neutres (Faille de l'invocateur) ────────────────
 // Valeurs vérifiées pour le patch 26.13 (juin 2026). Elles évoluent à chaque
@@ -24,6 +25,23 @@ function mmss(seconds) {
 
 function pct(n) {
   return Math.round(n * 100);
+}
+
+// Prochain objet conseillé non encore possédé + son coût total (pour le recall).
+function nextRecommendedItem(me, ddragon) {
+  if (!me || !me.championId || !ddragon) return null;
+  const build = getBuild(me.championId, me.position || null);
+  if (!build) return null;
+  const owned = new Set(me.itemIds || []);
+  const order = [...(build.core || []), build.boots, ...(build.situational || [])].filter(Boolean);
+  for (const name of order) {
+    const r = ddragon.resolveItemByName(name);
+    if (r && r.id && !owned.has(r.id)) {
+      const info = ddragon.itemInfo(r.id);
+      if (info && info.gold) return { name: r.name, id: r.id, cost: info.gold };
+    }
+  }
+  return null;
 }
 
 // Identifie l'entrée de allPlayers correspondant au joueur actif.
@@ -72,9 +90,14 @@ function buildScoreboard(data, ddragon) {
     };
   };
 
-  const allies = all.filter((p) => p.team === myTeam).map(mapPlayer);
-  const enemies = all.filter((p) => p.team !== myTeam).map(mapPlayer);
-  return { me: me ? mapPlayer(me) : null, allies, enemies, myTeam };
+  // Valeur nette estimée (or) d'un joueur : valeur des objets (réelle) + farm/kills.
+  // Approximation — l'API live n'expose pas l'or des autres joueurs.
+  const netWorthOf = (p) => (p.itemGold || 0) + (p.cs || 0) * 9 + (p.kills || 0) * 240 + (p.assists || 0) * 110 + 500;
+
+  const withNet = (pl) => ({ ...pl, netWorth: netWorthOf(pl) });
+  const allies = all.filter((p) => p.team === myTeam).map(mapPlayer).map(withNet);
+  const enemies = all.filter((p) => p.team !== myTeam).map(mapPlayer).map(withNet);
+  return { me: me ? withNet(mapPlayer(me)) : null, allies, enemies, myTeam };
 }
 
 // Calcule les ETA des objectifs à partir du temps de jeu et des events.
@@ -192,10 +215,27 @@ function analyzeInGame(data, ddragon) {
     }
   }
 
-  // 4. Recall / spike d'or
+  // 4. Recall / spike d'or — optimisé avec le coût du prochain objet conseillé.
   if (active.currentGold != null && !me?.isDead) {
     const gold = active.currentGold;
-    if (gold >= 2200) {
+    const nextItem = nextRecommendedItem(me, ddragon);
+    if (nextItem && gold >= nextItem.cost) {
+      advice.push({
+        id: 'recall-item',
+        priority: 'medium',
+        category: 'Économie',
+        title: `Recall : tu peux acheter ${nextItem.name}`,
+        message: `Tu as ${Math.round(gold)} or (≥ ${nextItem.cost} pour ${nextItem.name}). Recall sur une vague poussée pour prendre ton spike puis reviens.`,
+      });
+    } else if (nextItem && gold >= nextItem.cost - 450) {
+      advice.push({
+        id: 'recall-soon',
+        priority: 'low',
+        category: 'Économie',
+        title: `Bientôt ${nextItem.name} (${Math.round(gold)}/${nextItem.cost} or)`,
+        message: `Il te manque ${Math.max(0, nextItem.cost - Math.round(gold))} or pour ${nextItem.name}. Sécurise une vague puis recall — ne meurs pas avec l'or sur toi.`,
+      });
+    } else if (gold >= 2200) {
       advice.push({
         id: 'recall-big',
         priority: 'medium',
@@ -210,6 +250,30 @@ function analyzeInGame(data, ddragon) {
         category: 'Économie',
         title: `Pense au recall (${Math.round(gold)} or)`,
         message: 'Assez d’or pour un composant important. Recall au bon moment plutôt que de mourir avec l’or sur toi.',
+      });
+    }
+  }
+
+  // 4b. Avantage économique d'équipe (estimé) -> tempo de groupe.
+  if (me && gameTime > 240) {
+    const allyNet = scoreboard.allies.reduce((s, p) => s + (p.netWorth || 0), 0) + (active.currentGold || 0);
+    const enemyNet = scoreboard.enemies.reduce((s, p) => s + (p.netWorth || 0), 0);
+    const diff = allyNet - enemyNet;
+    if (diff >= 3000) {
+      advice.push({
+        id: 'team-ahead',
+        priority: 'medium',
+        category: 'Tempo',
+        title: `Avantage d'équipe (~+${Math.round(diff / 1000)}k or)`,
+        message: 'Ton équipe est en avance — force la vision et les objectifs (dragon/héraut/baron) pendant la fenêtre.',
+      });
+    } else if (diff <= -3000) {
+      advice.push({
+        id: 'team-behind',
+        priority: 'medium',
+        category: 'Tempo',
+        title: `Déficit d'équipe (~${Math.round(diff / 1000)}k or)`,
+        message: 'Ton équipe est en retard — évite les fights 50/50, sécurise le farm et joue la défense/scaling jusqu’à un meilleur timing.',
       });
     }
   }
@@ -319,6 +383,15 @@ function analyzeInGame(data, ddragon) {
     }
   }
 
+  // Avance économique estimée (équipe + lane) pour l'indicateur du tableau de bord.
+  const allyNet = scoreboard.allies.reduce((s, p) => s + (p.netWorth || 0), 0) + (active.currentGold || 0);
+  const enemyNet = scoreboard.enemies.reduce((s, p) => s + (p.netWorth || 0), 0);
+  const laneOppForGold = me && me.position ? scoreboard.enemies.find((e) => e.position === me.position) : null;
+  const teamGold = { allies: Math.round(allyNet), enemies: Math.round(enemyNet), diff: Math.round(allyNet - enemyNet) };
+  const laneGold = me && laneOppForGold
+    ? { you: Math.round((me.netWorth || 0) + (active.currentGold || 0)), opp: Math.round(laneOppForGold.netWorth || 0), diff: Math.round((me.netWorth || 0) + (active.currentGold || 0) - (laneOppForGold.netWorth || 0)) }
+    : null;
+
   const summary = {
     gameTime,
     gameTimeText: mmss(gameTime),
@@ -334,6 +407,8 @@ function analyzeInGame(data, ddragon) {
         }
       : null,
     enemyComp,
+    teamGold,
+    laneGold,
   };
 
   return { summary, objectives, scoreboard, advice };

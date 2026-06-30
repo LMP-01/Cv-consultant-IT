@@ -90,6 +90,7 @@ function buildItemPlan(result, ddragon) {
     champion: me.championDisplay || me.champion,
     runes: build.runes || null,
     summoners: build.summoners || null,
+    skillOrder: build.skillOrder || null,
     note: build.note || null,
     source: build.source || null,
     next,

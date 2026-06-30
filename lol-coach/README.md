@@ -254,6 +254,44 @@ Le chat a un bouton **🎤** pour **dicter** ta question (reconnaissance vocale 
 npm test     # tests des advisors (profil, picks, bans, build, tempo, historique…)
 ```
 
+### 🗺️ Plan de lane & win condition (IA, champ select)
+
+Dès que ton adversaire de lane est connu, Claude génère un **plan spécifique au matchup** : comment jouer la lane (trades, gestion de vague, niveaux clés, recall), la **page de runes** conseillée pour ce duel, la **win condition** de ta compo, tes **power spikes**, et les **dangers** concrets de l'adversaire. (1 appel par matchup, mis en cache.)
+
+### 💰 Avance économique & tempo d'équipe
+
+Le tableau de bord affiche une **barre d'avance d'or estimée** (ton équipe vs l'adverse) + une **courbe du différentiel** et ton **avance de lane**. Des callouts apparaissent : *« avantage d'équipe → force les objectifs »* ou *« déficit → joue safe/scaling »*. L'or des autres joueurs n'étant pas exposé par l'API, c'est une **estimation** (valeur des objets + farm + kills).
+
+### 🌳 Tracker de jungler & fenêtre d'engage
+
+Clique **« Jungler vu »** pour suivre sa disparition (alerte si invisible trop longtemps). Et quand **Flash + Ulti** d'un ennemi sont **tous deux down** (selon tes timers), une **fenêtre d'engage** s'affiche : *« X sans Flash ni Ulti — go »*.
+
+### 🔔 Alertes sonores & raccourcis externes (alt-tab)
+
+Un **bip** + une **notification** se déclenchent quand Dragon/Baron/Héraut/Voidgrubs deviennent disponibles, **même en alt-tab** (active la voix une fois pour autoriser son + notifications). Un endpoint **`POST /api/cue`** permet à un script externe de déclencher un timer/bip sans alt-tab. Exemple **AutoHotkey** (Windows) — F1 lance le timer Flash de l'adversaire de mid :
+
+```ahk
+F1::
+  RunWait, curl -s -X POST http://localhost:3000/api/cue -H "Content-Type: application/json" -d "{""kind"":""flash"",""champ"":""Zed""}", , Hide
+return
+```
+
+### 🖥️ Overlay transparent (1 seul écran)
+
+Pour superposer le coach **par-dessus le jeu** :
+- **Sans rien installer** : ajoute une **source navigateur OBS** vers `http://localhost:3000/?overlay=1`.
+- **Fenêtre flottante** : `npm i -D electron` puis `npm run overlay` (fenêtre transparente always-on-top ; `Ctrl+Shift+X` = clic-traversant, `Ctrl+Shift+H` = masquer).
+
+### 🎛️ Filtre, export & économie de quota
+
+- **Filtre du flux** : Macro / Micro / Tout (persistant).
+- **Export CSV** de l'historique (bouton sur la page Historique).
+- Les conseils IA au **contenu identique** sont **dédoublonnés** (45 s) pour préserver le quota.
+
+### 🧯 Anti-tilt & one-trick (historique)
+
+Après **3 défaites d'affilée**, une bannière propose une **pause + checklist de warm-up**. Et depuis tes winrates, le coach te recommande **quel champion spammer** (et lequel éviter) pour grimper.
+
 ### ⚡ Latence : pourquoi c'est « vraiment live » maintenant
 
 Le tableau de bord et les picks sont **diffusés immédiatement** à chaque tick ; les appels à l'IA (qui peuvent prendre plusieurs secondes) tournent **en arrière-plan** et n'attendent jamais l'affichage. Avant, l'attente de la réponse IA bloquait l'UI (d'où des retards de 30 s–1 min) — ce n'est plus le cas, en partie **comme en champ select**.

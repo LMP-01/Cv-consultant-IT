@@ -18,10 +18,9 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 const loop = new CoachLoop();
 let lastState = null;
 
-// Diffuse l'état à tous les clients WebSocket connectés.
-function broadcast(state) {
-  lastState = state;
-  const payload = JSON.stringify({ type: 'state', payload: state });
+// Envoie un message JSON brut à tous les clients WebSocket.
+function broadcastRaw(obj) {
+  const payload = JSON.stringify(obj);
   for (const client of wss.clients) {
     if (client.readyState === 1) {
       try {
@@ -31,6 +30,12 @@ function broadcast(state) {
       }
     }
   }
+}
+
+// Diffuse l'état à tous les clients WebSocket connectés.
+function broadcast(state) {
+  lastState = state;
+  broadcastRaw({ type: 'state', payload: state });
 }
 
 // Endpoint REST pratique (debug / intégrations).
@@ -86,6 +91,15 @@ app.get('/api/history/analysis', async (_req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// Pont pour déclencheurs externes (ex. script AutoHotkey -> timer Flash sans
+// alt-tab). POST {kind:'flash',champ:'Zed'} | {kind:'beep'} | {kind:'note',text}.
+app.post('/api/cue', (req, res) => {
+  const cue = req.body && typeof req.body === 'object' ? req.body : null;
+  if (!cue || !cue.kind) return res.status(400).json({ error: 'kind requis' });
+  broadcastRaw({ type: 'cue', payload: cue });
+  res.json({ ok: true });
 });
 
 // Cooldowns (Flash / ultimes) pour le tracker en jeu.
