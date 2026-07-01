@@ -1415,6 +1415,9 @@ body.overlay .feed-panel { max-height: 100vh; }
 .cbt-combo { font-size: 12.5px; color: var(--text); line-height: 1.5; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; }
 .cbt-combo b { color: var(--primary-2); display: inline-flex; align-items: center; gap: 5px; }
 .cbt-note { font-size: 10.5px; color: var(--faint); line-height: 1.4; }
+.cbt-toast { position: fixed; left: 50%; top: 14%; transform: translate(-50%, -8px); z-index: 50; background: rgba(11,15,26,.9); border: 1px solid var(--primary-2); color: var(--text); font-size: 14px; padding: 8px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; display: inline-flex; align-items: center; gap: 8px; }
+.cbt-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.cbt-toast b { color: var(--primary-2); }
 
 /* Profil victoires vs défaites (page Historique) */
 .win-profile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
@@ -1437,6 +1440,16 @@ body.overlay .feed-panel { max-height: 100vh; }
 .dh-cell { position: relative; flex: 1 1 0; min-width: 46px; height: 56px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(148,163,184,.06); }
 .dh-count { font-size: 15px; font-weight: 800; color: var(--text); }
 .dh-label { position: absolute; bottom: 3px; font-size: 9.5px; color: var(--faint); }
+
+/* ── Panneaux réductibles (bouton "réduire" par overlay) ──────────────────── */
+.panel-title { position: relative; }
+.panel-collapse { position: absolute; top: 0; right: 0; width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.panel-collapse:hover { color: var(--primary-2); border-color: var(--primary-2); }
+.panel-collapse .ic { width: 14px; height: 14px; }
+body.overlay .panel-collapse { -webkit-app-region: no-drag; }
+.panel-collapsed > *:not(.panel-title) { display: none !important; }
+.panel-collapsed { padding-bottom: 10px; }
+.panel-collapsed .panel-title { margin-bottom: 0; opacity: .82; }
 
 /* ── 3 prochains achats (bandeau HUD/overlay) ─────────────────────────────── */
 .hud-buys { padding: 11px 14px; }
