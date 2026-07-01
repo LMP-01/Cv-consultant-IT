@@ -1346,6 +1346,19 @@ body.overlay .feed-panel { max-height: 100vh; }
 .cs-bad { color: #fb7185; }
 .cs-fill.cs-bad { background: linear-gradient(90deg, #fb7185, #f43f5e); }
 
+/* Objectifs pris (drakes / tours / baron / plaques) */
+.obj-taken { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.obj-taken:empty { display: none; }
+.ot-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.ot-chip b { color: var(--text); font-size: 12.5px; }
+.ot-sep { color: var(--faint); margin: 0 1px; }
+.ot-good { border-color: rgba(52,211,153,.45); }
+.ot-good b:first-of-type { color: var(--green); }
+.ot-bad { border-color: rgba(251,113,133,.45); }
+.ot-bad b:last-of-type { color: #fb7185; }
+.ot-plate { border-color: rgba(240,179,48,.4); color: #f0b330; }
+.ot-plate-urgent { animation: timerPulse 1.2s ease-in-out infinite; }
+
 /* ── Icônes SVG (remplacent les emojis) ───────────────────────────────────── */
 .ic { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.16em; flex: 0 0 auto; }
 .ic-lg { width: 1.35em; height: 1.35em; }

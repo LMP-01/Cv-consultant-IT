@@ -461,33 +461,66 @@ function analyzeInGame(data, ddragon) {
     }
   }
 
+  // Adversaire direct de lane (réutilisé par plusieurs règles).
+  const laneOpp = me && me.position ? scoreboard.enemies.find((e) => e.position === me.position) : null;
+  const oppName = laneOpp ? laneOpp.championDisplay || laneOpp.champion : null;
+
   // 8b. Tempo : force relative vs l'adversaire de lane (niveau + or d'objets).
-  if (me && gameTime > 120 && !me.isDead) {
-    const laneOpp = me.position ? scoreboard.enemies.find((e) => e.position === me.position) : null;
-    if (laneOpp) {
-      const lvlDiff = (me.level || 0) - (laneOpp.level || 0);
-      const goldDiff = (me.itemGold || 0) - (laneOpp.itemGold || 0);
-      const oppName = laneOpp.championDisplay || laneOpp.champion;
-      if (goldDiff >= 450 || lvlDiff >= 2) {
-        const bits = [];
-        if (lvlDiff >= 1) bits.push(`+${lvlDiff} niveau${lvlDiff > 1 ? 'x' : ''}`);
-        if (goldDiff >= 450) bits.push(`+${goldDiff} or d'objets`);
-        advice.push({
-          id: 'tempo-ahead',
-          priority: 'medium',
-          category: 'Tempo',
-          title: '⚡ Fenêtre de force',
-          message: `Tu es plus fort que ${oppName} (${bits.join(', ')}). Cherche un trade/all-in ou un play sur la map avant qu'il rattrape.`,
-        });
-      } else if (goldDiff <= -550 || lvlDiff <= -2) {
-        advice.push({
-          id: 'tempo-behind',
-          priority: 'medium',
-          category: 'Tempo',
-          title: '🛡️ Adversaire en avance',
-          message: `${oppName} a un spike d'avance — temporise, farm en sécurité, et évite les trades prolongés jusqu'à ton prochain objet.`,
-        });
-      }
+  if (me && gameTime > 120 && !me.isDead && laneOpp) {
+    const lvlDiff = (me.level || 0) - (laneOpp.level || 0);
+    const goldDiff = (me.itemGold || 0) - (laneOpp.itemGold || 0);
+    if (goldDiff >= 450 || lvlDiff >= 2) {
+      const bits = [];
+      if (lvlDiff >= 1) bits.push(`+${lvlDiff} niveau${lvlDiff > 1 ? 'x' : ''}`);
+      if (goldDiff >= 450) bits.push(`+${goldDiff} or d'objets`);
+      advice.push({
+        id: 'tempo-ahead',
+        priority: 'medium',
+        category: 'Tempo',
+        title: '⚡ Fenêtre de force',
+        message: `Tu es plus fort que ${oppName} (${bits.join(', ')}). Cherche un trade/all-in ou un play sur la map avant qu'il rattrape.`,
+      });
+    } else if (goldDiff <= -550 || lvlDiff <= -2) {
+      advice.push({
+        id: 'tempo-behind',
+        priority: 'medium',
+        category: 'Tempo',
+        title: '🛡️ Adversaire en avance',
+        message: `${oppName} a un spike d'avance — temporise, farm en sécurité, et évite les trades prolongés jusqu'à ton prochain objet.`,
+      });
+    }
+  }
+
+  // 8b-bis. Spike d'objet de l'adversaire de lane (estimé sur son or d'objets).
+  // Paliers d'objets complets ≈ 3000 / 6100 / 9200 or. S'il passe un palier
+  // avant toi, il a une fenêtre de force à respecter.
+  if (me && !me.isDead && gameTime > 300 && laneOpp) {
+    const SPIKES = [3000, 6100, 9200];
+    const itemTier = (g) => SPIKES.filter((t) => (g || 0) >= t).length; // 0..3
+    const oppTier = itemTier(laneOpp.itemGold);
+    const myTier = itemTier(me.itemGold);
+    if (oppTier >= 1 && oppTier > myTier) {
+      advice.push({
+        id: 'opp-spike',
+        priority: 'medium',
+        category: 'Tempo',
+        title: `Spike objet de ${oppName}`,
+        message: `${oppName} a ~${oppTier} objet(s) complet(s) contre ~${myTier} pour toi — il a un pic de puissance. Respecte ses trades/all-ins et farme jusqu'à compléter le tien.`,
+      });
+    }
+  }
+
+  // 8b-ter. Plaques de tour : fenêtre avant leur chute à 14:00 (840 s).
+  if (me && !me.isDead && gameTime > 150 && gameTime < 840 && ['TOP', 'MIDDLE', 'BOTTOM'].includes(me.position)) {
+    const left = 840 - gameTime;
+    if (left <= 90) {
+      advice.push({
+        id: 'plates-ending',
+        priority: 'medium',
+        category: 'Économie',
+        title: 'Plaques bientôt terminées',
+        message: `Les plaques de tour tombent à 14:00 (dans ${mmss(left)}). Pousse la vague pour en gratter un maximum avant qu'elles disparaissent (~160 or/plaque).`,
+      });
     }
   }
 
@@ -567,6 +600,28 @@ function analyzeInGame(data, ddragon) {
     });
   }
 
+  // Participation aux kills (KP%) : (tes kills + assists) / kills de l'équipe.
+  const teamKills = scoreboard.allies.reduce((s, p) => s + (p.kills || 0), 0);
+  const kp = me && teamKills > 0 ? Math.round(((me.kills + me.assists) / teamKills) * 100) : me ? 0 : null;
+  // Barons pris (par équipe) via les events.
+  const baron = {
+    ally: events.filter((e) => e.EventName === 'BaronKill' && scoreboard.allies.some((p) => p.summoner === e.KillerName)).length,
+    enemy: events.filter((e) => e.EventName === 'BaronKill' && scoreboard.enemies.some((p) => p.summoner === e.KillerName)).length,
+  };
+  // Plaques de tour : encore actives jusqu'à 14:00.
+  const plates = { active: gameTime < 840, secondsLeft: Math.max(0, Math.round(840 - gameTime)) };
+
+  // KP faible pour un rôle de combat (hors support/jungle) → alerte douce.
+  if (me && kp != null && gameTime > 600 && teamKills >= 5 && kp < 45 && !['UTILITY', 'JUNGLE'].includes(me.position)) {
+    advice.push({
+      id: 'low-kp',
+      priority: 'low',
+      category: 'Macro',
+      title: `Participation aux kills faible (${kp}%)`,
+      message: 'Tu manques des combats de ton équipe — rote avec eux sur les objectifs et les fenêtres de pick au lieu de farmer isolé.',
+    });
+  }
+
   const minutes = gameTime / 60;
   const summary = {
     gameTime,
@@ -577,6 +632,7 @@ function analyzeInGame(data, ddragon) {
           champion: me.champion,
           level: me.level,
           kda: `${me.kills}/${me.deaths}/${me.assists}`,
+          kp,
           cs: me.cs,
           csPerMin: gameTime > 0 ? +(me.cs / (gameTime / 60)).toFixed(1) : 0,
           csTarget: 10,
@@ -598,6 +654,13 @@ function analyzeInGame(data, ddragon) {
     laneGold,
     dragons,
     towers,
+    baron,
+    plates,
+    objectivesTaken: {
+      dragons: { ally: (dragons.ally || []).length, enemy: (dragons.enemy || []).length },
+      towers: { ally: towers.ally || 0, enemy: towers.enemy || 0 },
+      baron,
+    },
     enemyKeystones: scoreboard.enemies.map((e) => ({ champion: e.championDisplay || e.champion, keystone: e.keystone })).filter((x) => x.keystone),
     enemySpells: scoreboard.enemies.map((e) => ({ champion: e.championDisplay || e.champion, spells: e.summonerSpells })),
   };
