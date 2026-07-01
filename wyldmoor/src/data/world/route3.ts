@@ -1,0 +1,75 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Route 3: Harrow Ridge <-> Tidalmere Town. The path cools down toward the coast.
+export const ROUTE_3: MapDef = {
+  id: 'route_3',
+  name: 'Route 3',
+  width: 14,
+  height: 16,
+  skyColor: '#a8d0e0',
+  groundColor: '#5a8a5a',
+  tiles: [
+    '##############',
+    '#.....D.......#',
+    '#.....,.......#',
+    '#...,,,,,.....#',
+    '#...,\"\"\",.....#',
+    '#...,\"\"\",..~~.#',
+    '#...,,,,,..~~.#',
+    '#.....,.......#',
+    '#.....,....~~.#',
+    '#...,,,,,..~~.#',
+    '#...,\"\"\",.....#',
+    '#...,\"\"\",.....#',
+    '#...,,,,,.....#',
+    '#.....,.......#',
+    '#.....D.......#',
+    '##############',
+  ],
+  warps: [
+    { x: 6, y: 1, toMapId: 'harrow_ridge', spawnX: 9, spawnY: 12, spawnFacing: 'down' },
+    { x: 6, y: 14, toMapId: 'tidalmere_town', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 5, minLevel: 18, maxLevel: 20, weight: 3 },
+    { speciesId: 7, minLevel: 18, maxLevel: 20, weight: 3 },
+    { speciesId: 21, minLevel: 18, maxLevel: 20, weight: 2 },
+    { speciesId: 99, minLevel: 18, maxLevel: 20, weight: 2 },
+    { speciesId: 122, minLevel: 19, maxLevel: 21, weight: 2 },
+  ],
+  npcs: [
+    {
+      id: 'route3_ranger_wynn',
+      x: 3,
+      y: 6,
+      facing: 'right',
+      name: 'Garde-foret Wynn',
+      sprite: 'ranger',
+      dialogue: [
+        "On sent deja l'air marin d'ici. Tidalmere Town n'est plus tres loin.",
+        "Prouve-moi que tu es pret pour la cote !",
+      ],
+      team: [
+        { speciesId: 21, level: 19 },
+        { speciesId: 99, level: 20 },
+      ],
+      postBattleDialogue: ["L'air marin te reussit on dirait !"],
+      setFlagOnComplete: 'route3_wynn_defeated',
+    },
+    {
+      id: 'route3_fisher_pell',
+      x: 10,
+      y: 9,
+      facing: 'left',
+      name: 'Pecheur Pell',
+      sprite: 'fisher',
+      dialogue: [
+        "J'attends le bon moment pour lancer ma ligne dans ces bassins.",
+        "En attendant, un petit combat ?",
+      ],
+      team: [{ speciesId: 7, level: 21 }],
+      postBattleDialogue: ["Bien joue ! File vers Tidalmere avant la maree haute."],
+      setFlagOnComplete: 'route3_pell_defeated',
+    },
+  ],
+};

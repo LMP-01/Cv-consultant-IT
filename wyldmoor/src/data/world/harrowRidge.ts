@@ -1,0 +1,108 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Gym 2: Rurik Kade, Fire specialist, awards the Ember Badge. Also home turf for Bryn rematch #2.
+export const HARROW_RIDGE: MapDef = {
+  id: 'harrow_ridge',
+  name: 'Harrow Ridge',
+  width: 18,
+  height: 14,
+  skyColor: '#e8a878',
+  groundColor: '#7a3f2c',
+  tiles: [
+    '##################',
+    '#........D.......#',
+    '#........B.......#',
+    '#..^.............#',
+    '#..B..,,,,,...^..#',
+    '#..D..,,S,,...S..#',
+    '#.....,,,,,......#',
+    '#................#',
+    '#....B......G....#',
+    '#....D......G....#',
+    '#..^.............#',
+    '#................#',
+    '#........,.......#',
+    '########..########',
+  ],
+  warps: [
+    { x: 9, y: 0, toMapId: 'route_2', spawnX: 6, spawnY: 13, spawnFacing: 'up' },
+    { x: 9, y: 12, toMapId: 'route_3', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 4, minLevel: 12, maxLevel: 16, weight: 4 },
+    { speciesId: 5, minLevel: 13, maxLevel: 16, weight: 3 },
+    { speciesId: 54, minLevel: 12, maxLevel: 16, weight: 3 },
+    { speciesId: 137, minLevel: 13, maxLevel: 16, weight: 2 },
+    { speciesId: 133, minLevel: 12, maxLevel: 15, weight: 1 },
+  ],
+  npcs: [
+    {
+      id: 'harrow_elder',
+      x: 4,
+      y: 3,
+      facing: 'down',
+      name: 'Ancien Pyrus',
+      sprite: 'elder',
+      dialogue: [
+        "Harrow Ridge dort sur un volcan endormi. Nos Wyldes de feu adorent la chaleur des cendres.",
+        "Rurik dirige le gymnase depuis dix ans. Personne n'a encore eteint sa flamme.",
+      ],
+    },
+    {
+      id: 'harrow_rival_2',
+      x: 13,
+      y: 3,
+      facing: 'down',
+      name: 'Bryn',
+      sprite: 'rival',
+      dialogue: [
+        "Tiens, tiens ! Je viens de battre le gym d'ici. Toi, tu en es ou ?",
+        "Allez, montre-moi tes progres !",
+      ],
+      team: [
+        { speciesId: 1, level: 15 },
+        { speciesId: 77, level: 14 },
+        { speciesId: 19, level: 15 },
+      ],
+      postBattleDialogue: [
+        "Argh ! Tu progresses vite. Ca me motive encore plus.",
+        "On se retrouve apres le prochain badge, promis !",
+      ],
+      setFlagOnComplete: 'bryn_defeated_2',
+      requiresFlag: 'gym1_talia_defeated',
+    },
+    {
+      id: 'harrow_gym_leader_rurik',
+      x: 12,
+      y: 9,
+      facing: 'down',
+      name: 'Rurik Kade',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Bienvenue dans la fournaise ! Je suis Rurik, gardien de la flamme de Harrow Ridge.",
+        "Voyons si tu peux resister a la chaleur du combat !",
+      ],
+      team: [
+        { speciesId: 54, level: 16 },
+        { speciesId: 5, level: 17 },
+        { speciesId: 6, level: 19 },
+      ],
+      postBattleDialogue: [
+        "Impressionnant ! Ta flamme brule aussi fort que la mienne.",
+        "Prends le Badge de Braise, tu l'as merite.",
+      ],
+      setFlagOnComplete: 'gym2_rurik_defeated',
+    },
+  ],
+  gym: {
+    leaderName: 'Rurik Kade',
+    leaderNpcId: 'harrow_gym_leader_rurik',
+    badgeName: 'Badge de Braise',
+    team: [
+      { speciesId: 54, level: 16 },
+      { speciesId: 5, level: 17 },
+      { speciesId: 6, level: 19 },
+    ],
+    flagOnDefeat: 'gym2_rurik_defeated',
+  },
+};
