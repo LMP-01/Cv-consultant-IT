@@ -1,0 +1,150 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// The Wyldmoor League: Elite Council members #3 and #4, fought back to back, then the
+// Champion, and finally - once the Champion has been defeated - a one-time encounter with
+// the legendary Aurelith at the summit. Aurelith is implemented as a unique NPC ("???")
+// gated behind `requiresFlag: 'champion_rhosyn_defeated'`, matching the existing NpcDef schema.
+export const WYLDMOOR_PLATEAU: MapDef = {
+  id: 'wyldmoor_plateau',
+  name: 'Wyldmoor Plateau',
+  width: 16,
+  height: 18,
+  skyColor: '#3a4a6a',
+  groundColor: '#5a4a6a',
+  tiles: [
+    '################',
+    '#......D.......#',
+    '#......B.......#',
+    '#..............#',
+    '#...B......B...#',
+    '#...D......D...#',
+    '#..............#',
+    '#...B......B...#',
+    '#...D......D...#',
+    '#..............#',
+    '#....,,,,,,....#',
+    '#....,\"\"\"\",....#',
+    '#....,,,,,,....#',
+    '#..............#',
+    '#......^.......#',
+    '#......,.......#',
+    '#......B.......#',
+    '################',
+  ],
+  warps: [
+    { x: 7, y: 0, toMapId: 'route_11', spawnX: 6, spawnY: 13, spawnFacing: 'up' },
+  ],
+  encounters: [
+    { speciesId: 46, minLevel: 68, maxLevel: 71, weight: 3 },
+    { speciesId: 129, minLevel: 68, maxLevel: 71, weight: 2 },
+    { speciesId: 150, minLevel: 69, maxLevel: 72, weight: 2 },
+    { speciesId: 149, minLevel: 69, maxLevel: 72, weight: 2 },
+    { speciesId: 47, minLevel: 70, maxLevel: 72, weight: 1 },
+  ],
+  npcs: [
+    {
+      id: 'plateau_usher',
+      x: 8,
+      y: 3,
+      facing: 'down',
+      name: 'Heraut du Conseil',
+      sprite: 'elder',
+      dialogue: [
+        "Bienvenue au plateau de Wyldmoor, dresseur. Ici siege le Conseil d'Elite au complet.",
+        "Ysolde et Thane t'attendent, puis la Championne Rhosyn Vantane elle-meme.",
+      ],
+    },
+    {
+      id: 'plateau_elite_ysolde',
+      x: 4,
+      y: 5,
+      facing: 'down',
+      name: 'Ysolde Marchetti',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Je suis Ysolde, troisieme membre du Conseil d'Elite. La roche et la terre repondent a mon appel.",
+        "Kael m'a parle de toi. Voyons si la legende est meritee.",
+      ],
+      team: [
+        { speciesId: 49, level: 67 },
+        { speciesId: 26, level: 68 },
+        { speciesId: 146, level: 70 },
+        { speciesId: 142, level: 71 },
+      ],
+      postBattleDialogue: [
+        "Solide comme le roc. Thane t'attend juste a cote, ne le fais pas patienter.",
+      ],
+      setFlagOnComplete: 'elite3_ysolde_defeated',
+      requiresFlag: 'elite2_kael_defeated',
+    },
+    {
+      id: 'plateau_elite_thane',
+      x: 12,
+      y: 5,
+      facing: 'down',
+      name: 'Thane Ossric',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Ysolde t'a laisse passer ? Alors tu merites bien mon plein effort.",
+        "Je suis Thane, quatrieme du Conseil. Mes poings ne connaissent pas la pitie.",
+      ],
+      team: [
+        { speciesId: 31, level: 68 },
+        { speciesId: 88, level: 69 },
+        { speciesId: 112, level: 70 },
+        { speciesId: 146, level: 71 },
+        { speciesId: 30, level: 72 },
+      ],
+      postBattleDialogue: [
+        "Ha ! Une victoire franche. La Championne t'attend maintenant, au coeur du plateau.",
+      ],
+      setFlagOnComplete: 'elite4_thane_defeated',
+      requiresFlag: 'elite3_ysolde_defeated',
+    },
+    {
+      id: 'plateau_champion_rhosyn',
+      x: 8,
+      y: 7,
+      facing: 'down',
+      name: 'Championne Rhosyn Vantane',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Alors c'est toi, celui dont tout Wyldmoor parle depuis des semaines.",
+        "Huit badges, quatre membres du Conseil vaincus... Tu arrives enfin devant moi.",
+        "Je suis Rhosyn Vantane, Championne de la ligue de Wyldmoor. Montre-moi ce voyage grave dans tes yeux.",
+      ],
+      team: [
+        { speciesId: 92, level: 68 },
+        { speciesId: 68, level: 69 },
+        { speciesId: 96, level: 70 },
+        { speciesId: 55, level: 71 },
+        { speciesId: 118, level: 72 },
+        { speciesId: 150, level: 74 },
+      ],
+      postBattleDialogue: [
+        "...Je n'ai plus de mots. Tu es le nouveau Champion de Wyldmoor.",
+        "Un dernier murmure court sur le plateau : quelque chose t'attend encore, tout en haut.",
+      ],
+      setFlagOnComplete: 'champion_rhosyn_defeated',
+      requiresFlag: 'elite4_thane_defeated',
+    },
+    {
+      id: 'plateau_aurelith',
+      x: 7,
+      y: 15,
+      facing: 'up',
+      name: '???',
+      sprite: 'elder',
+      dialogue: [
+        "Une presence immense se dresse devant toi, comme si le ciel lui-meme avait pris forme.",
+        "Aurelith, gardien legendaire de Wyldmoor, semble t'evaluer d'un seul regard.",
+      ],
+      team: [{ speciesId: 151, level: 70 }],
+      postBattleDialogue: [
+        "Le silence retombe sur le plateau. Aurelith s'incline, comme pour saluer un lien nouveau.",
+      ],
+      setFlagOnComplete: 'aurelith_encountered',
+      requiresFlag: 'champion_rhosyn_defeated',
+    },
+  ],
+};

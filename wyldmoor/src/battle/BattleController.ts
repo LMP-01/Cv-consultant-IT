@@ -52,6 +52,7 @@ export class BattleController {
     this.hud.showBattleHud();
     this.hud.clearLog();
     this.hud.setCaptureEnabled(opts.battleOptions.kind === 'wild');
+    this.hud.setFleeEnabled(opts.battleOptions.kind === 'wild');
     this.hud.pushLog(
       opts.battleOptions.kind === 'wild'
         ? `Un ${this.system.opponentActive.nickname} sauvage apparaît !`

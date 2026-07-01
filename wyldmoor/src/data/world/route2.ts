@@ -4,12 +4,12 @@ import type { MapDef } from '../mapSchema.ts';
 export const ROUTE_2: MapDef = {
   id: 'route_2',
   name: 'Route 2',
-  width: 14,
+  width: 15,
   height: 16,
   skyColor: '#cfe0b0',
   groundColor: '#8a9a4a',
   tiles: [
-    '##############',
+    '###############',
     '#.....D.......#',
     '#.....,.......#',
     '#...,,,,,.....#',
@@ -24,7 +24,7 @@ export const ROUTE_2: MapDef = {
     '#...,\"\"\",.....#',
     '#...,,,,,.....#',
     '#.....D.......#',
-    '##############',
+    '###############',
   ],
   warps: [
     { x: 6, y: 1, toMapId: 'mossreed_village', spawnX: 8, spawnY: 12, spawnFacing: 'down' },
@@ -40,7 +40,7 @@ export const ROUTE_2: MapDef = {
   npcs: [
     {
       id: 'route2_hiker_toma',
-      x: 3,
+      x: 4,
       y: 8,
       facing: 'right',
       name: 'Randonneur Toma',

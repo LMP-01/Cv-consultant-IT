@@ -4,12 +4,12 @@ import type { MapDef } from '../mapSchema.ts';
 export const ROUTE_3: MapDef = {
   id: 'route_3',
   name: 'Route 3',
-  width: 14,
+  width: 15,
   height: 16,
   skyColor: '#a8d0e0',
   groundColor: '#5a8a5a',
   tiles: [
-    '##############',
+    '###############',
     '#.....D.......#',
     '#.....,.......#',
     '#...,,,,,.....#',
@@ -24,7 +24,7 @@ export const ROUTE_3: MapDef = {
     '#...,,,,,.....#',
     '#.....,.......#',
     '#.....D.......#',
-    '##############',
+    '###############',
   ],
   warps: [
     { x: 6, y: 1, toMapId: 'harrow_ridge', spawnX: 9, spawnY: 12, spawnFacing: 'down' },

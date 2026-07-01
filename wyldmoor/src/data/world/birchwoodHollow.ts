@@ -33,7 +33,7 @@ export const BIRCHWOOD_HOLLOW: MapDef = {
     {
       id: 'birchwood_professor_ilma',
       x: 12,
-      y: 2,
+      y: 1,
       facing: 'down',
       name: 'Professeure Ilma Rowe',
       sprite: 'professor',

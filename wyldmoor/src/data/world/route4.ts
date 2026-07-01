@@ -4,12 +4,12 @@ import type { MapDef } from '../mapSchema.ts';
 export const ROUTE_4: MapDef = {
   id: 'route_4',
   name: 'Route 4',
-  width: 14,
+  width: 15,
   height: 16,
   skyColor: '#bcd9e8',
   groundColor: '#8fae4a',
   tiles: [
-    '##############',
+    '###############',
     '#.....D.......#',
     '#.....,.......#',
     '#...,,,,,.....#',
@@ -24,7 +24,7 @@ export const ROUTE_4: MapDef = {
     '#...,,,,,.....#',
     '#.....,.......#',
     '#.....D.......#',
-    '##############',
+    '###############',
   ],
   warps: [
     { x: 6, y: 1, toMapId: 'tidalmere_town', spawnX: 9, spawnY: 12, spawnFacing: 'down' },
