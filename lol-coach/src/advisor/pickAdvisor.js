@@ -3,6 +3,122 @@
 const fs = require('fs');
 const path = require('path');
 const { dataset, analyzeComp, defensiveSuggestions, classifyDamage } = require('./profile');
+const { getBuild } = require('./builds');
+
+// IDs Data Dragon des sorts d'invocateur -> nom FR (pour lire ceux de l'équipe adverse).
+const SUMMONER_SPELLS = {
+  1: 'Nettoyage', // Cleanse
+  3: 'Fatigue', // Exhaust
+  4: 'Flash',
+  6: 'Fantôme', // Ghost
+  7: 'Soin', // Heal
+  11: 'Châtiment', // Smite
+  12: 'Téléportation',
+  13: 'Clairvoyance', // Clarity
+  14: 'Embrasement', // Ignite
+  21: 'Barrière', // Barrier
+  32: 'Marque', // Snowball (ARAM)
+};
+function spellName(id) {
+  return SUMMONER_SPELLS[Number(id)] || null;
+}
+
+// Remplace le sort d'invocateur offensif (Embrasement/Ignite) d'un couple
+// "Flash + X" par un sort donné (ex. Barrière), en gardant Flash.
+function swapOffensive(summoners, replacement) {
+  if (!summoners) return `Flash + ${replacement}`;
+  const parts = summoners.split(/\s*\+\s*/);
+  const flash = parts.find((p) => /flash/i.test(p)) || 'Flash';
+  return `${flash} + ${replacement}`;
+}
+
+// Recommande sorts d'invoc + runes ADAPTÉS : au matchup direct (adversaire de
+// lane), à TOUTE la composition adverse (CC/burst/AD-AP) et aux sorts d'invoc
+// RÉELLEMENT pris par l'équipe adverse. Base = build curé du champion, ajusté par
+// règles (sans IA) ; le plan de lane IA affine encore.
+//   opts.enemyTeam : membres theirTeam bruts (pour lire spell1Id/spell2Id).
+//   opts.oppMember : le membre adverse de ta lane (ses sorts d'invoc réels).
+//   opts.autofilled : true si le joueur est autofill -> reco plus sûres.
+function matchupSetup(pickChamp, role, laneOpponent, enemyComp, ds, opts) {
+  if (!pickChamp) return null;
+  const enemyTeam = (opts && opts.enemyTeam) || [];
+  const oppMember = (opts && opts.oppMember) || null;
+  const autofilled = Boolean(opts && opts.autofilled);
+  const build = getBuild(pickChamp.id, role) || {};
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const burst = new Set((ds.burstThreats || []).map(norm));
+  const cc = new Set((ds.ccHeavy || []).map(norm));
+
+  let summoners = build.summoners || 'Flash + Embrasement';
+  let summonerNote = null;
+  const notes = [];
+  const oppTags = laneOpponent ? laneOpponent.tags || [] : [];
+  const oppName = laneOpponent ? laneOpponent.displayName || laneOpponent.name : null;
+  const oppAssassin = laneOpponent && (oppTags.includes('Assassin') || burst.has(norm(laneOpponent.id)));
+  const oppHardCc = laneOpponent && cc.has(norm(laneOpponent.id));
+  const iAmSquishy = ['Mage', 'Marksman', 'Assassin'].some((t) => (pickChamp.tags || []).includes(t));
+
+  // Sorts d'invoc réellement pris par l'équipe adverse (visibles en LCU).
+  const enemySpellNames = [];
+  for (const m of enemyTeam) {
+    const a = spellName(m.spell1Id);
+    const b = spellName(m.spell2Id);
+    if (a && a !== 'Flash') enemySpellNames.push(a);
+    if (b && b !== 'Flash') enemySpellNames.push(b);
+  }
+  const oppHasIgnite = oppMember && (Number(oppMember.spell1Id) === 14 || Number(oppMember.spell2Id) === 14);
+  const oppHasExhaust = oppMember && (Number(oppMember.spell1Id) === 3 || Number(oppMember.spell2Id) === 3);
+  const oppHasCleanse = oppMember && (Number(oppMember.spell1Id) === 1 || Number(oppMember.spell2Id) === 1);
+  const enemyIgniteCount = enemySpellNames.filter((s) => s === 'Embrasement').length;
+  const enemyExhaustCount = enemySpellNames.filter((s) => s === 'Fatigue').length;
+
+  // Priorité 1 : sorts d'invoc réels de l'adversaire de lane.
+  if (oppHasIgnite && iAmSquishy && /embrasement|ignite/i.test(summoners)) {
+    summoners = swapOffensive(summoners, 'Barrière');
+    summonerNote = `${oppName} a pris Embrasement (all-in) → Barrière pour survivre à son combo plutôt que d'échanger les Embrasement.`;
+  } else if (oppAssassin && iAmSquishy && /embrasement|ignite/i.test(summoners)) {
+    summoners = swapOffensive(summoners, 'Barrière');
+    summonerNote = `Barrière plutôt qu'Embrasement : ${oppName} burst fort (assassin) — de quoi survivre à son all-in.`;
+  } else if ((oppHardCc || (enemyComp && enemyComp.ccCount >= 3)) && iAmSquishy) {
+    summoners = swapOffensive(summoners, 'Nettoyage');
+    summonerNote = oppHardCc
+      ? `Nettoyage envisageable : ${oppName} a un CC fiable qui te lock (casse la chaîne de contrôle).`
+      : `Nettoyage envisageable : l'équipe adverse aligne beaucoup de CC (${enemyComp.ccCount}) — de quoi sortir d'un lock.`;
+  }
+  if (oppHasExhaust) notes.push(`${oppName} a Fatigue : tes all-ins burst sont moins fiables — joue le long terme / le poke.`);
+  if (oppHasCleanse) notes.push(`${oppName} a Nettoyage : ton Embrasement/CC dur sera annulé — ne compte pas dessus pour le kill.`);
+  if (!oppHasIgnite && enemyIgniteCount >= 2) notes.push(`${enemyIgniteCount} Embrasement côté adverse : anticipe des all-ins, garde de la survie.`);
+  if (enemyExhaustCount >= 2) notes.push(`${enemyExhaustCount} Fatigue en face : ton burst sera coupé en teamfight, étale tes dégâts.`);
+
+  // Runes : keystone/secondaire du build + notes de matchup ET de comp globale.
+  let runes = build.runes ? build.runes.keystone + (build.runes.secondary ? ' · ' + build.runes.secondary : '') : null;
+  const runeNotes = [];
+  if (laneOpponent) {
+    const oppDmg = classifyDamage(laneOpponent);
+    if (oppAssassin) runeNotes.push('Secondaire de survie (Seconde Souffle / Garde-Ange) vs le burst de lane.');
+    if (oppTags.includes('Mage') && oppDmg === 'AP') runeNotes.push('Contre le poke : Seconde Souffle + Biscuits pour tenir la lane.');
+    if (oppTags.includes('Marksman')) runeNotes.push('Contre un ranged : sustain/vitesse contre le poke (Fleet / Seconde Souffle).');
+  }
+  // Toute l'équipe adverse.
+  if (enemyComp) {
+    if (enemyComp.burstCount >= 2) runeNotes.push(`Comp adverse à fort burst (${enemyComp.burstCount}) : Seconde Souffle/Os Démoniaque + Garde-Ange en secondaire.`);
+    if (enemyComp.ccCount >= 4) runeNotes.push(`Beaucoup de CC (${enemyComp.ccCount}) : Ténacité (bottes de Mercure) et rune de survie.`);
+    if (enemyComp.profile === 'à dominante AD') runeNotes.push('Comp majoritairement AD : fragments d’armure + Os Démoniaque.');
+    if (enemyComp.profile === 'à dominante AP') runeNotes.push('Comp majoritairement AP : fragments de résistance magique + bottes de Mercure.');
+  }
+  if (autofilled) {
+    runeNotes.unshift('Autofill : privilégie une page sûre et polyvalente (survie/sustain) plutôt qu’une page all-in risquée.');
+  }
+  return {
+    summoners,
+    summonerNote,
+    runes,
+    runeNote: runeNotes[0] || null,
+    notes: [summonerNote, ...notes, ...runeNotes].filter(Boolean).slice(0, 5),
+    enemySpells: [...new Set(enemySpellNames)],
+    autofilled: Boolean(autofilled),
+  };
+}
 
 // Pool de champions du joueur (data/champion-pool.json), chargée à la demande.
 let POOL = null;
@@ -141,10 +257,16 @@ function analyzeChampSelect(session, ddragon) {
 
   // Adversaire direct de lane (même rôle assigné, si connu).
   let laneOpponent = null;
+  let oppMember = null;
   if (myRole) {
-    const opp = (session.theirTeam || []).find((m) => normRole(m.assignedPosition) === myRole && m.championId > 0);
-    if (opp && ddragon) laneOpponent = ddragon.resolveChampionByKey(opp.championId);
+    oppMember = (session.theirTeam || []).find((m) => normRole(m.assignedPosition) === myRole && m.championId > 0) || null;
+    if (oppMember && ddragon) laneOpponent = ddragon.resolveChampionByKey(oppMember.championId);
   }
+
+  // Autofill : tu es assigné à un rôle qui n'est pas dans ta pool configurée
+  // (tes mains). On ajuste alors les conseils vers plus de sûreté/confort.
+  const poolRoles = Object.keys((loadPool().pool || {}));
+  const autofilled = Boolean(myRole && poolRoles.length && !poolRoles.includes(myRole));
 
   // ── Suggestions de pick ──────────────────────────────────────────────────
   const taken = new Set([...myChamps, ...enemyChamps].map((c) => c.id));
@@ -377,6 +499,19 @@ function analyzeChampSelect(session, ddragon) {
   const teamWinProb = suggestions.length && suggestions[0].winProb != null ? suggestions[0].winProb : null;
   const winProbGrounded = suggestions.length ? Boolean(suggestions[0].winProbGrounded) : false;
 
+  // Sorts d'invoc + runes adaptés au matchup. On calcule pour le champion le plus
+  // probable : celui déjà pické, sinon le meilleur pick conseillé.
+  let setupChamp = myPicked;
+  if (!setupChamp && suggestions.length && ddragon) {
+    setupChamp = ddragon.resolveChampionByName(suggestions[0].id) || ddragon.resolveChampionByName(suggestions[0].name);
+  }
+  const recommendedSetup = matchupSetup(setupChamp, myRole, laneOpponent, enemyComp, ds, {
+    enemyTeam: session.theirTeam || [],
+    oppMember,
+    autofilled,
+  });
+  if (recommendedSetup) recommendedSetup.forChampion = champRef(setupChamp);
+
   return {
     myRole,
     myRoleLabel: ROLE_LABEL[myRole] || myRole || 'Inconnu',
@@ -394,6 +529,11 @@ function analyzeChampSelect(session, ddragon) {
     banSuggestions,
     buildSuggestions,
     runeHints,
+    recommendedSetup,
+    autofilled,
+    autofillNote: autofilled
+      ? `Tu es autofill ${ROLE_LABEL[myRole] || myRole} (hors de ta pool ${poolRoles.map((r) => ROLE_LABEL[r] || r).join('/')}). Joue sûr : champion simple/défensif, freeze/farm, évite les plays risqués tôt.`
+      : null,
     timerSeconds: session.timer ? Math.round((session.timer.adjustedTimeLeftInPhase || 0) / 1000) : null,
   };
 }

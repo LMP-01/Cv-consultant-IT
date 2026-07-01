@@ -268,6 +268,18 @@ function wpClass(wp) {
 function renderChampSelect(pick) {
   $('myRole').textContent = pick.myRoleLabel || '';
 
+  // Bandeau autofill (rôle hors de ta pool) — conseils ajustés vers la sûreté.
+  const af = $('autofillBanner');
+  if (af) {
+    if (pick.autofilled && pick.autofillNote) {
+      af.innerHTML = `${iconSvg('alert', 'ic-amber')} <span>${esc(pick.autofillNote)}</span>`;
+      af.classList.remove('hidden');
+    } else {
+      af.innerHTML = '';
+      af.classList.add('hidden');
+    }
+  }
+
   const lane = $('laneOpponent');
   lane.innerHTML = pick.laneOpponent
     ? `Adversaire de lane : <strong>${esc(pick.laneOpponent.name)}</strong>`
@@ -287,6 +299,28 @@ function renderChampSelect(pick) {
       : '<span class="profile-line">En attente des picks adverses…</span>';
   }
 
+  // Sorts d'invoc + runes adaptés au matchup ET à toute l'équipe adverse
+  // (règles, instantané — pas d'attente IA). Le plan IA affine ensuite.
+  const setupEl = $('matchupSetup');
+  if (setupEl) {
+    const s = pick.recommendedSetup;
+    if (s && (s.summoners || s.runes)) {
+      const forWho = s.forChampion ? ` <span class="ms-for">${esc(s.forChampion.name)}</span>` : '';
+      const notes = (s.notes && s.notes.length ? s.notes : [s.summonerNote, s.runeNote].filter(Boolean))
+        .map((n) => `<li>${esc(n)}</li>`)
+        .join('');
+      setupEl.innerHTML = `
+        <h3 class="sub">${iconSvg('sliders')} Sorts d'invoc &amp; runes (matchup + équipe)${forWho}</h3>
+        <div class="ms-card">
+          ${s.summoners ? `<div class="ms-row"><span class="ms-k">${iconSvg('flame')} Sorts</span><span class="ms-v">${esc(s.summoners)}</span></div>` : ''}
+          ${s.runes ? `<div class="ms-row"><span class="ms-k">${iconSvg('tree')} Runes</span><span class="ms-v">${esc(s.runes)}</span></div>` : ''}
+          ${notes ? `<ul class="ms-notes">${notes}</ul>` : ''}
+        </div>`;
+    } else {
+      setupEl.innerHTML = '';
+    }
+  }
+
   // Plan de lane détaillé (IA) — apparaît dès qu'il est prêt.
   const mp = $('matchupPlan');
   if (mp) {
@@ -297,6 +331,7 @@ function renderChampSelect(pick) {
         <h3 class="sub">${iconSvg('map')} Plan de lane (IA)</h3>
         <div class="mplan-card">
           <div class="mplan-row"><span class="mplan-k">Lane</span><span>${esc(p.lanePlan)}</span></div>
+          ${p.summoners ? `<div class="mplan-row"><span class="mplan-k">Sorts d'invoc</span><span>${esc(p.summoners)}</span></div>` : ''}
           ${p.runes ? `<div class="mplan-row"><span class="mplan-k">Runes</span><span>${esc(p.runes)}</span></div>` : ''}
           ${p.winCondition ? `<div class="mplan-row"><span class="mplan-k">Win condition</span><span>${esc(p.winCondition)}</span></div>` : ''}
           ${p.powerSpikes ? `<div class="mplan-row"><span class="mplan-k">Spikes</span><span>${esc(p.powerSpikes)}</span></div>` : ''}

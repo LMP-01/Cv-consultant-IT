@@ -280,9 +280,23 @@ Avec une **clé dev Riot** (gratuite, **expire toutes les 24 h**) dans `.env` (`
 
 Le bouton 🎤 du chat : tu **dictes** ta question, elle **part toute seule** à la fin, et la **réponse est lue à voix haute** si la voix est active → boucle quasi mains-libres (utile mort / en alt-tab).
 
+### 🎚️ Sorts d'invoc & runes adaptés (matchup + équipe adverse)
+
+En champ select, sous les picks, un bloc **« Sorts d'invoc & runes »** propose une reco **instantanée (règles, sans attendre l'IA)** calculée pour ton champion probable et adaptée à **trois niveaux** :
+
+- ton **adversaire de lane direct** (assassin/burst → **Barrière** ; CC fiable → **Nettoyage**) ;
+- **toute la composition adverse** (beaucoup de CC → Nettoyage/Ténacité ; fort burst → runes de survie ; profil AD → armure, AP → RM) ;
+- les **sorts d'invocateur RÉELLEMENT pris par l'équipe adverse** (visibles via le LCU) : *ton adversaire a pris Embrasement → Barrière* ; *il a Fatigue → tes all-ins burst valent moins* ; *il a Nettoyage → ne compte pas sur ton Embrasement pour le kill* ; *plusieurs Embrasement en face → anticipe les all-ins*.
+
+Le **plan de lane IA** (ci-dessous) reçoit les mêmes données et affine encore les runes/sorts.
+
+### 🧭 Détection d'autofill
+
+Si ton **rôle assigné n'est pas dans ta pool** (`data/champion-pool.json`), le coach affiche un **bandeau autofill** et **ajuste tous ses conseils** vers la sûreté : picks simples/défensifs, page de runes polyvalente (survie/sustain plutôt qu'all-in), rappel de jouer farm/freeze et d'éviter les plays risqués tôt. L'info est aussi transmise à l'IA pour son plan de lane.
+
 ### 🗺️ Plan de lane & win condition (IA, champ select)
 
-Dès que ton adversaire de lane est connu, Claude génère un **plan spécifique au matchup** : comment jouer la lane (trades, gestion de vague, niveaux clés, recall), la **page de runes** conseillée pour ce duel, la **win condition** de ta compo, tes **power spikes**, et les **dangers** concrets de l'adversaire. (1 appel par matchup, mis en cache.)
+Dès que ton adversaire de lane est connu, Claude génère un **plan spécifique au matchup** : comment jouer la lane (trades, gestion de vague, niveaux clés, recall), la **page de runes** conseillée pour ce duel, les **sorts d'invoc** adaptés, la **win condition** de ta compo, tes **power spikes**, et les **dangers** concrets de l'adversaire. (1 appel par matchup, mis en cache.)
 
 ### 💰 Avance économique & tempo d'équipe
 

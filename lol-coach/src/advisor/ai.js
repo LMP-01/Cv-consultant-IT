@@ -156,6 +156,7 @@ const MATCHUP_SCHEMA = {
   properties: {
     lanePlan: { type: 'string' },
     runes: { type: 'string' },
+    summoners: { type: 'string' },
     winCondition: { type: 'string' },
     powerSpikes: { type: 'string' },
     dangers: { type: 'array', items: { type: 'string' } },
@@ -163,24 +164,30 @@ const MATCHUP_SCHEMA = {
 };
 
 const MATCHUP_FR = `Tu es un coach de League of Legends de très haut niveau qui prépare un joueur AVANT la partie.
-On te donne ton champion probable, ton adversaire de lane DIRECT, ton rôle, et les deux compositions.
+On te donne ton champion probable, ton adversaire de lane DIRECT, ton rôle, les deux compositions, les sorts d'invocateur RÉELLEMENT pris par l'équipe adverse (enemySummonerSpells) et si tu es AUTOFILL (autofilled).
+Adapte "summoners" et "runes" au matchup ET à TOUTE l'équipe adverse (CC, burst, AD/AP) ET à leurs sorts d'invoc réels (ex. adversaire avec Embrasement → Barrière ; beaucoup de CC → Nettoyage/Ténacité ; adversaire avec Fatigue → tes all-ins burst valent moins).
+Si autofilled=true, privilégie des choix SÛRS et polyvalents (survie, farm, éviter les plays risqués) et dis-le.
 Donne un plan concret et spécifique à CE matchup (pas de généralités).
 Réponds UNIQUEMENT avec un objet JSON :
-{"lanePlan":"...","runes":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
+{"lanePlan":"...","runes":"...","summoners":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
 - "lanePlan" : comment jouer la lane (trades à prendre/éviter, gestion de vague, niveaux clés, timings de recall).
 - "runes" : la page de runes conseillée POUR ce matchup (keystone + secondaires, 1 ligne).
+- "summoners" : les sorts d'invocateur conseillés POUR ce matchup (ex. "Flash + Barrière vs l'assassin", "Flash + Nettoyage vs le lock CC") — 1 ligne, avec la raison.
 - "winCondition" : comment TON équipe gagne la partie (déduit des deux compos).
 - "powerSpikes" : tes fenêtres de force à jouer (niveaux/objets).
 - "dangers" : 2 à 3 pièges concrets de l'adversaire (son combo, son spike, ce qu'il build/fait contre toi).
 N'invente pas de champions absents. En français, sans aucun texte autour du JSON.`;
 
 const MATCHUP_EN = `You are a top-level League of Legends coach preparing a player BEFORE the game.
-You receive their likely champion, their DIRECT lane opponent, their role, and both compositions.
+You receive their likely champion, their DIRECT lane opponent, their role, both compositions, the summoner spells the enemy team ACTUALLY picked (enemySummonerSpells), and whether they are AUTOFILL (autofilled).
+Adapt "summoners" and "runes" to the matchup AND the WHOLE enemy team (CC, burst, AD/AP) AND their real summoner spells (e.g. opponent with Ignite → Barrier; lots of CC → Cleanse/Tenacity; opponent with Exhaust → your burst all-ins are worth less).
+If autofilled=true, prefer SAFE, versatile choices (survival, farming, avoiding risky plays) and say so.
 Give a concrete plan specific to THIS matchup (no generalities).
 Reply ONLY with a JSON object:
-{"lanePlan":"...","runes":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
+{"lanePlan":"...","runes":"...","summoners":"...","winCondition":"...","powerSpikes":"...","dangers":["..."]}
 - "lanePlan": how to play lane (trades to take/avoid, wave management, key levels, recall timings).
 - "runes": the recommended rune page FOR this matchup (keystone + secondaries, 1 line).
+- "summoners": the recommended summoner spells FOR this matchup (e.g. "Flash + Barrier vs the assassin", "Flash + Cleanse vs the CC lock") — 1 line, with the reason.
 - "winCondition": how YOUR team wins the game (from both comps).
 - "powerSpikes": your strength windows to play (levels/items).
 - "dangers": 2-3 concrete opponent threats (combo, spike, what they build/do against you).
@@ -512,6 +519,7 @@ class AiAdvisor {
       return {
         lanePlan: String(p.lanePlan),
         runes: p.runes || null,
+        summoners: p.summoners || null,
         winCondition: p.winCondition || null,
         powerSpikes: p.powerSpikes || null,
         dangers: Array.isArray(p.dangers) ? p.dangers.slice(0, 4) : [],

@@ -1236,6 +1236,21 @@ body.compact .brand h1 { font-size: 16px; }
 .mplan-danger ul { margin: 5px 0 0; padding-left: 18px; }
 .mplan-danger li { font-size: 12px; line-height: 1.5; color: var(--muted); margin-bottom: 4px; }
 
+/* ── Sorts d'invoc & runes adaptés (matchup + équipe adverse) ─────────────── */
+.matchup-setup { margin: 8px 0 4px; }
+.matchup-setup .sub { display: flex; align-items: center; gap: 6px; }
+.ms-for { font-weight: 700; color: var(--primary-2); }
+.ms-card { background: linear-gradient(180deg, rgba(45,212,191,.10), rgba(139,92,246,.06)); border: 1px solid rgba(45,212,191,.32); border-radius: 12px; padding: 11px 14px; }
+.ms-row { display: grid; grid-template-columns: 84px 1fr; gap: 10px; align-items: baseline; font-size: 13px; line-height: 1.5; margin-bottom: 6px; color: var(--text); }
+.ms-k { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--primary-2); }
+.ms-v { font-weight: 600; }
+.ms-notes { margin: 6px 0 0; padding-left: 16px; border-top: 1px solid var(--border); padding-top: 8px; }
+.ms-notes li { font-size: 12px; line-height: 1.5; color: var(--muted); margin-bottom: 4px; }
+
+/* ── Bandeau autofill ─────────────────────────────────────────────────────── */
+.autofill-banner { display: flex; align-items: center; gap: 8px; background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.5); color: #fcd34d; border-radius: 10px; padding: 8px 12px; font-size: 12.5px; line-height: 1.45; margin: 4px 0 8px; }
+.autofill-banner.hidden { display: none; }
+
 /* ── Avance économique (tableau de bord) ──────────────────────────────────── */
 .gold-lead { margin: 10px 0 4px; }
 .gl-head { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }

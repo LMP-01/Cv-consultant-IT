@@ -293,9 +293,18 @@ class CoachLoop {
           lang: config.lang,
           yourRole: pick.myRoleLabel,
           yourPick: topPick.name,
+          autofilled: Boolean(pick.autofilled),
+          autofillNote: pick.autofillNote || null,
           laneOpponent: pick.laneOpponent.name,
           enemyTeam: (pick.enemyChamps || []).map((c) => c.name),
           yourTeam: (pick.myChamps || []).map((c) => c.name),
+          enemyComp: pick.enemyComp
+            ? { profile: pick.enemyComp.profile, cc: pick.enemyComp.ccLevel, burst: pick.enemyComp.burstLevel }
+            : null,
+          enemySummonerSpells: (pick.recommendedSetup && pick.recommendedSetup.enemySpells) || [],
+          suggestedSetup: pick.recommendedSetup
+            ? { summoners: pick.recommendedSetup.summoners, runes: pick.recommendedSetup.runes }
+            : null,
         };
         Promise.resolve()
           .then(() => this.ai.getMatchupPlan(ctx))
