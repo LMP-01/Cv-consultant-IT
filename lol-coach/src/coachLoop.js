@@ -490,6 +490,7 @@ class CoachLoop {
           }
         : null,
       // Données live enrichies pour des conseils stratégiques.
+      risk: summary.risk ? { level: summary.risk.level, title: summary.risk.title } : null,
       goldLead: summary.teamGold ? { team: summary.teamGold.diff, lane: summary.laneGold ? summary.laneGold.diff : null } : null,
       dragons: summary.dragons ? { ally: summary.dragons.ally, enemy: summary.dragons.enemy, soulTeam: summary.dragons.soulTeam, soulPointTeam: summary.dragons.soulPointTeam } : null,
       towers: summary.towers || null,

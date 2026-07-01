@@ -298,6 +298,20 @@ Si ton **rôle assigné n'est pas dans ta pool** (`data/champion-pool.json`), le
 
 Dès que ton adversaire de lane est connu, Claude génère un **plan spécifique au matchup** : comment jouer la lane (trades, gestion de vague, niveaux clés, recall), la **page de runes** conseillée pour ce duel, les **sorts d'invoc** adaptés, la **win condition** de ta compo, tes **power spikes**, et les **dangers** concrets de l'adversaire. (1 appel par matchup, mis en cache.)
 
+### ⚠️ Alerte « move risqué » (ping ATTENTION)
+
+En jeu, un **bandeau rouge + bip** apparaît en haut du HUD quand la situation devient dangereuse : **infériorité numérique** (plus d'ennemis vivants que d'alliés), **objectif contesté alors que des alliés sont morts**, ou **PV bas avec de l'or non dépensé sur toi**. Le ping ne se déclenche qu'à l'**apparition** d'un nouveau risque (pas à chaque tick).
+
+> ℹ️ L'API live de Riot **n'expose pas les coordonnées** des joueurs : impossible de détecter un « overextend » sur la carte. L'alerte s'appuie donc sur des signaux fiables et réellement disponibles (morts, PV, or, objectif). C'est un garde-fou, pas un radar de position.
+
+### 🎯 Suivi CS/min (objectif 10)
+
+Le HUD affiche en continu tes **CS/minute** avec une **barre de progression vers 10 CS/min** (objectif configurable), le **retard/avance** par rapport à ce rythme, et un code couleur (vert ≥ objectif, jaune, rouge). Le jungle est traité à part (farm différent).
+
+### 🏆 Rang, LP & climb vers Master (HUD)
+
+En haut du HUD in-game, une **carte de rang** montre ton **palier avec son emblème** (Fer → Challenger — image officielle Community Dragon, avec blason SVG coloré en repli), tes **LP**, ton **winrate**, et surtout une **estimation du nombre de games à GAGNER pour atteindre Master** (`RANK_LP_PER_WIN`, ~22 LP/win par défaut). La carte apparaît aussi sur la page **Historique**. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
+
 ### 💰 Avance économique & tempo d'équipe
 
 Le tableau de bord affiche une **barre d'avance d'or estimée** (ton équipe vs l'adverse) + une **courbe du différentiel** et ton **avance de lane**. Des callouts apparaissent : *« avantage d'équipe → force les objectifs »* ou *« déficit → joue safe/scaling »*. L'or des autres joueurs n'étant pas exposé par l'API, c'est une **estimation** (valeur des objets + farm + kills).

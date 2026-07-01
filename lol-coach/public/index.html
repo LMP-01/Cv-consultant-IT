@@ -126,6 +126,17 @@
 
         <!-- In game -->
         <div id="inGame" class="hidden">
+          <!-- Alerte move risqué (ping ATTENTION) -->
+          <div id="riskBanner" class="risk-banner hidden"></div>
+
+          <!-- Barre HUD : rang (climb Master) + suivi CS/min -->
+          <div class="panel hud-topbar">
+            <div id="rankCard" class="rank-card">
+              <div class="rank-empty">Rang : ajoute <code>RIOT_ID</code> (+ clé) au <code>.env</code>.</div>
+            </div>
+            <div id="csTracker" class="cs-tracker"></div>
+          </div>
+
           <div class="panel">
             <h2 class="panel-title"><span class="ic" data-ic="clock"></span> Objectifs</h2>
             <div id="objectives" class="objectives"></div>

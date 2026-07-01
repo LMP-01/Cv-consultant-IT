@@ -198,6 +198,67 @@ function computeObjectives(gameTime, events) {
  * Moteur de conseils en jeu basé sur des règles.
  * @returns {{summary, objectives, scoreboard, advice}}
  */
+// Évalue le risque d'un engagement/positionnement à partir des seuls signaux
+// exposés par l'API live (pas de coordonnées). Renvoie null si rien d'alarmant,
+// sinon { level, title, message, reasons[] } — le plus grave d'abord.
+function computeRisk({ me, scoreboard, stats, active, objectives, dragons, gameTime }) {
+  if (!me || me.isDead || gameTime < 90) return null;
+  const alliesAliveCount = 1 + scoreboard.allies.filter((p) => !p.isYou && !p.isDead).length; // toi + alliés vivants
+  const enemiesAlive = scoreboard.enemies.filter((p) => !p.isDead);
+  const enemiesAliveCount = enemiesAlive.length;
+  const hpPct = stats.maxHealth ? stats.currentHealth / stats.maxHealth : 1;
+  const gold = active.currentGold != null ? active.currentGold : 0;
+
+  // Objectif majeur disponible maintenant (fenêtre de contest = zone chaude).
+  const hotObjective = (objectives || []).find(
+    (o) => o.etaSeconds === 0 && (o.name === 'Baron' || o.name === 'Dragon')
+  );
+  const soulOnLine = dragons && dragons.soulPointTeam; // le prochain drake donne le soul
+
+  // 1) Infériorité numérique nette (2 morts d'écart) — le pire.
+  if (enemiesAliveCount - alliesAliveCount >= 2) {
+    return {
+      level: 'danger',
+      title: 'Infériorité numérique',
+      message: `${enemiesAliveCount} ennemis vivants pour ${alliesAliveCount} des vôtres — NE force PAS. Recule, temporise et attends le respawn de tes alliés avant tout fight/objectif.`,
+      reasons: [`${alliesAliveCount}v${enemiesAliveCount}`],
+    };
+  }
+
+  // 2) Objectif chaud alors que des alliés sont morts : contest suicide.
+  const alliesDead = scoreboard.allies.filter((p) => !p.isYou && p.isDead).length;
+  if ((hotObjective || soulOnLine) && alliesDead >= 2 && enemiesAliveCount >= alliesAliveCount) {
+    const what = hotObjective ? hotObjective.name : 'drake du Soul';
+    return {
+      level: 'danger',
+      title: `Ne conteste pas le ${what} seul`,
+      message: `${alliesDead} alliés morts et l'ennemi est au complet autour du ${what}. Le contest est perdu — pose la vision, décroche et cède l'objectif plutôt qu'un ace.`,
+      reasons: [`${alliesDead} alliés morts`, what],
+    };
+  }
+
+  // 3) PV bas + or non dépensé : tu joues avec de l'or sur toi.
+  if (hpPct < 0.35 && gold >= 1300 && enemiesAliveCount >= 1) {
+    return {
+      level: 'warn',
+      title: 'PV bas avec de l’or sur toi',
+      message: `Tu es à ${pct(hpPct)}% PV avec ${Math.round(gold)} or non dépensé. Recall et achète — ne meurs pas en donnant à la fois le kill ET ton or.`,
+      reasons: [`${pct(hpPct)}% PV`, `${Math.round(gold)} or`],
+    };
+  }
+
+  // 4) PV très bas, ennemis vivants, sans avantage numérique : décroche.
+  if (hpPct < 0.25 && enemiesAliveCount >= alliesAliveCount) {
+    return {
+      level: 'warn',
+      title: 'PV critiques',
+      message: `À ${pct(hpPct)}% PV, un seul engage adverse te tue. Sors de portée de sort, reset ou colle-toi à ta tour.`,
+      reasons: [`${pct(hpPct)}% PV`],
+    };
+  }
+  return null;
+}
+
 function analyzeInGame(data, ddragon) {
   const advice = [];
   const gameTime = data.gameData ? data.gameData.gameTime : 0;
@@ -489,9 +550,28 @@ function analyzeInGame(data, ddragon) {
     ? { you: Math.round((me.netWorth || 0) + (active.currentGold || 0)), opp: Math.round(laneOppForGold.netWorth || 0), diff: Math.round((me.netWorth || 0) + (active.currentGold || 0) - (laneOppForGold.netWorth || 0)) }
     : null;
 
+  // ── Détecteur de move risqué (« ATTENTION ») ──────────────────────────────
+  // L'API live n'expose PAS les coordonnées : on ne peut pas voir un overextend
+  // sur la map. On s'appuie donc sur des signaux fiables et disponibles :
+  // infériorité numérique (morts), tes PV, ton or non dépensé, objectif contesté.
+  const risk = computeRisk({ me, scoreboard, stats, active, objectives, dragons, gameTime });
+  if (risk) {
+    advice.push({
+      id: 'risk-alert',
+      priority: 'high',
+      category: 'ATTENTION',
+      alert: true,
+      cue: { kind: 'beep', freq: 300, ms: 260 },
+      title: `⚠️ ATTENTION — ${risk.title}`,
+      message: risk.message,
+    });
+  }
+
+  const minutes = gameTime / 60;
   const summary = {
     gameTime,
     gameTimeText: mmss(gameTime),
+    risk,
     me: me
       ? {
           champion: me.champion,
@@ -499,6 +579,9 @@ function analyzeInGame(data, ddragon) {
           kda: `${me.kills}/${me.deaths}/${me.assists}`,
           cs: me.cs,
           csPerMin: gameTime > 0 ? +(me.cs / (gameTime / 60)).toFixed(1) : 0,
+          csTarget: 10,
+          csExpected: minutes > 0 ? Math.round(10 * minutes) : 0,
+          csIsJungle: me.position === 'JUNGLE',
           gold: active.currentGold != null ? Math.round(active.currentGold) : null,
           hpPct: stats.maxHealth ? pct(stats.currentHealth / stats.maxHealth) : null,
           stats: {

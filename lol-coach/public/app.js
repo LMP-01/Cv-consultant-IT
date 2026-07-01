@@ -448,12 +448,147 @@ function renderInGame(game) {
     });
   }
 
+  renderRisk(game.summary && game.summary.risk);
+  renderCsTracker(s);
+  renderRankCard();
+
   renderGoldLead(game.summary);
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
 
   renderItemPlan(game.itemPlan);
   renderTimers(game.scoreboard ? game.scoreboard.enemies : []);
+}
+
+// ── Alerte move risqué (ping ATTENTION) ─────────────────────────────────────
+let lastRiskKey = null;
+let lastRiskAt = 0;
+function renderRisk(risk) {
+  const el = $('riskBanner');
+  if (!el) return;
+  if (!risk) {
+    el.classList.add('hidden');
+    el.innerHTML = '';
+    lastRiskKey = null;
+    return;
+  }
+  const key = risk.title;
+  el.className = 'risk-banner ' + (risk.level === 'danger' ? 'risk-danger' : 'risk-warn');
+  el.innerHTML =
+    `<span class="risk-ic">${iconSvg('alert')}</span>` +
+    `<span class="risk-txt"><b>ATTENTION — ${esc(risk.title)}</b>${risk.message ? `<span>${esc(risk.message)}</span>` : ''}</span>`;
+  // Ping (bip + flash) seulement à l'apparition d'un NOUVEAU risque, pas à chaque tick.
+  const now = Date.now();
+  if (key !== lastRiskKey && now - lastRiskAt > 4000) {
+    lastRiskKey = key;
+    lastRiskAt = now;
+    if (risk.level === 'danger') { beep(300, 180); setTimeout(() => beep(300, 180), 230); }
+    else beep(420, 160);
+    el.classList.remove('risk-flash');
+    void el.offsetWidth; // relance l'animation
+    el.classList.add('risk-flash');
+    notify('⚠️ ATTENTION', risk.title);
+  }
+}
+
+// ── Suivi CS/min (objectif 10) ──────────────────────────────────────────────
+function renderCsTracker(s) {
+  const el = $('csTracker');
+  if (!el) return;
+  if (!s) { el.innerHTML = ''; return; }
+  if (s.csIsJungle) {
+    // Le jungler farm différemment : objectif indicatif plus bas, pas d'alerte.
+    el.innerHTML = `<div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min <b>${s.csPerMin}</b> <span class="cs-note">(jungle)</span></div>`;
+    if (window.hydrateIcons) hydrateIcons();
+    return;
+  }
+  const target = s.csTarget || 10;
+  const pctBar = Math.max(0, Math.min(100, (s.csPerMin / target) * 100));
+  const delta = s.cs - (s.csExpected || 0); // vs le rythme 10/min
+  const cls = s.csPerMin >= target ? 'cs-good' : s.csPerMin >= target * 0.7 ? 'cs-mid' : 'cs-bad';
+  const deltaTxt =
+    delta >= 0
+      ? `<span class="cs-good">+${delta} CS d'avance</span> sur le rythme 10/min`
+      : `<span class="cs-bad">${delta} CS</span> sous le rythme 10/min`;
+  el.innerHTML = `
+    <div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min
+      <b class="${cls}">${s.csPerMin}</b> <span class="cs-target">/ ${target} objectif</span>
+    </div>
+    <div class="cs-bar"><div class="cs-fill ${cls}" style="width:${pctBar}%"></div><div class="cs-goal"></div></div>
+    <div class="cs-sub">${s.cs} CS · ${deltaTxt}</div>`;
+  if (window.hydrateIcons) hydrateIcons();
+}
+
+// ── Carte de rang (emblème + LP + games à Master) ───────────────────────────
+let rankCache = null;
+let rankFetchedAt = 0;
+function renderRankCard() {
+  const el = $('rankCard');
+  if (!el) return;
+  const now = Date.now();
+  // Rafraîchit toutes les ~3 min si on a déjà des données ; retente vite sinon.
+  if (now - rankFetchedAt > (rankCache ? 180000 : 5000)) {
+    rankFetchedAt = now;
+    fetch('/api/riot/profile')
+      .then((r) => r.json())
+      .then((d) => {
+        rankCache = d && d.enabled && d.profile ? d.profile : (d || { enabled: false });
+        paintRankCard();
+      })
+      .catch(() => {});
+  }
+  paintRankCard();
+}
+const TIER_FR_HUD = { IRON: 'Fer', BRONZE: 'Bronze', SILVER: 'Argent', GOLD: 'Or', PLATINUM: 'Platine', EMERALD: 'Émeraude', DIAMOND: 'Diamant', MASTER: 'Maître', GRANDMASTER: 'Grand Maître', CHALLENGER: 'Challenger' };
+const TIER_COLOR = { IRON: '#7a6a5d', BRONZE: '#b3743c', SILVER: '#9aa8b4', GOLD: '#f0b330', PLATINUM: '#3fb6a8', EMERALD: '#2ecc71', DIAMOND: '#4aa3e0', MASTER: '#b15cff', GRANDMASTER: '#e0403e', CHALLENGER: '#f4c95d' };
+function rankCrestSvg(tier, size) {
+  const c = TIER_COLOR[tier] || '#8aa';
+  const s = size || 46;
+  // Petit blason SVG coloré par palier — fallback garanti si l'emblème CDN ne charge pas.
+  return `<svg width="${s}" height="${s}" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="#0b0f1a"/></linearGradient></defs><path d="M24 3l17 6v13c0 11-7.5 18.5-17 23C14.5 41.5 7 34 7 22V9z" fill="url(#rg)" stroke="${c}" stroke-width="1.6"/><path d="M24 13l5.5 10L24 33l-5.5-10z" fill="${c}" opacity=".9"/></svg>`;
+}
+function paintRankCard() {
+  const el = $('rankCard');
+  if (!el) return;
+  const d = rankCache;
+  if (!d) return;
+  if (d.enabled === false) {
+    el.innerHTML = `<div class="rank-empty">${iconSvg('gamepad')} Rang : ajoute <code>RIOT_ID</code> + <code>RIOT_API_KEY</code> au <code>.env</code> (clé dev = 24 h).</div>`;
+    return;
+  }
+  if (d.error) {
+    const hint = /manquant|Riot ID/i.test(d.error)
+      ? 'ajoute <code>RIOT_ID</code> (format « Pseudo#TAG ») au <code>.env</code>'
+      : /expir|invalide/i.test(d.error)
+        ? 'clé Riot expirée — régénère-la (dev = 24 h)'
+        : esc(d.error);
+    el.innerHTML = `<div class="rank-empty">${iconSvg('gamepad')} Rang indisponible : ${hint}.</div>`;
+    return;
+  }
+  const r = d.rank;
+  if (!r) { el.innerHTML = `<div class="rank-empty">${esc(d.riotId || '')} · non classé cette saison</div>`; return; }
+  const tierFr = TIER_FR_HUD[r.tier] || r.tier;
+  const games = (r.wins || 0) + (r.losses || 0);
+  const wr = games ? Math.round((r.wins / games) * 100) : 0;
+  // Blason SVG coloré en base (toujours visible) + emblème CDN par-dessus s'il charge.
+  const crest = rankCrestSvg(r.tier);
+  const emblem =
+    `<span class="rank-emblem-stack">${crest}` +
+    (r.emblem ? `<img class="rank-emblem" src="${r.emblem}" alt="${esc(tierFr)}" onerror="this.remove()"/>` : '') +
+    `</span>`;
+  let climb = '';
+  if (r.toMaster && r.toMaster.reached) {
+    climb = `<span class="rank-climb rank-master">${iconSvg('trophy')} Master atteint</span>`;
+  } else if (r.toMaster) {
+    climb = `<span class="rank-climb">${iconSvg('trophy')} <b>${r.toMaster.gamesToWin}</b> games à win → Master <span class="rank-climb-lp">(${r.toMaster.remainingLp} LP)</span></span>`;
+  }
+  el.innerHTML = `
+    <div class="rank-emblem-wrap" style="--tier:${TIER_COLOR[r.tier] || '#8aa'}">${emblem}</div>
+    <div class="rank-body">
+      <div class="rank-line1"><b class="rank-tier">${esc(tierFr)} ${esc(r.rank || '')}</b> <span class="rank-lp">${r.lp} LP</span></div>
+      <div class="rank-line2">${r.wins}V/${r.losses}D · <b class="${wr >= 50 ? 'cs-good' : 'cs-bad'}">${wr}%</b></div>
+      ${climb}
+    </div>`;
 }
 
 // ── Timers Flash / ultimes ennemis ───────────────────────────────────────────
