@@ -336,6 +336,16 @@ Le coach enregistre **l'horodatage de chaque mort** en partie (events de la Live
 
 La page Historique compare ton **profil moyen en victoire vs en défaite** (CS/min, morts, kills, assists, KP, vision, durée) : tu identifies ce qui change vraiment quand tu gagnes. **En partie**, le HUD affiche en plus ton **CS/min live comparé à ton rythme de win** (« vs ton rythme de win : +0.4 »).
 
+### 📥 Import de tes 20 dernières parties (Riot) dans l'historique
+
+Sur la page **Historique**, le bouton **« Importer mes 20 dernières (Riot) »** récupère tes vraies parties (Match-V5) **et leur timeline** pour en extraire : résultat, KDA, **CS/min**, **KP%**, **vision**, durée **et les timings de chaque mort**. Elles sont **fusionnées dans ton historique local** (dédoublonnées par `matchId`) et alimentent directement toutes tes analyses : winrate, **profil victoires/défaites**, **heatmap des morts**, courbes de progression. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
+
+### 🎯 Jalons de CS (10/20 min), mort avant objectif & résumé vocal
+
+- **Jalons de CS** : ton CS est figé à **10:00 et 20:00** et comparé à ton objectif (ton rythme de win, sinon 8/min) directement dans le HUD.
+- **Mort avant objectif** : une alerte **ATTENTION** se déclenche si tu meurs alors qu'un **dragon/baron/héraut** arrive avant ta résurrection (tu vas le rater — préviens ton équipe de temporiser).
+- **Résumé vocal de fin de partie** : à la fin, le coach **lit** un bilan court (résultat, KDA, CS/min + 1 axe clé, ex. « 3 morts avant la 10ᵉ minute ») si la voix est activée.
+
 ### 💰 Avance économique & tempo d'équipe
 
 Le tableau de bord affiche une **barre d'avance d'or estimée** (ton équipe vs l'adverse) + une **courbe du différentiel** et ton **avance de lane**. Des callouts apparaissent : *« avantage d'équipe → force les objectifs »* ou *« déficit → joue safe/scaling »*. L'or des autres joueurs n'étant pas exposé par l'API, c'est une **estimation** (valeur des objets + farm + kills).

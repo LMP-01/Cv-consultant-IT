@@ -104,6 +104,72 @@ class RiotApi {
     return this._get(`${this.region}.api.riotgames.com`, `/lol/match/v5/matches/${matchId}`);
   }
 
+  // Timeline d'un match (events par frame) — pour extraire les timings de morts.
+  async matchTimeline(matchId) {
+    return this._get(`${this.region}.api.riotgames.com`, `/lol/match/v5/matches/${matchId}/timeline`);
+  }
+
+  // Récupère les N dernières parties AU FORMAT de l'historique local (pour import),
+  // avec KP calculée et deathTimes issus de la timeline (alimente la heatmap).
+  async getMatchesForImport(riotId, count, opts) {
+    const withTimeline = !opts || opts.withTimeline !== false;
+    const id = riotId || config.riot.riotId;
+    if (!id || !id.includes('#')) throw new Error('Riot ID manquant (format "Pseudo#TAG")');
+    const [gameName, tagLine] = id.split('#');
+    const account = await this.accountByRiotId(gameName, tagLine);
+    if (!account) return [];
+    const ids = await this.matchIds(account.puuid, Math.min(20, count || 20));
+    if (!Array.isArray(ids)) return [];
+    const out = [];
+    for (const mid of ids) {
+      const m = await this.match(mid).catch(() => null);
+      if (!m || !m.info) continue;
+      const parts = m.info.participants || [];
+      const me = parts.find((p) => p.puuid === account.puuid);
+      if (!me) continue;
+      const durSec = m.info.gameDuration || 0;
+      const cs = (me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0);
+      const teamKills = parts.filter((p) => p.teamId === me.teamId).reduce((s, p) => s + (p.kills || 0), 0);
+      const kp = teamKills ? Math.round(((me.kills + me.assists) / teamKills) * 100) : null;
+      let deathTimes = [];
+      if (withTimeline) {
+        const tl = await this.matchTimeline(mid).catch(() => null);
+        if (tl && tl.info && Array.isArray(tl.info.frames)) {
+          for (const fr of tl.info.frames) {
+            for (const ev of fr.events || []) {
+              if (ev.type === 'CHAMPION_KILL' && ev.victimId === me.participantId) {
+                deathTimes.push(Math.round((ev.timestamp || 0) / 1000));
+              }
+            }
+          }
+          deathTimes.sort((a, b) => a - b);
+        }
+      }
+      out.push({
+        matchId: mid,
+        source: 'riot',
+        date: new Date(m.info.gameEndTimestamp || m.info.gameStartTimestamp || Date.now()).toISOString(),
+        durationSec: durSec,
+        durationText: `${Math.floor(durSec / 60)}:${String(durSec % 60).padStart(2, '0')}`,
+        win: Boolean(me.win),
+        champion: me.championName,
+        role: me.teamPosition || me.individualPosition || null,
+        kda: `${me.kills}/${me.deaths}/${me.assists}`,
+        kills: me.kills,
+        deaths: me.deaths,
+        assists: me.assists,
+        cs,
+        csPerMin: durSec ? +(cs / (durSec / 60)).toFixed(1) : null,
+        wardScore: me.visionScore != null ? me.visionScore : null,
+        kp,
+        deathTimes,
+        queue: QUEUE[m.info.queueId] || String(m.info.queueId),
+        review: null,
+      });
+    }
+    return out;
+  }
+
   // Profil complet : compte + rang. Riot ID "Pseudo#TAG" (sinon config.riot.riotId).
   async getProfile(riotId) {
     const id = riotId || config.riot.riotId;

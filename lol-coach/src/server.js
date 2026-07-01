@@ -130,6 +130,20 @@ app.get('/api/riot/profile', async (req, res) => {
   }
 });
 
+// Riot API : IMPORT des N dernières parties dans l'historique local (avec stats
+// + timings de morts via timeline), pour enrichir les analyses. Dédoublonné.
+app.get('/api/riot/import', async (req, res) => {
+  if (!riot.available) return res.json({ enabled: false, hint: 'Ajoute RIOT_API_KEY et RIOT_ID dans .env.' });
+  try {
+    const count = Math.min(20, parseInt(req.query.count, 10) || 20);
+    const records = await riot.getMatchesForImport(req.query.id, count);
+    const imported = loop.history.importMany(records);
+    res.json({ enabled: true, imported, fetched: records.length });
+  } catch (e) {
+    res.status(502).json({ enabled: true, error: e.message });
+  }
+});
+
 // Riot API : parties récentes réelles (match-v5).
 app.get('/api/riot/matches', async (req, res) => {
   if (!riot.available) return res.json({ enabled: false, matches: [] });
@@ -170,6 +184,8 @@ server.listen(config.port, () => {
   console.log(`  Langue     : ${config.lang}`);
   console.log('  Ctrl+C pour quitter.\n');
 
+  // Permet à la boucle d'émettre des cues (ex. résumé vocal de fin de partie).
+  loop.onCue = (cue) => broadcastRaw({ type: 'cue', payload: cue });
   loop.init(broadcast).catch((err) => {
     console.error('Échec d’initialisation de la boucle de coaching:', err);
   });

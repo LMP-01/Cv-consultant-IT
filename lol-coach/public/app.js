@@ -450,7 +450,7 @@ function renderInGame(game) {
   }
 
   renderRisk(game.summary && game.summary.risk);
-  renderCsTracker(s, game.benchmark);
+  renderCsTracker(s, game.benchmark, game.milestones);
   renderRankCard();
   renderObjectivesTaken(game.summary);
   renderRecall(game.summary);
@@ -521,8 +521,8 @@ function renderRisk(risk) {
   }
 }
 
-// ── Suivi CS/min (objectif 10) + benchmark rythme de win ────────────────────
-function renderCsTracker(s, benchmark) {
+// ── Suivi CS/min (objectif 10) + benchmark rythme de win + jalons 10/20 min ──
+function renderCsTracker(s, benchmark, milestones) {
   const el = $('csTracker');
   if (!el) return;
   if (!s) { el.innerHTML = ''; return; }
@@ -533,8 +533,18 @@ function renderCsTracker(s, benchmark) {
     const cls = d >= 0 ? 'cs-good' : 'cs-bad';
     bench = `<div class="cs-bench">vs ton rythme de win (${benchmark.csPerMin.win}/min) : <span class="${cls}">${d >= 0 ? '+' : ''}${d}</span></div>`;
   }
+  // Jalons de CS figés à 10:00 / 20:00 (repères de farm vs objectif).
+  let mile = '';
+  if (milestones && (milestones.m10 || milestones.m20)) {
+    const chip = (label, mm) => {
+      if (!mm) return '';
+      const cls = mm.delta >= 0 ? 'cs-good' : 'cs-bad';
+      return `<span class="cs-mile"><b>${label}</b> ${mm.cs} <span class="${cls}">(${mm.delta >= 0 ? '+' : ''}${mm.delta})</span></span>`;
+    };
+    mile = `<div class="cs-miles">${chip('@10', milestones.m10)}${chip('@20', milestones.m20)}<span class="cs-mile-note">vs objectif ${milestones.pace}/min</span></div>`;
+  }
   if (s.csIsJungle) {
-    el.innerHTML = `<div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min <b>${s.csPerMin}</b> <span class="cs-note">(jungle)</span></div>${bench}`;
+    el.innerHTML = `<div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min <b>${s.csPerMin}</b> <span class="cs-note">(jungle)</span></div>${bench}${mile}`;
     if (window.hydrateIcons) hydrateIcons();
     return;
   }
@@ -551,7 +561,7 @@ function renderCsTracker(s, benchmark) {
       <b class="${cls}">${s.csPerMin}</b> <span class="cs-target">/ ${target} objectif</span>
     </div>
     <div class="cs-bar"><div class="cs-fill ${cls}" style="width:${pctBar}%"></div><div class="cs-goal"></div></div>
-    <div class="cs-sub">${s.cs} CS · ${deltaTxt}</div>${bench}`;
+    <div class="cs-sub">${s.cs} CS · ${deltaTxt}</div>${bench}${mile}`;
   if (window.hydrateIcons) hydrateIcons();
 }
 

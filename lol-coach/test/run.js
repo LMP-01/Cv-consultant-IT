@@ -230,6 +230,32 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(b5 && b5.deaths === 3, '3 morts dans la tranche 5-10 min, eu: ' + (b5 && b5.deaths));
   });
 
+  await test('GameHistory : import Riot dédoublonné par matchId', () => {
+    const tmp = require('path').join(require('os').tmpdir(), `lolcoach-hist-${process.pid}.json`);
+    const h = new GameHistory(tmp);
+    h.games = [{ id: 1, matchId: 'EUW1_A', win: true, kills: 5, deaths: 2, assists: 3 }];
+    h._seq = 1;
+    const added = h.importMany([
+      { matchId: 'EUW1_A', win: true, date: '2026-06-01T00:00:00Z' }, // doublon -> ignoré
+      { matchId: 'EUW1_B', win: false, kills: 2, deaths: 6, assists: 1, csPerMin: 6, date: '2026-06-02T00:00:00Z', deathTimes: [200, 700] },
+      { matchId: 'EUW1_C', win: true, kills: 9, deaths: 1, assists: 7, csPerMin: 8.5, date: '2026-06-03T00:00:00Z', deathTimes: [800] },
+    ]);
+    assert(added === 2, '2 nouvelles parties importées (1 doublon ignoré), eu: ' + added);
+    assert(h.games.length === 3, 'total 3 parties');
+    const s = h.list().stats;
+    assert(s.deathHeatmap.totalDeaths === 3, 'morts importées comptées dans la heatmap');
+    assert(s.profileByResult.win.games === 2, '2 victoires dans le profil');
+    try { require('fs').unlinkSync(tmp); } catch { /* nettoyage best-effort */ }
+  });
+
+  await test('CoachLoop : résumé vocal de fin de partie', () => {
+    const loop = new CoachLoop();
+    const txt = loop._endgameSummary({ win: true, kills: 8, deaths: 2, assists: 6, csPerMin: 8.1, role: 'MIDDLE', deathTimes: [] });
+    assert(/Victoire/.test(txt) && /8, 2, 6/.test(txt), 'résumé mentionne le résultat + KDA');
+    const txt2 = loop._endgameSummary({ win: false, kills: 1, deaths: 4, assists: 2, csPerMin: 7, role: 'MIDDLE', deathTimes: [120, 300] });
+    assert(/dixième minute/.test(txt2), 'signale les morts précoces');
+  });
+
   await test('CoachLoop._computePlayerProfile : profil de faiblesses', () => {
     const loop = new CoachLoop();
     loop.history.games = [

@@ -24,6 +24,7 @@ class CoachLoop {
     this.ai = new AiAdvisor();
 
     this.onState = null;
+    this.onCue = null; // émetteur de cues (bip/voix) vers les clients WS
     this.state = this._emptyState();
     this.feed = []; // conseils récents, plus récent en tête
     this.emittedAt = new Map(); // id de conseil -> timestamp d'émission
@@ -201,11 +202,13 @@ class CoachLoop {
       this.deathTimes = [];
       this.seenDeaths = new Set();
       this.winProfile = (this.history.list().stats.profileByResult || {}).win || null;
+      this.csMilestones = { m10: null, m20: null };
     }
     this.lastPhase = 'ingame';
 
     const result = analyzeInGame(gameData, this.ddragon);
     this._captureDeaths(result, gameData);
+    this._captureMilestones(result);
     this._pushAdvice(result.advice);
 
     // Déclencheur réactif : mort, chute de PV, kill/objectif... => conseil immédiat.
@@ -224,6 +227,7 @@ class CoachLoop {
         scoreboard: result.scoreboard,
         itemPlan,
         benchmark: this._benchmark(result.summary),
+        milestones: this._milestones(result.summary),
       },
       pick: null,
       feed: this.feed,
@@ -389,6 +393,31 @@ class CoachLoop {
     }
   }
 
+  _emitCue(cue) {
+    if (this.onCue) { try { this.onCue(cue); } catch { /* ignore */ } }
+  }
+
+  // Fige ton CS aux jalons 10:00 et 20:00 (repères de farm).
+  _captureMilestones(result) {
+    if (!this.csMilestones) this.csMilestones = { m10: null, m20: null };
+    const t = result.summary.gameTime || 0;
+    const cs = result.summary.me ? result.summary.me.cs : null;
+    if (cs == null) return;
+    if (this.csMilestones.m10 == null && t >= 600) this.csMilestones.m10 = cs;
+    if (this.csMilestones.m20 == null && t >= 1200) this.csMilestones.m20 = cs;
+  }
+
+  // Jalons de CS + objectif dérivé de ton rythme de win (ou 8/min par défaut).
+  _milestones(summary) {
+    const m = this.csMilestones || {};
+    if (m.m10 == null && m.m20 == null) return null;
+    const pace = this.winProfile && this.winProfile.csPerMin ? this.winProfile.csPerMin : 8;
+    const out = { pace: +pace.toFixed ? +pace.toFixed(1) : pace };
+    if (m.m10 != null) out.m10 = { cs: m.m10, target: Math.round(pace * 10), delta: m.m10 - Math.round(pace * 10) };
+    if (m.m20 != null) out.m20 = { cs: m.m20, target: Math.round(pace * 20), delta: m.m20 - Math.round(pace * 20) };
+    return out;
+  }
+
   // Compare tes stats LIVE à ton profil moyen des games GAGNÉES (rythme de win).
   _benchmark(summary) {
     const wp = this.winProfile;
@@ -402,6 +431,21 @@ class CoachLoop {
       out.kp = { you: me.kp, win: Math.round(wp.kp), delta: me.kp - Math.round(wp.kp) };
     }
     return out.csPerMin || out.kp ? out : null;
+  }
+
+  // Court résumé parlé de fin de partie (règles) : résultat, KDA, 1 axe clé.
+  _endgameSummary(record) {
+    const res = record.win === true ? 'Victoire' : record.win === false ? 'Défaite' : 'Partie terminée';
+    const kda = record.kills != null ? `${record.kills}, ${record.deaths}, ${record.assists}` : '';
+    let txt = `${res}. ${kda ? 'KDA ' + kda + '. ' : ''}`;
+    if (record.csPerMin != null) txt += `${record.csPerMin} CS par minute. `;
+    const early = (record.deathTimes || []).filter((t) => t < 600).length;
+    if (early >= 2) txt += `Attention, ${early} morts avant la dixième minute — soigne ton début de partie.`;
+    else if ((record.deaths || 0) >= 8) txt += `Trop de morts cette partie, joue plus prudemment.`;
+    else if (record.csPerMin != null && record.csPerMin < 6 && record.role !== 'JUNGLE') txt += `Ton farm est bas, récupère mieux tes vagues.`;
+    else if (record.win === true) txt += `Belle partie, continue comme ça.`;
+    else txt += `Analyse la critique pour progresser.`;
+    return txt;
   }
 
   _finalizeGameIfNeeded() {
@@ -436,6 +480,9 @@ class CoachLoop {
       review: null, // rempli par l'IA ci-dessous (async)
     };
     const id = this.history.add(record);
+
+    // Résumé vocal de fin de partie (lu si la voix est active côté client).
+    this._emitCue({ kind: 'note', text: this._endgameSummary(record) });
 
     // Critique IA (axes positifs / à améliorer) en arrière-plan.
     if (this.ai.available) {

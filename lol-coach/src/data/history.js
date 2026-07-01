@@ -8,15 +8,19 @@ const FILE = path.join(DATA_DIR, 'history.json');
 const MAX_GAMES = 200;
 
 // Stockage local des parties jouées avec le coach (JSON sur disque).
+// `filePath` permet aux tests d'utiliser un fichier temporaire (ne pollue pas
+// l'historique réel du joueur quand on lance `npm test`).
 class GameHistory {
-  constructor() {
+  constructor(filePath) {
+    this.file = filePath || FILE;
+    this.dir = path.dirname(this.file);
     this.games = this._load();
     this._seq = this.games.reduce((m, g) => Math.max(m, g.id || 0), 0);
   }
 
   _load() {
     try {
-      const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+      const data = JSON.parse(fs.readFileSync(this.file, 'utf8'));
       return Array.isArray(data.games) ? data.games : [];
     } catch {
       return [];
@@ -25,8 +29,8 @@ class GameHistory {
 
   _save() {
     try {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      fs.writeFileSync(FILE, JSON.stringify({ games: this.games }, null, 2));
+      fs.mkdirSync(this.dir, { recursive: true });
+      fs.writeFileSync(this.file, JSON.stringify({ games: this.games }, null, 2));
     } catch {
       /* best-effort : pas de persistance si le disque est en lecture seule */
     }
@@ -38,6 +42,25 @@ class GameHistory {
     if (this.games.length > MAX_GAMES) this.games.length = MAX_GAMES;
     this._save();
     return id;
+  }
+
+  // Importe plusieurs parties (ex. depuis la Riot API), dédoublonnées par matchId.
+  // Les records sont insérés du plus ancien au plus récent pour garder l'ordre.
+  importMany(records) {
+    if (!Array.isArray(records) || !records.length) return 0;
+    const seen = new Set(this.games.map((g) => g.matchId).filter(Boolean));
+    const sorted = records.slice().sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    let added = 0;
+    for (const r of sorted) {
+      if (r.matchId && seen.has(r.matchId)) continue;
+      const id = ++this._seq;
+      this.games.unshift({ id, ...r });
+      if (r.matchId) seen.add(r.matchId);
+      added++;
+    }
+    if (this.games.length > MAX_GAMES) this.games.length = MAX_GAMES;
+    this._save();
+    return added;
   }
 
   update(id, patch) {
