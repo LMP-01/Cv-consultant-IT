@@ -8,6 +8,7 @@ const config = require('./config');
 const { CoachLoop } = require('./coachLoop');
 const { buildPoolDex } = require('./advisor/championDex');
 const { RiotApi } = require('./data/riotApi');
+const { getRankEmblem } = require('./data/rankEmblems');
 
 const riot = new RiotApi();
 
@@ -103,6 +104,20 @@ app.post('/api/cue', (req, res) => {
   if (!cue || !cue.kind) return res.status(400).json({ error: 'kind requis' });
   broadcastRaw({ type: 'cue', payload: cue });
   res.json({ ok: true });
+});
+
+// Emblème de rang OFFICIEL (image LoL), proxifié + mis en cache par le serveur local.
+// L'UI pointe /ranks/<tier>.png ; hors-ligne -> 404 et repli sur le blason SVG.
+app.get('/ranks/:tier.png', async (req, res) => {
+  try {
+    const buf = await getRankEmblem(req.params.tier);
+    if (!buf) return res.status(404).end();
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=604800'); // 7 jours
+    return res.send(buf);
+  } catch {
+    return res.status(404).end();
+  }
 });
 
 // Riot API : profil + rang/LP (clé dev dans .env, voir README).

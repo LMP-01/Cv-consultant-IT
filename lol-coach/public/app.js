@@ -599,11 +599,15 @@ function paintRankCard() {
   const tierFr = TIER_FR_HUD[r.tier] || r.tier;
   const games = (r.wins || 0) + (r.losses || 0);
   const wr = games ? Math.round((r.wins / games) * 100) : 0;
-  // Blason SVG coloré en base (toujours visible) + emblème CDN par-dessus s'il charge.
+  // Blason SVG coloré en base (repli) + vraie image d'emblème LoL par-dessus.
+  // À la charge de l'image officielle, on masque le blason ; sinon (hors-ligne)
+  // l'image se retire et le blason reste visible.
   const crest = rankCrestSvg(r.tier);
   const emblem =
     `<span class="rank-emblem-stack">${crest}` +
-    (r.emblem ? `<img class="rank-emblem" src="${r.emblem}" alt="${esc(tierFr)}" onerror="this.remove()"/>` : '') +
+    (r.emblem
+      ? `<img class="rank-emblem" src="${r.emblem}" alt="${esc(tierFr)}" onload="var c=this.previousElementSibling; if(c) c.style.opacity=0;" onerror="this.remove()"/>`
+      : '') +
     `</span>`;
   let climb = '';
   if (r.toMaster && r.toMaster.reached) {

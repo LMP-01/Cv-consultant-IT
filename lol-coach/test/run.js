@@ -120,7 +120,7 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(d1.remainingLp === 20 && d1.gamesToWin === 1, 'Diamant I 80LP => 20 LP / 1 game, eu: ' + JSON.stringify(d1));
     const gold = climbToMaster('GOLD', 'IV', 0, 20);
     assert(gold.remainingLp === 1600 && gold.gamesToWin === 80, 'Or IV 0LP => 1600 LP / 80 games @20, eu: ' + JSON.stringify(gold));
-    assert(rankEmblemUrl('GOLD').includes('emblem-gold'), 'URL emblème par tier');
+    assert(rankEmblemUrl('GOLD') === '/ranks/gold.png', 'URL emblème locale par tier');
   });
 
   await test('heuristics : alerte ATTENTION en infériorité numérique', () => {
