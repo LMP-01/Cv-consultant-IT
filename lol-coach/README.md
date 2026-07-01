@@ -333,6 +333,9 @@ Un panneau **« Duel »** estime, en %, l'issue d'un **trade court** et d'un **a
 - Le calcul **s'actualise instantanément** à chaque changement de cible/alliés.
 - Un **combo d'engage/trade** adapté à ton champion est affiché (`data/combos.json`, éditable).
 
+- **Lecture vocale** : bouton haut-parleur pour **entendre la reco** (« all-in favorable, 68 % en 2v1 »), et lecture **automatique** quand l'issue bascule (favorable/défavorable) si la voix est activée.
+- Ta **sélection de cible et d'alliés est mémorisée** (par équipe adverse) — elle survit aux fights et aux rechargements de l'overlay.
+
 > C'est une **estimation** indicative (l'API n'expose ni PV adverses ni cooldowns) — pense-la comme une boussole, pas une vérité.
 
 ### 💉 Anti-soin & 👁️ vision
