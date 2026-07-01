@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { MapRuntime, TILE_SIZE } from './MapRuntime.ts';
 import { PlayerController, ThirdPersonCamera } from './PlayerController.ts';
 import { WyldeActor } from './WyldeActor.ts';
@@ -26,28 +27,44 @@ export class OverworldScene {
   private npcs: NpcActor[] = [];
   private state: GameState;
   private callbacks: OverworldCallbacks;
-  private ambient: THREE.AmbientLight;
+  private hemi: THREE.HemisphereLight;
   private sun: THREE.DirectionalLight;
+  private sunDirection = new THREE.Vector3(0.5, 0.8, 0.3);
+  private sky: Sky;
   private respawnTimers: { speciesId: number; minLevel: number; maxLevel: number; x: number; z: number; timer: number }[] = [];
   frozen = false;
 
   constructor(aspect: number, state: GameState, callbacks: OverworldCallbacks) {
-    this.camera = new THREE.PerspectiveCamera(58, aspect, 0.1, 200);
+    this.camera = new THREE.PerspectiveCamera(58, aspect, 0.1, 3000);
     this.state = state;
     this.callbacks = callbacks;
-    this.ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    this.sun = new THREE.DirectionalLight(0xffffff, 0.9);
-    this.sun.position.set(6, 10, 4);
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x4f9a4a, 0.6);
+    this.sun = new THREE.DirectionalLight(0xffffff, 2.2);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
-    this.scene.add(this.ambient, this.sun);
+    this.sun.shadow.mapSize.set(1536, 1536);
+    this.sun.shadow.camera.near = 1;
+    this.sun.shadow.camera.far = 60;
+    this.sun.shadow.camera.left = -30;
+    this.sun.shadow.camera.right = 30;
+    this.sun.shadow.camera.top = 30;
+    this.sun.shadow.camera.bottom = -30;
+    this.sun.shadow.bias = -0.002;
+    this.scene.add(this.hemi, this.sun, this.sun.target);
+
+    this.sky = new Sky();
+    this.sky.scale.setScalar(2000);
+    this.scene.add(this.sky);
+
     this.loadMap(state.currentMapId, state.playerX, state.playerY);
   }
 
   loadMap(mapId: string, spawnX: number, spawnY: number): void {
-    if (this.map) this.scene.remove(this.map.group);
-    for (const npc of this.npcs) this.scene.remove(npc.object);
-    for (const wylde of this.wyldes) this.scene.remove(wylde.object);
+    if (this.map) {
+      this.scene.remove(this.map.group);
+      this.map.dispose();
+    }
+    for (const npc of this.npcs) { this.scene.remove(npc.object); npc.dispose(); }
+    for (const wylde of this.wyldes) { this.scene.remove(wylde.object); wylde.dispose(); }
     this.npcs = [];
     this.wyldes = [];
     this.respawnTimers = [];
@@ -55,9 +72,8 @@ export class OverworldScene {
     const def = getMapDef(mapId);
     this.map = new MapRuntime(def);
     this.scene.add(this.map.group);
-    this.scene.background = new THREE.Color(def.skyColor);
-    this.scene.fog = new THREE.Fog(def.skyColor, 20, 55);
-    this.sun.color.set(0xffffff);
+    this.scene.fog = new THREE.Fog(def.skyColor, 24, 70);
+    this.applySkyMood(def.skyColor, def.groundColor);
 
     const spawnWorld = this.map.gridToWorld(spawnX, spawnY);
     if (this.player) {
@@ -83,6 +99,40 @@ export class OverworldScene {
     this.state.playerX = spawnX;
     this.state.playerY = spawnY;
     this.callbacks.onEnterMap(def);
+  }
+
+  /** Derives a Preetham sky (sun elevation/haze) and matching light colors from a map's mood colors,
+   *  so each region reads with its own atmosphere instead of a flat background fill. */
+  private applySkyMood(skyColorHex: string, groundColorHex: string): void {
+    const skyColor = new THREE.Color(skyColorHex);
+    const hsl = { h: 0, s: 0, l: 0 };
+    skyColor.getHSL(hsl);
+
+    let elevationDeg: number;
+    let turbidity: number;
+    if (hsl.l > 0.75) { elevationDeg = 52; turbidity = 3.5; }
+    else if (hsl.l > 0.55) { elevationDeg = 42; turbidity = 6; }
+    else if (hsl.l > 0.35) { elevationDeg = 16; turbidity = 9; }
+    else { elevationDeg = 4; turbidity = 11; }
+
+    const azimuthDeg = hsl.h * 360;
+    const phi = THREE.MathUtils.degToRad(90 - elevationDeg);
+    const theta = THREE.MathUtils.degToRad(azimuthDeg);
+    this.sunDirection.setFromSphericalCoords(1, phi, theta);
+
+    const uniforms = this.sky.material.uniforms;
+    uniforms.turbidity.value = turbidity;
+    uniforms.rayleigh.value = hsl.l < 0.35 ? 3.5 : 2;
+    uniforms.mieCoefficient.value = 0.006;
+    uniforms.mieDirectionalG.value = 0.8;
+    uniforms.sunPosition.value.copy(this.sunDirection);
+
+    this.sun.intensity = 0.6 + (elevationDeg / 52) * 1.8;
+    this.sun.color.copy(skyColor).lerp(new THREE.Color(0xffffff), 0.6);
+
+    this.hemi.color.copy(skyColor);
+    this.hemi.groundColor.set(groundColorHex);
+    this.hemi.intensity = 0.5 + hsl.l * 0.4;
   }
 
   private spawnWyldes(def: MapDef): void {
@@ -119,6 +169,7 @@ export class OverworldScene {
   removeWylde(actor: WyldeActor): void {
     actor.consumed = true;
     this.scene.remove(actor.object);
+    actor.dispose();
     this.wyldes = this.wyldes.filter((w) => w !== actor);
     this.respawnTimers.push({ speciesId: actor.speciesId, minLevel: actor.level, maxLevel: actor.level, x: actor.object.position.x, z: actor.object.position.z, timer: 20 });
   }
@@ -128,7 +179,13 @@ export class OverworldScene {
 
     this.player.update(dt, input.moveVector);
     this.thirdPerson.update(dt);
+    this.map.update(dt);
     for (const wylde of this.wyldes) wylde.update(dt);
+
+    // Keep the shadow-casting sun centered on the player so its (deliberately tight,
+    // high-resolution) shadow frustum stays useful regardless of map size/offset.
+    this.sun.target.position.copy(this.player.position);
+    this.sun.position.copy(this.player.position).addScaledVector(this.sunDirection, 40);
 
     this.state.playerX = Math.round(this.player.position.x / TILE_SIZE);
     this.state.playerY = Math.round(this.player.position.z / TILE_SIZE);

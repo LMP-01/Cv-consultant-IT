@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildCreatureModel } from '../gfx/CreatureModel.ts';
 import { CreatureAnimator } from '../gfx/CreatureAnimator.ts';
+import { disposeObject3D } from '../gfx/dispose.ts';
 import { createWildCreature } from '../systems/CreatureInstance.ts';
 import { getSpecies } from '../data/species.ts';
 
@@ -60,5 +61,9 @@ export class WyldeActor {
 
   distanceTo(x: number, z: number): number {
     return Math.hypot(this.object.position.x - x, this.object.position.z - z);
+  }
+
+  dispose(): void {
+    disposeObject3D(this.object);
   }
 }

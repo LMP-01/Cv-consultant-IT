@@ -29,6 +29,10 @@ export class GameApp {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -210,7 +214,10 @@ export class GameApp {
   }
 
   private loop(): void {
-    const dt = Math.min(0.05, this.clock.getDelta());
+    // Capped generously above the normal frame budget: this only exists to stop a single
+    // huge spike (e.g. the tab was backgrounded) from teleporting movement, not to throttle
+    // otherwise-slow frames into visible slow motion.
+    const dt = Math.min(0.1, this.clock.getDelta());
 
     if (this.mode === 'overworld' && this.overworld) {
       this.overworld.update(dt, this.input);

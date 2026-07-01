@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import type { MapDef, TileCode } from '../data/mapSchema.ts';
+import {
+  grassTexture, dirtPathTexture, sandTexture, stoneTexture,
+  barkTexture, leafTexture, roofTexture, wallTexture, fenceTexture, waterTexture,
+} from '../gfx/TextureFactory.ts';
 
 export const TILE_SIZE = 2;
 
@@ -10,20 +14,38 @@ const WALKABLE: Record<TileCode, boolean> = {
 
 const ENCOUNTER_TILE: Partial<Record<TileCode, number>> = { ',': 0.06, '"': 0.14 };
 
-const GROUND_COLORS: Partial<Record<TileCode, number>> = {
-  '.': 0xcbb488, ',': 0x4f9a4a, '"': 0x2e7a3a, S: 0xe0cf9a, b: 0x9c7a4a, G: 0xb9a97a, D: 0xb9a97a,
-};
-
 export interface CellQuery {
   walkable: boolean;
   encounterChance: number;
   tile: TileCode;
 }
 
+function groundMaterialFor(tile: TileCode, groundColorHex: number): THREE.MeshStandardMaterial {
+  switch (tile) {
+    case ',':
+      return new THREE.MeshStandardMaterial({ map: grassTexture('short'), roughness: 0.95 });
+    case '"':
+      return new THREE.MeshStandardMaterial({ map: grassTexture('tall'), roughness: 0.95 });
+    case 'S':
+      return new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1 });
+    case 'b':
+      return new THREE.MeshStandardMaterial({ map: barkTexture(), roughness: 0.9 });
+    case 'G':
+      return new THREE.MeshStandardMaterial({ map: stoneTexture(), roughness: 0.85 });
+    case '.':
+    case 'D':
+      return new THREE.MeshStandardMaterial({ map: dirtPathTexture(), roughness: 1 });
+    default:
+      return new THREE.MeshStandardMaterial({ map: dirtPathTexture(), color: groundColorHex, roughness: 1 });
+  }
+}
+
 export class MapRuntime {
   readonly def: MapDef;
   readonly group = new THREE.Object3D();
   private grid: TileCode[][];
+  private waterMaterial?: THREE.MeshStandardMaterial;
+  private elapsed = 0;
 
   constructor(def: MapDef) {
     this.def = def;
@@ -46,20 +68,41 @@ export class MapRuntime {
     return { walkable: WALKABLE[tile] ?? false, encounterChance: ENCOUNTER_TILE[tile] ?? 0, tile };
   }
 
+  /** Frees this map's own geometries/materials on transition. Shared cached textures are left intact
+   *  (only the water shimmer texture is a per-map clone, so it's disposed explicitly here). */
+  dispose(): void {
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh || child instanceof THREE.InstancedMesh) {
+        child.geometry.dispose();
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        for (const mat of materials) mat.dispose();
+      }
+    });
+    this.waterMaterial?.map?.dispose();
+  }
+
+  /** Animates the water shimmer; called once per frame while this map is active. */
+  update(dt: number): void {
+    this.elapsed += dt;
+    if (this.waterMaterial?.map) {
+      this.waterMaterial.map.offset.set(Math.sin(this.elapsed * 0.05) * 0.3, this.elapsed * 0.02 % 1);
+    }
+  }
+
   private buildGround(): void {
     const geom = new THREE.BoxGeometry(TILE_SIZE * 0.98, 0.1, TILE_SIZE * 0.98);
-    const byColor = new Map<number, { x: number; y: number }[]>();
+    const groundColorHex = new THREE.Color(this.def.groundColor).getHex();
+    const byTile = new Map<TileCode, { x: number; y: number }[]>();
     for (let y = 0; y < this.def.height; y += 1) {
       for (let x = 0; x < this.def.width; x += 1) {
         const tile = this.grid[y][x];
-        if (tile === ' ') continue;
-        const color = GROUND_COLORS[tile] ?? new THREE.Color(this.def.groundColor).getHex();
-        if (!byColor.has(color)) byColor.set(color, []);
-        byColor.get(color)!.push({ x, y });
+        if (tile === ' ' || tile === '~') continue;
+        if (!byTile.has(tile)) byTile.set(tile, []);
+        byTile.get(tile)!.push({ x, y });
       }
     }
-    for (const [color, cells] of byColor) {
-      const mesh = new THREE.InstancedMesh(geom, new THREE.MeshStandardMaterial({ color, flatShading: true }), cells.length);
+    for (const [tile, cells] of byTile) {
+      const mesh = new THREE.InstancedMesh(geom, groundMaterialFor(tile, groundColorHex), cells.length);
       mesh.receiveShadow = true;
       const m = new THREE.Matrix4();
       cells.forEach((cell, i) => {
@@ -77,11 +120,12 @@ export class MapRuntime {
     }
     if (waterCells.length > 0) {
       const waterGeom = new THREE.BoxGeometry(TILE_SIZE * 0.98, 0.06, TILE_SIZE * 0.98);
-      const waterMesh = new THREE.InstancedMesh(
-        waterGeom,
-        new THREE.MeshStandardMaterial({ color: 0x3a7bd5, flatShading: true, transparent: true, opacity: 0.85 }),
-        waterCells.length,
-      );
+      const map = waterTexture().clone();
+      map.needsUpdate = true;
+      this.waterMaterial = new THREE.MeshStandardMaterial({
+        map, transparent: true, opacity: 0.88, roughness: 0.25, metalness: 0.1,
+      });
+      const waterMesh = new THREE.InstancedMesh(waterGeom, this.waterMaterial, waterCells.length);
       const m = new THREE.Matrix4();
       waterCells.forEach((cell, i) => {
         m.makeTranslation(cell.x * TILE_SIZE, -0.02, cell.y * TILE_SIZE);
@@ -109,17 +153,17 @@ export class MapRuntime {
 
     this.instanceProp(trees, () => {
       const g = new THREE.Object3D();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.8, 6), new THREE.MeshStandardMaterial({ color: 0x6b4a2f, flatShading: true }));
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.8, 7), new THREE.MeshStandardMaterial({ map: barkTexture(), roughness: 0.9 }));
       trunk.position.y = 0.4;
       g.add(trunk);
-      const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 0), new THREE.MeshStandardMaterial({ color: 0x2f7a3f, flatShading: true }));
+      const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 1), new THREE.MeshStandardMaterial({ map: leafTexture(), roughness: 0.85 }));
       leaves.position.y = 1.3;
       g.add(leaves);
       return g;
     });
 
     this.instanceProp(rocks, () => {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshStandardMaterial({ color: 0x8a8478, flatShading: true }));
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshStandardMaterial({ map: stoneTexture(), roughness: 0.8 }));
       rock.position.y = 0.4;
       rock.rotation.set(Math.random(), Math.random(), Math.random());
       return rock;
@@ -127,10 +171,10 @@ export class MapRuntime {
 
     this.instanceProp(buildings, () => {
       const g = new THREE.Object3D();
-      const base = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 0.95, 2.2, TILE_SIZE * 0.95), new THREE.MeshStandardMaterial({ color: 0xd7c9a3, flatShading: true }));
+      const base = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 0.95, 2.2, TILE_SIZE * 0.95), new THREE.MeshStandardMaterial({ map: wallTexture(), roughness: 0.9 }));
       base.position.y = 1.1;
       g.add(base);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(TILE_SIZE * 0.75, 1, 4), new THREE.MeshStandardMaterial({ color: 0xa4483f, flatShading: true }));
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(TILE_SIZE * 0.75, 1, 4), new THREE.MeshStandardMaterial({ map: roofTexture(), roughness: 0.75 }));
       roof.rotation.y = Math.PI / 4;
       roof.position.y = 2.7;
       g.add(roof);
@@ -138,7 +182,7 @@ export class MapRuntime {
     });
 
     this.instanceProp(fences, () => {
-      const fence = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 0.9, 0.6, 0.12), new THREE.MeshStandardMaterial({ color: 0xb08d5a, flatShading: true }));
+      const fence = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 0.9, 0.6, 0.12), new THREE.MeshStandardMaterial({ map: fenceTexture(), roughness: 0.9 }));
       fence.position.y = 0.3;
       return fence;
     });

@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import type { SpeciesSprite } from '../data/speciesSchema.ts';
+import { organicNoiseTexture } from './TextureFactory.ts';
 
 /**
  * Builds a deterministic low-poly 3D model for a species purely from its
  * `SpeciesSprite` descriptor — no external art assets are used anywhere in
- * this project. The same descriptor always yields the same shape.
+ * this project. The same descriptor always yields the same shape. Every part
+ * shares one small mottled noise texture (tinted per-species via `color`) so
+ * surfaces read as organic skin/scale/fur rather than flat plastic.
  */
 
 function mat(color: string, extra: Partial<THREE.MeshStandardMaterialParameters> = {}): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.6, metalness: 0.05, ...extra });
+  return new THREE.MeshStandardMaterial({ color, map: organicNoiseTexture(), roughness: 0.6, metalness: 0.05, ...extra });
 }
 
 function addEyes(parent: THREE.Object3D, style: SpeciesSprite['eyeStyle'], headRadius: number): void {
@@ -40,7 +43,7 @@ function buildBody(sprite: SpeciesSprite, primary: THREE.MeshStandardMaterial): 
       torso.rotation.z = Math.PI / 2;
       torso.position.y = 0.55 * s;
       group.add(torso);
-      const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34 * s, 0), primary);
+      const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34 * s, 1), primary);
       head.position.set(0, 0.62 * s, 0.55 * s);
       group.add(head);
       addEyes(head, sprite.eyeStyle, 0.34 * s);
@@ -56,7 +59,7 @@ function buildBody(sprite: SpeciesSprite, primary: THREE.MeshStandardMaterial): 
       const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.32 * s, 0.5 * s, 2, 8), primary);
       torso.position.y = 0.75 * s;
       group.add(torso);
-      const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 * s, 0), primary);
+      const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 * s, 1), primary);
       head.position.set(0, 1.25 * s, 0.05 * s);
       group.add(head);
       addEyes(head, sprite.eyeStyle, 0.3 * s);
@@ -162,7 +165,7 @@ function buildBody(sprite: SpeciesSprite, primary: THREE.MeshStandardMaterial): 
       break;
     }
     case 'crystalline': {
-      const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.36 * s, 0), primary);
+      const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.36 * s, 1), primary);
       core.position.y = 0.6 * s;
       group.add(core);
       addEyes(core, sprite.eyeStyle, 0.36 * s);

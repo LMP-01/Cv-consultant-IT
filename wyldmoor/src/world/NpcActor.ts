@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildHumanoid } from '../gfx/HumanoidModel.ts';
+import { disposeObject3D } from '../gfx/dispose.ts';
 import type { NpcDef, Facing } from '../data/mapSchema.ts';
 
 const FACING_ANGLE: Record<Facing, number> = { up: Math.PI, down: 0, left: Math.PI * 1.5, right: Math.PI * 0.5 };
@@ -17,5 +18,9 @@ export class NpcActor {
 
   distanceTo(x: number, z: number): number {
     return Math.hypot(this.object.position.x - x, this.object.position.z - z);
+  }
+
+  dispose(): void {
+    disposeObject3D(this.object);
   }
 }
