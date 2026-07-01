@@ -469,7 +469,31 @@ function renderInGame(game) {
 // L'API live ne donne ni positions ni vision : TU choisis qui tu affrontes
 // (clique les portraits) et combien d'alliés sont proches — le calcul s'actualise.
 const combatSel = { keys: null, allies: 0, sig: null };
+const combatVoice = { band: null, at: 0 }; // pour la lecture auto (transition de bande)
 let lastCombatGame = null;
+
+// Persistance de la sélection de cible/alliés (mémorisée entre fights et reloads),
+// par signature d'équipe adverse (localStorage).
+function combatKey(sig) { return 'coach_combat_' + sig; }
+function saveCombatSel() {
+  try {
+    if (combatSel.sig) localStorage.setItem(combatKey(combatSel.sig), JSON.stringify({ keys: [...combatSel.keys], allies: combatSel.allies }));
+  } catch { /* stockage indispo */ }
+}
+function loadCombatSel(sig, enemies, combat) {
+  try {
+    const raw = localStorage.getItem(combatKey(sig));
+    if (raw) {
+      const o = JSON.parse(raw);
+      const valid = new Set((enemies || []).map((e) => e.championKey));
+      const keys = (o.keys || []).filter((k) => valid.has(k));
+      if (keys.length) return { keys: new Set(keys), allies: Math.max(0, Math.min(4, o.allies || 0)) };
+    }
+  } catch { /* ignore */ }
+  const def = combat && combat.defaultTargetKey;
+  return { keys: new Set(def ? [def] : (enemies[0] ? [enemies[0].championKey] : [])), allies: 0 };
+}
+
 function renderCombat(game) {
   lastCombatGame = game;
   const el = $('combatBody');
@@ -479,13 +503,26 @@ function renderCombat(game) {
   const combat = game.summary && game.summary.combat;
   if (!enemies.length || !meS) { el.innerHTML = '<div class="rc-empty">En attente des données de partie…</div>'; return; }
 
-  // Initialise la sélection sur l'adversaire de lane (une fois par partie).
+  // Restaure la sélection mémorisée pour cette équipe (ou défaut = adversaire de lane).
   const teamSig = enemies.map((e) => e.championKey).join(',');
   if (combatSel.keys === null || combatSel.sig !== teamSig) {
     combatSel.sig = teamSig;
-    const def = combat && combat.defaultTargetKey;
-    combatSel.keys = new Set(def ? [def] : (enemies[0] ? [enemies[0].championKey] : []));
+    const restored = loadCombatSel(teamSig, enemies, combat);
+    combatSel.keys = restored.keys;
+    combatSel.allies = restored.allies;
+    combatVoice.band = null; // réinitialise la lecture auto pour cette équipe
   }
+
+  // Ne re-render que si les données pertinentes OU la sélection ont changé
+  // (évite le scintillement et l'interruption des clics à chaque tick).
+  const renderSig = [
+    teamSig, meS.level, meS.hpPct, meS.netWorth, meS.hasUlt, meS.hasSpike,
+    enemies.map((e) => `${e.level}:${e.itemGold}:${e.isDead ? 1 : 0}`).join(','),
+    [...combatSel.keys].sort().join('|'), combatSel.allies,
+  ].join('#');
+  if (combatSel.renderSig === renderSig) return;
+  combatSel.renderSig = renderSig;
+
   const targets = enemies.filter((e) => combatSel.keys.has(e.championKey));
   const duel = targets.length && window.Combat
     ? window.Combat.computeDuel({
@@ -524,10 +561,21 @@ function renderCombat(game) {
       .map((f) => `<span class="cbt-fac ${f.delta >= 0 ? 'cs-good' : 'cs-bad'}">${esc(f.label)} ${f.delta >= 0 ? '+' : ''}${Math.round(f.delta)}</span>`)
       .join('');
     odds = `
-      <div class="cbt-numbers">Combat <b>${duel.numbers}</b> · <span class="cbt-verdict cbt-${duel.verdict}">${duel.verdict}</span></div>
+      <div class="cbt-numbers">Combat <b>${duel.numbers}</b> · <span class="cbt-verdict cbt-${duel.verdict}">${duel.verdict}</span>
+        <button class="cbt-read" title="Lire la reco à voix haute">${iconSvg('volume')}</button></div>
       ${bar('Trade court', duel.trade)}
       ${bar('All-in', duel.allIn)}
       <div class="cbt-facs">${factors}</div>`;
+
+    // Lecture vocale AUTO : quand la bande d'all-in bascule (favorable/défavorable),
+    // au plus une fois toutes les 8 s, si la voix est activée.
+    const band = duel.allIn >= 65 ? 'fav' : duel.allIn <= 38 ? 'def' : 'neu';
+    if (combatVoice.band !== null && band !== 'neu' && band !== combatVoice.band && tts.enabled && Date.now() - combatVoice.at > 8000) {
+      combatVoice.at = Date.now();
+      speakCombat(duel);
+    }
+    combatVoice.band = band;
+    combatSel.lastDuel = duel;
   }
 
   el.innerHTML = `
@@ -539,20 +587,35 @@ function renderCombat(game) {
     <div class="cbt-note">Estimation (or/objets, niveau, PV, spikes, sorts, nombre). L'API ne voit pas la map : à toi de sélectionner la cible.</div>`;
   if (window.hydrateIcons) hydrateIcons();
 }
-// Délégation de clic pour le panneau de duel (portraits + alliés).
+// Énonce la reco de combat (trade/all-in) via la synthèse vocale.
+function speakCombat(duel) {
+  if (!duel) return;
+  const best = duel.allIn >= duel.trade ? { k: 'all-in', v: duel.allIn } : { k: 'trade', v: duel.trade };
+  const dir = duel.verdict === 'favorable' ? 'favorable' : duel.verdict === 'défavorable' ? 'défavorable, recule' : 'équilibré';
+  speak(`${best.k} ${dir}. ${best.v} pour cent en ${duel.numbers}.`);
+}
+
+// Délégation de clic pour le panneau de duel (portraits + alliés + lecture).
 document.addEventListener('click', (ev) => {
-  const p = ev.target.closest && ev.target.closest('.cbt-portrait');
+  if (!ev.target.closest) return;
+  const p = ev.target.closest('.cbt-portrait');
   if (p && combatSel.keys) {
     const k = Number(p.dataset.key);
     if (combatSel.keys.has(k)) combatSel.keys.delete(k);
     else combatSel.keys.add(k);
+    saveCombatSel();
     if (lastCombatGame) renderCombat(lastCombatGame);
     return;
   }
-  const a = ev.target.closest && ev.target.closest('.cbt-ally');
+  const a = ev.target.closest('.cbt-ally');
   if (a) {
     combatSel.allies = Number(a.dataset.allies) || 0;
+    saveCombatSel();
     if (lastCombatGame) renderCombat(lastCombatGame);
+    return;
+  }
+  if (ev.target.closest('.cbt-read')) {
+    speakCombat(combatSel.lastDuel);
   }
 });
 
