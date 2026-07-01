@@ -1385,6 +1385,34 @@ body.overlay .feed-panel { max-height: 100vh; }
 .queue-filter { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
 .queue-filter .ic { color: var(--primary-2); }
 
+/* ── Panneau de duel (proba trade / all-in) ───────────────────────────────── */
+.combat-body { display: flex; flex-direction: column; gap: 11px; }
+.cbt-label, .cbt-allies span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.cbt-portraits { display: flex; gap: 8px; flex-wrap: wrap; }
+.cbt-portrait { position: relative; width: 46px; height: 46px; border-radius: 10px; padding: 0; overflow: hidden; cursor: pointer; background: #0d1424; border: 2px solid rgba(120,140,190,.3); transition: transform .1s, border-color .12s; }
+.cbt-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cbt-portrait:hover { transform: translateY(-1px); }
+.cbt-portrait.cbt-on { border-color: var(--primary-2); box-shadow: 0 0 0 2px rgba(139,92,246,.4), 0 6px 16px rgba(139,92,246,.3); }
+.cbt-portrait.cbt-dead { opacity: .4; filter: grayscale(.6); }
+.cbt-lvl { position: absolute; right: 2px; bottom: 1px; font-size: 9.5px; font-weight: 800; color: #f0c04a; text-shadow: 0 1px 2px #000; }
+.cbt-allies { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cbt-ally { min-width: 30px; padding: 3px 8px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.cbt-ally-on { background: rgba(45,212,191,.16); border-color: rgba(45,212,191,.5); color: var(--green); }
+.cbt-numbers { font-size: 12.5px; color: var(--muted); }
+.cbt-numbers b { color: var(--text); }
+.cbt-verdict { font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: .4px; }
+.cbt-favorable { color: var(--green); }
+.cbt-défavorable { color: #fb7185; }
+.cbt-équilibré { color: #fcd34d; }
+.cbt-odds { margin-top: 2px; }
+.cbt-odds-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text); margin-bottom: 3px; }
+.cbt-odds-top b { font-size: 15px; }
+.cbt-facs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.cbt-fac { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(148,163,184,.1); border: 1px solid var(--border); }
+.cbt-combo { font-size: 12.5px; color: var(--text); line-height: 1.5; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; }
+.cbt-combo b { color: var(--primary-2); display: inline-flex; align-items: center; gap: 5px; }
+.cbt-note { font-size: 10.5px; color: var(--faint); line-height: 1.4; }
+
 /* Profil victoires vs défaites (page Historique) */
 .win-profile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
 .win-profile .sub { display: flex; align-items: center; gap: 7px; margin-top: 0; }

@@ -324,6 +324,22 @@ Le HUD affiche aussi :
 - **Spike d'objet de ton adversaire de lane** : quand il complète un objet (1ᵉ/2ᵉ/3ᵉ) avant toi, un rappel te dit de **respecter ses trades** jusqu'à ce que tu combles.
 - **Ping ATTENTION en voix** : si la voix est activée, l'alerte de move risqué est **lue à voix haute** (« Attention, infériorité numérique ») en plus du bip.
 
+### ⚔️ Proba de trade / all-in (panneau interactif)
+
+Un panneau **« Duel »** estime, en %, l'issue d'un **trade court** et d'un **all-in** selon : l'écart d'**or/objets**, de **niveau**, tes **PV**, ton **power spike** (ultime prêt, objet complété), le **spike adverse**, les **sorts d'invoc** (Fatigue/Embrasement) et le **nombre** de combattants.
+
+- **Tu choisis qui tu affrontes** en cliquant les **portraits des champions** ennemis (l'API live ne donne ni positions ni vision — c'est donc toi qui indiques qui est devant toi : le jungler croisé en rivière, ou 2-3-4-5 en teamfight).
+- **Alliés proches** : boutons +0…+4 pour intégrer la **supériorité/infériorité numérique** (ex. en bot, sélectionne le duo ennemi et « +1 » pour ton support).
+- Le calcul **s'actualise instantanément** à chaque changement de cible/alliés.
+- Un **combo d'engage/trade** adapté à ton champion est affiché (`data/combos.json`, éditable).
+
+> C'est une **estimation** indicative (l'API n'expose ni PV adverses ni cooldowns) — pense-la comme une boussole, pas une vérité.
+
+### 💉 Anti-soin & 👁️ vision
+
+- **Anti-soin** : si l'équipe adverse **heal/shield** notablement (champions ou objets de sustain), le coach te dit d'acheter un objet d'**anti-soin (Fléau / Blessures graves)** à ton prochain achat.
+- **Jungler discret** : si le jungler adverse n'apparaît dans aucun combat depuis un moment, un rappel **vision** te dit de placer une ward et de respecter un gank (heuristique honnête — l'API ne voit pas la map).
+
 ### 🧩 Conseils d'objets cohérents (achat prioritaire + timing)
 
 Quand la situation appelle un objet défensif (ex. **Sablier de Zhonya** face à un gros burst), le coach ne se contente plus de le suggérer : il **précise QUAND l'acheter** (« ton prochain retour, en priorité ») **et le met automatiquement en tête de tes prochains achats**, avec la raison. Conseil et plan d'objets parlent donc d'une seule voix (source unique : la menace adverse dominante × ton build). L'objet prioritaire est mis en évidence dans le HUD.

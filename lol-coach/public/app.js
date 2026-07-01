@@ -460,9 +460,101 @@ function renderInGame(game) {
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
 
   renderHudBuys(game.itemPlan);
+  renderCombat(game);
   renderItemPlan(game.itemPlan);
   renderTimers(game.scoreboard ? game.scoreboard.enemies : []);
 }
+
+// ── Duel : proba de trade / all-in (interactif) ─────────────────────────────
+// L'API live ne donne ni positions ni vision : TU choisis qui tu affrontes
+// (clique les portraits) et combien d'alliés sont proches — le calcul s'actualise.
+const combatSel = { keys: null, allies: 0, sig: null };
+let lastCombatGame = null;
+function renderCombat(game) {
+  lastCombatGame = game;
+  const el = $('combatBody');
+  if (!el) return;
+  const enemies = (game.scoreboard && game.scoreboard.enemies) || [];
+  const meS = game.summary && game.summary.me;
+  const combat = game.summary && game.summary.combat;
+  if (!enemies.length || !meS) { el.innerHTML = '<div class="rc-empty">En attente des données de partie…</div>'; return; }
+
+  // Initialise la sélection sur l'adversaire de lane (une fois par partie).
+  const teamSig = enemies.map((e) => e.championKey).join(',');
+  if (combatSel.keys === null || combatSel.sig !== teamSig) {
+    combatSel.sig = teamSig;
+    const def = combat && combat.defaultTargetKey;
+    combatSel.keys = new Set(def ? [def] : (enemies[0] ? [enemies[0].championKey] : []));
+  }
+  const targets = enemies.filter((e) => combatSel.keys.has(e.championKey));
+  const duel = targets.length && window.Combat
+    ? window.Combat.computeDuel({
+        me: { level: meS.level, hpPct: meS.hpPct, netWorth: meS.netWorth, hasUlt: meS.hasUlt, hasSpike: meS.hasSpike },
+        targets: targets.map((t) => ({ name: t.championDisplay || t.champion, level: t.level, netWorth: t.itemGold, ...(t.traits || {}) })),
+        alliesNearby: combatSel.allies,
+      })
+    : null;
+
+  // Portraits ennemis cliquables (icône du champion = stylé).
+  const portraits = enemies
+    .map((e) => {
+      const on = combatSel.keys.has(e.championKey) ? ' cbt-on' : '';
+      const dead = e.isDead ? ' cbt-dead' : '';
+      const img = e.portrait ? `<img src="${esc(e.portrait)}" alt="" onerror="this.style.visibility='hidden'"/>` : '';
+      return `<button class="cbt-portrait${on}${dead}" data-key="${e.championKey}" title="${esc(e.championDisplay || e.champion)}">${img}<span class="cbt-lvl">${e.level || ''}</span></button>`;
+    })
+    .join('');
+  const allyBtns = [0, 1, 2, 3, 4]
+    .map((n) => `<button class="cbt-ally${combatSel.allies === n ? ' cbt-ally-on' : ''}" data-allies="${n}">+${n}</button>`)
+    .join('');
+
+  let odds = '<div class="rc-empty">Sélectionne au moins un adversaire.</div>';
+  if (duel) {
+    const bar = (label, val) => {
+      const cls = val >= 60 ? 'cs-good' : val <= 42 ? 'cs-bad' : 'cs-mid';
+      return `<div class="cbt-odds">
+        <div class="cbt-odds-top"><span>${label}</span><b class="${cls}">${val}%</b></div>
+        <div class="cs-bar"><div class="cs-fill ${cls}" style="width:${val}%"></div></div>
+      </div>`;
+    };
+    const factors = (duel.factors.allIn || [])
+      .slice()
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+      .slice(0, 3)
+      .map((f) => `<span class="cbt-fac ${f.delta >= 0 ? 'cs-good' : 'cs-bad'}">${esc(f.label)} ${f.delta >= 0 ? '+' : ''}${Math.round(f.delta)}</span>`)
+      .join('');
+    odds = `
+      <div class="cbt-numbers">Combat <b>${duel.numbers}</b> · <span class="cbt-verdict cbt-${duel.verdict}">${duel.verdict}</span></div>
+      ${bar('Trade court', duel.trade)}
+      ${bar('All-in', duel.allIn)}
+      <div class="cbt-facs">${factors}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="cbt-label">Qui affrontes-tu ? (clique)</div>
+    <div class="cbt-portraits">${portraits}</div>
+    <div class="cbt-allies"><span>Alliés proches :</span>${allyBtns}</div>
+    ${odds}
+    ${combat && combat.combo ? `<div class="cbt-combo"><b>${iconSvg('swords')} Combo</b> ${esc(combat.combo)}</div>` : ''}
+    <div class="cbt-note">Estimation (or/objets, niveau, PV, spikes, sorts, nombre). L'API ne voit pas la map : à toi de sélectionner la cible.</div>`;
+  if (window.hydrateIcons) hydrateIcons();
+}
+// Délégation de clic pour le panneau de duel (portraits + alliés).
+document.addEventListener('click', (ev) => {
+  const p = ev.target.closest && ev.target.closest('.cbt-portrait');
+  if (p && combatSel.keys) {
+    const k = Number(p.dataset.key);
+    if (combatSel.keys.has(k)) combatSel.keys.delete(k);
+    else combatSel.keys.add(k);
+    if (lastCombatGame) renderCombat(lastCombatGame);
+    return;
+  }
+  const a = ev.target.closest && ev.target.closest('.cbt-ally');
+  if (a) {
+    combatSel.allies = Number(a.dataset.allies) || 0;
+    if (lastCombatGame) renderCombat(lastCombatGame);
+  }
+});
 
 // ── 3 prochains achats (icônes réelles) — bandeau HUD/overlay ───────────────
 function renderHudBuys(plan) {

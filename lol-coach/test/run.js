@@ -35,6 +35,7 @@ const { buildItemPlan } = require('../src/advisor/itemPlan');
 const { getBuild } = require('../src/advisor/builds');
 const { GameHistory } = require('../src/data/history');
 const { climbToMaster, rankEmblemUrl } = require('../src/data/riotApi');
+const { computeDuel } = require('../public/combat');
 const { CoachLoop } = require('../src/coachLoop');
 const fetchBuilds = require('../scripts/fetch-builds');
 const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockData');
@@ -214,6 +215,21 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(typeof r.summary.me.kp === 'number', 'participation aux kills (KP%) calculée');
     assert(r.summary.objectivesTaken && r.summary.objectivesTaken.dragons.enemy === 3, 'objectifs pris : 3 drakes adverses');
     assert(r.summary.plates && r.summary.plates.active === false, 'plaques terminées après 14:00');
+  });
+
+  await test('combat : proba de duel (trade / all-in) réagit au contexte', () => {
+    const base = { me: { level: 11, hpPct: 90, netWorth: 4000, hasUlt: true, hasSpike: false }, targets: [{ level: 11, netWorth: 4000 }], alliesNearby: 0 };
+    const even = computeDuel(base);
+    assert(even && even.trade >= 40 && even.trade <= 60, 'duel équilibré ≈ 50% au trade, eu: ' + (even && even.trade));
+    // Fatigue en face -> all-in nettement moins bon.
+    const exhaust = computeDuel({ ...base, targets: [{ level: 11, netWorth: 4000, exhaust: true }] });
+    assert(exhaust.allIn < even.allIn, 'Fatigue en face baisse la proba d’all-in');
+    // Supériorité numérique -> proba plus haute.
+    const twoVone = computeDuel({ ...base, alliesNearby: 1 });
+    assert(twoVone.allIn > even.allIn && twoVone.numbers === '2v1', 'un allié proche améliore l’all-in (2v1)');
+    // Gros retard d'or -> défavorable.
+    const behind = computeDuel({ me: { level: 8, hpPct: 50, netWorth: 1500, hasUlt: false }, targets: [{ level: 11, netWorth: 6000, hasSpike: true }], alliesNearby: 0 });
+    assert(behind.allIn < 40 && behind.verdict === 'défavorable', 'net désavantage => défavorable, eu: ' + behind.allIn);
   });
 
   await test('heuristics : timing des vagues (canon)', () => {
