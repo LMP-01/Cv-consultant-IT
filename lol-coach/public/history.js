@@ -332,8 +332,12 @@ function renderRiotProfile() {
       const wr = games ? Math.round((r.wins / games) * 100) : 0;
       const nextTier = TIER_ORDER[TIER_ORDER.indexOf(r.tier) + 1];
       const toNext = ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? null : 100 - r.lp;
+      let toMaster = '';
+      if (r.toMaster && r.toMaster.reached) toMaster = `<span>${iconSvg('trophy')} Master atteint 🎉</span>`;
+      else if (r.toMaster) toMaster = `<span>${iconSvg('trophy')} <b>${r.toMaster.gamesToWin}</b> games à win → Master (${r.toMaster.remainingLp} LP, ~${r.toMaster.lpPerWin} LP/win)</span>`;
       box.innerHTML = `
         <div class="riot-card">
+          ${r.emblem ? `<img class="riot-emblem" src="${r.emblem}" alt="${esc(TIER_FR[r.tier] || r.tier)}" onerror="this.remove()"/>` : ''}
           <div class="riot-rank">
             <div class="riot-tier">${esc(TIER_FR[r.tier] || r.tier)} ${esc(r.rank || '')}</div>
             <div class="riot-lp">${r.lp} LP</div>
@@ -341,7 +345,8 @@ function renderRiotProfile() {
           <div class="riot-meta">
             <span>${esc(p.riotId)}</span>
             <span>${r.wins}V / ${r.losses}D · <b class="${wr >= 50 ? 'wr-good' : 'wr-bad'}">${wr}%</b></span>
-            ${toNext != null ? `<span>${iconSvg('target')} ${toNext} LP avant ${esc(TIER_FR[nextTier] || 'la division suivante')}${nextTier ? '' : ''} (palier de division)</span>` : ''}
+            ${toNext != null ? `<span>${iconSvg('target')} ${toNext} LP avant ${esc(TIER_FR[nextTier] || 'la division suivante')} (palier de division)</span>` : ''}
+            ${toMaster}
           </div>
         </div>`;
     })

@@ -11,6 +11,33 @@ const config = require('../config');
 
 const QUEUE = { 420: 'Solo/Duo', 440: 'Flex', 400: 'Normal Draft', 430: 'Normal Blind', 450: 'ARAM' };
 
+// Ordre des paliers (saison actuelle, Émeraude insérée entre Platine et Diamant).
+const TIER_INDEX = { IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4, EMERALD: 5, DIAMOND: 6 };
+const DIVISION_INDEX = { IV: 0, III: 1, II: 2, I: 3 };
+const APEX = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
+// Master = sortie de Diamant I 100 LP -> 6*400 + 3*100 + 100 = 2800 LP cumulés depuis Fer IV 0 LP.
+const MASTER_TOTAL_LP = 2800;
+
+// Emblème de rang (image). Community Dragon (à jour, sans clé). Fallback SVG côté client.
+function rankEmblemUrl(tier) {
+  const t = String(tier || '').toLowerCase();
+  if (!t) return null;
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${t}.png`;
+}
+
+// Estime le nombre de games à GAGNER pour atteindre Master, depuis tier/division/LP.
+// lpPerWin : gain net moyen par victoire (dev peut le régler via RANK_LP_PER_WIN).
+function climbToMaster(tier, division, lp, lpPerWin) {
+  const T = String(tier || '').toUpperCase();
+  if (APEX.includes(T)) return { remainingLp: 0, gamesToWin: 0, reached: true };
+  if (!(T in TIER_INDEX)) return null;
+  const perWin = Number(lpPerWin) > 0 ? Number(lpPerWin) : 22;
+  const divIdx = DIVISION_INDEX[String(division || 'IV').toUpperCase()] ?? 0;
+  const currentTotal = TIER_INDEX[T] * 400 + divIdx * 100 + (Number(lp) || 0);
+  const remainingLp = Math.max(0, MASTER_TOTAL_LP - currentTotal);
+  return { remainingLp, gamesToWin: Math.ceil(remainingLp / perWin), reached: false, lpPerWin: perWin };
+}
+
 let lastCall = 0;
 async function throttle() {
   const wait = 120 - (Date.now() - lastCall); // ~8 req/s max, marge sous la limite
@@ -54,9 +81,17 @@ class RiotApi {
     const entries = await this._get(`${this.platform}.api.riotgames.com`, `/lol/league/v4/entries/by-puuid/${puuid}`);
     if (!Array.isArray(entries)) return null;
     const solo = entries.find((e) => e.queueType === 'RANKED_SOLO_5x5') || entries[0] || null;
-    return solo
-      ? { tier: solo.tier, rank: solo.rank, lp: solo.leaguePoints, wins: solo.wins, losses: solo.losses, queue: solo.queueType }
-      : null;
+    if (!solo) return null;
+    return {
+      tier: solo.tier,
+      rank: solo.rank,
+      lp: solo.leaguePoints,
+      wins: solo.wins,
+      losses: solo.losses,
+      queue: solo.queueType,
+      emblem: rankEmblemUrl(solo.tier),
+      toMaster: climbToMaster(solo.tier, solo.rank, solo.leaguePoints, config.riot.lpPerWin),
+    };
   }
 
   async matchIds(puuid, count) {
@@ -120,4 +155,4 @@ class RiotApi {
   }
 }
 
-module.exports = { RiotApi };
+module.exports = { RiotApi, climbToMaster, rankEmblemUrl };

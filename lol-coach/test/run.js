@@ -34,6 +34,7 @@ const { analyzeInGame } = require('../src/advisor/heuristics');
 const { buildItemPlan } = require('../src/advisor/itemPlan');
 const { getBuild } = require('../src/advisor/builds');
 const { GameHistory } = require('../src/data/history');
+const { climbToMaster, rankEmblemUrl } = require('../src/data/riotApi');
 const { CoachLoop } = require('../src/coachLoop');
 const fetchBuilds = require('../scripts/fetch-builds');
 const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockData');
@@ -111,6 +112,36 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     const b = getBuild('Zoe', 'MIDDLE');
     assert(b && b.runes, 'Zoe a des runes curées');
     assert(b.core && b.core.length, 'Zoe a un core');
+  });
+
+  await test('riotApi : games à win pour Master (climbToMaster)', () => {
+    assert(climbToMaster('MASTER', null, 30).reached === true, 'déjà Master => reached');
+    const d1 = climbToMaster('DIAMOND', 'I', 80, 22);
+    assert(d1.remainingLp === 20 && d1.gamesToWin === 1, 'Diamant I 80LP => 20 LP / 1 game, eu: ' + JSON.stringify(d1));
+    const gold = climbToMaster('GOLD', 'IV', 0, 20);
+    assert(gold.remainingLp === 1600 && gold.gamesToWin === 80, 'Or IV 0LP => 1600 LP / 80 games @20, eu: ' + JSON.stringify(gold));
+    assert(rankEmblemUrl('GOLD').includes('emblem-gold'), 'URL emblème par tier');
+  });
+
+  await test('heuristics : alerte ATTENTION en infériorité numérique', () => {
+    const mk = (c, t, pos, dead) => ({ championName: c, team: t, position: pos, level: 10, isDead: dead, respawnTimer: dead ? 20 : 0, scores: { kills: 1, deaths: 2, assists: 1, creepScore: 120, wardScore: 5 }, items: [], riotIdGameName: c });
+    const me = { ...mk('Zoe', 'ORDER', 'MIDDLE', false), riotId: 'Me#X', summonerName: 'Me' };
+    // 2 alliés morts, ennemis au complet -> infériorité nette.
+    const data = {
+      activePlayer: { currentGold: 800, level: 10, riotId: 'Me#X', summonerName: 'Me', championStats: { currentHealth: 900, maxHealth: 1000 } },
+      allPlayers: [
+        me,
+        mk('Garen', 'ORDER', 'TOP', true), mk('Lee Sin', 'ORDER', 'JUNGLE', true),
+        mk('Zed', 'CHAOS', 'MIDDLE', false), mk('Darius', 'CHAOS', 'TOP', false),
+        mk('Caitlyn', 'CHAOS', 'BOTTOM', false), mk('Thresh', 'CHAOS', 'UTILITY', false),
+      ],
+      events: { Events: [] },
+      gameData: { gameTime: 700 },
+    };
+    const res = analyzeInGame(data, dd);
+    assert(res.summary.risk && res.summary.risk.level === 'danger', 'un risque danger est détecté');
+    assert(res.advice.some((a) => a.category === 'ATTENTION' && a.alert && a.cue), 'un conseil ATTENTION avec cue est émis');
+    assert(res.summary.me.csTarget === 10, 'objectif CS/min = 10 exposé');
   });
 
   await test('heuristics : alerte de tempo si avance', () => {

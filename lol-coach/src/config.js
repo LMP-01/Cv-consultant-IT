@@ -74,6 +74,7 @@ const config = {
     region: process.env.RIOT_REGION || 'europe', // routing régional : americas / asia / europe
     platform: process.env.RIOT_PLATFORM || 'euw1', // plateforme : euw1 / na1 / kr ...
     riotId: process.env.RIOT_ID || '', // "Pseudo#TAG" pour le suivi de rang/historique
+    lpPerWin: Number(process.env.RANK_LP_PER_WIN) || 22, // gain net moyen/victoire (estimation climb Master)
     get enabled() {
       return Boolean(this.apiKey);
     },
