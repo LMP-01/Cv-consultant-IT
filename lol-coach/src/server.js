@@ -76,9 +76,9 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Historique des parties jouées avec le coach (+ stats agrégées).
-app.get('/api/history', (_req, res) => {
+app.get('/api/history', (req, res) => {
   try {
-    res.json(loop.history.list());
+    res.json(loop.history.list({ queue: req.query.queue }));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

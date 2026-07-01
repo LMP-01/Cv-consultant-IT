@@ -71,15 +71,32 @@ class GameHistory {
     return true;
   }
 
+  // File d'une partie (label). Les parties jouées en live n'ont pas de file
+  // exposée par l'API -> "En direct".
+  _queueOf(g) {
+    return g.queue || (g.source === 'riot' ? 'Riot' : 'En direct');
+  }
+
   // Liste + statistiques agrégées (winrate, KDA moyen, par champion).
-  list() {
-    const played = this.games.length;
-    const decided = this.games.filter((g) => g.win === true || g.win === false);
-    const wins = this.games.filter((g) => g.win === true).length;
+  // opts.queue : filtre sur une file donnée ("all" ou absent = toutes).
+  list(opts) {
+    const queueFilter = opts && opts.queue && opts.queue !== 'all' ? String(opts.queue) : null;
+    // Files présentes (pour peupler le sélecteur), sur l'ensemble des parties.
+    const queueCounts = {};
+    for (const g of this.games) {
+      const q = this._queueOf(g);
+      queueCounts[q] = (queueCounts[q] || 0) + 1;
+    }
+    const queues = Object.keys(queueCounts).sort((a, b) => queueCounts[b] - queueCounts[a]).map((q) => ({ queue: q, games: queueCounts[q] }));
+
+    const games = queueFilter ? this.games.filter((g) => this._queueOf(g) === queueFilter) : this.games;
+    const played = games.length;
+    const decided = games.filter((g) => g.win === true || g.win === false);
+    const wins = games.filter((g) => g.win === true).length;
     const winrate = decided.length ? Math.round((wins / decided.length) * 100) : null;
     let k = 0, d = 0, a = 0, n = 0;
     const byChamp = {};
-    for (const g of this.games) {
+    for (const g of games) {
       if (g.kills != null) { k += g.kills; d += g.deaths || 0; a += g.assists || 0; n++; }
       if (g.champion) {
         const c = (byChamp[g.champion] = byChamp[g.champion] || { champion: g.champion, games: 0, wins: 0 });
@@ -88,8 +105,10 @@ class GameHistory {
       }
     }
     return {
-      games: this.games,
+      games,
       stats: {
+        queue: queueFilter || 'all',
+        queues,
         played,
         decided: decided.length,
         wins,
@@ -97,22 +116,22 @@ class GameHistory {
         winrate,
         avgKda: n ? { k: +(k / n).toFixed(1), d: +(d / n).toFixed(1), a: +(a / n).toFixed(1) } : null,
         byChampion: Object.values(byChamp).sort((x, y) => y.games - x.games),
-        deathHeatmap: this._deathHeatmap(),
-        profileByResult: this._profileByResult(),
+        deathHeatmap: this._deathHeatmap(games),
+        profileByResult: this._profileByResult(games),
       },
     };
   }
 
   // Heatmap temporelle des morts : nb de morts par tranche de minutes, agrégé
   // sur les parties qui ont enregistré les horodatages (deathTimes en secondes).
-  _deathHeatmap() {
+  _deathHeatmap(games) {
     const BUCKET = 5; // minutes par tranche
     const MAXMIN = 40;
     const buckets = [];
     for (let m = 0; m < MAXMIN; m += BUCKET) buckets.push({ from: m, to: m + BUCKET, deaths: 0 });
     let gamesWithData = 0;
     let totalDeaths = 0;
-    for (const g of this.games) {
+    for (const g of games) {
       if (!Array.isArray(g.deathTimes) || !g.deathTimes.length) continue;
       gamesWithData++;
       for (const sec of g.deathTimes) {
@@ -129,9 +148,9 @@ class GameHistory {
 
   // Profil moyen des games GAGNÉES vs PERDUES (pour se benchmarker sur son rythme
   // de victoire) : CS/min, KDA, morts, vision, durée.
-  _profileByResult() {
+  _profileByResult(games) {
     const agg = (pred) => {
-      const g = this.games.filter((x) => pred(x) && x.kills != null);
+      const g = games.filter((x) => pred(x) && x.kills != null);
       if (!g.length) return null;
       const avg = (f) => {
         const vals = g.map(f).filter((v) => typeof v === 'number' && !isNaN(v));
