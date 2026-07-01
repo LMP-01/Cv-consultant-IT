@@ -18,11 +18,13 @@ const APEX = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
 // Master = sortie de Diamant I 100 LP -> 6*400 + 3*100 + 100 = 2800 LP cumulés depuis Fer IV 0 LP.
 const MASTER_TOTAL_LP = 2800;
 
-// Emblème de rang (image). Community Dragon (à jour, sans clé). Fallback SVG côté client.
+// Emblème de rang (image OFFICIELLE LoL). On pointe la route LOCALE /ranks/<tier>.png :
+// le serveur télécharge l'image depuis Community Dragon (miroir Riot), la met en cache
+// et la sert — ce qui évite les soucis de CORS/hotlink côté navigateur. Repli blason SVG.
 function rankEmblemUrl(tier) {
-  const t = String(tier || '').toLowerCase();
+  const t = String(tier || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!t) return null;
-  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${t}.png`;
+  return `/ranks/${t}.png`;
 }
 
 // Estime le nombre de games à GAGNER pour atteindre Master, depuis tier/division/LP.

@@ -310,7 +310,9 @@ Le HUD affiche en continu tes **CS/minute** avec une **barre de progression vers
 
 ### 🏆 Rang, LP & climb vers Master (HUD)
 
-En haut du HUD in-game, une **carte de rang** montre ton **palier avec son emblème** (Fer → Challenger — image officielle Community Dragon, avec blason SVG coloré en repli), tes **LP**, ton **winrate**, et surtout une **estimation du nombre de games à GAGNER pour atteindre Master** (`RANK_LP_PER_WIN`, ~22 LP/win par défaut). La carte apparaît aussi sur la page **Historique**. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
+En haut du HUD in-game, une **carte de rang** montre ton **palier avec l'emblème OFFICIEL League of Legends** (Fer → Challenger), tes **LP**, ton **winrate**, et surtout une **estimation du nombre de games à GAGNER pour atteindre Master** (`RANK_LP_PER_WIN`, ~22 LP/win par défaut). La carte apparaît aussi sur la page **Historique**. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
+
+> 🖼️ Les emblèmes de rang sont de **vraies images Riot** : le serveur local les télécharge une fois depuis Community Dragon (miroir officiel des assets), les met en cache dans `.cache/ranks/` et les sert via `/ranks/<tier>.png`. Hors-ligne, l'UI retombe proprement sur un blason coloré par palier.
 
 ### 📊 Data live supplémentaires (KP, objectifs pris, plaques, spikes)
 
