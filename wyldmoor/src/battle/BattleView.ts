@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildCreatureModel, type CreatureModelHandle } from '../gfx/CreatureModel.ts';
 import { CreatureAnimator } from '../gfx/CreatureAnimator.ts';
+import { disposeObject3D } from '../gfx/dispose.ts';
 import type { CreatureInstance } from '../systems/CreatureInstance.ts';
 
 interface Combatant {
@@ -75,6 +76,7 @@ export class BattleView {
     const pos = combatant.handle.object.position.clone();
     const rot = combatant.handle.object.rotation.y;
     this.scene.remove(combatant.handle.object);
+    disposeObject3D(combatant.handle.object);
     const handle = buildCreatureModel(creature.species.sprite);
     handle.object.position.copy(pos);
     handle.object.rotation.y = rot;
@@ -116,8 +118,14 @@ export class BattleView {
 
   end(): void {
     this.active = false;
-    if (this.playerCombatant) this.scene.remove(this.playerCombatant.handle.object);
-    if (this.opponentCombatant) this.scene.remove(this.opponentCombatant.handle.object);
+    if (this.playerCombatant) {
+      this.scene.remove(this.playerCombatant.handle.object);
+      disposeObject3D(this.playerCombatant.handle.object);
+    }
+    if (this.opponentCombatant) {
+      this.scene.remove(this.opponentCombatant.handle.object);
+      disposeObject3D(this.opponentCombatant.handle.object);
+    }
     this.playerCombatant = undefined;
     this.opponentCombatant = undefined;
     this.opponentReusedObject = undefined;

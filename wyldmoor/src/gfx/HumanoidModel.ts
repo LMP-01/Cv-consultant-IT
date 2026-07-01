@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { organicNoiseTexture } from './TextureFactory.ts';
 
 export interface HumanoidPalette {
   skin: string;
@@ -26,10 +27,11 @@ export function buildHumanoid(paletteKey: keyof typeof PALETTES | string): THREE
   const palette = PALETTES[paletteKey] ?? PALETTES.youth;
   const group = new THREE.Object3D();
 
-  const skinMat = new THREE.MeshStandardMaterial({ color: palette.skin, flatShading: true });
-  const outfitMat = new THREE.MeshStandardMaterial({ color: palette.outfit, flatShading: true });
-  const accentMat = new THREE.MeshStandardMaterial({ color: palette.outfitAccent, flatShading: true });
-  const hairMat = new THREE.MeshStandardMaterial({ color: palette.hair, flatShading: true });
+  const noise = organicNoiseTexture();
+  const skinMat = new THREE.MeshStandardMaterial({ color: palette.skin, map: noise, roughness: 0.7 });
+  const outfitMat = new THREE.MeshStandardMaterial({ color: palette.outfit, map: noise, roughness: 0.85 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: palette.outfitAccent, map: noise, roughness: 0.85 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: palette.hair, map: noise, roughness: 0.6 });
 
   const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.7, 6), accentMat);
   legs.position.y = 0.35;
