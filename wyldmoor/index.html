@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#1c2b1e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Wyldmoor</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene-canvas"></canvas>
+
+      <div id="hud">
+        <div id="minimap-wrap" class="hud-panel">
+          <canvas id="minimap" width="140" height="140"></canvas>
+        </div>
+
+        <div id="party-hp" class="hud-panel"></div>
+
+        <div id="battle-log" class="hud-panel hidden"></div>
+
+        <div id="dialogue-box" class="hud-panel hidden">
+          <div id="dialogue-speaker"></div>
+          <div id="dialogue-text"></div>
+          <div id="dialogue-hint">▶ toucher pour continuer</div>
+        </div>
+
+        <div id="battle-hud" class="hidden">
+          <div id="battle-opponent-info" class="hud-panel"></div>
+          <div id="battle-actions">
+            <button id="btn-flee" class="battle-side-btn">Fuir</button>
+            <button id="btn-capture" class="battle-side-btn">Orbe</button>
+            <div id="move-wheel"></div>
+          </div>
+        </div>
+
+        <div id="touch-controls">
+          <div id="stick-base">
+            <div id="stick-knob"></div>
+          </div>
+          <button id="btn-interact">A</button>
+          <button id="btn-menu">☰</button>
+        </div>
+
+        <div id="menu-screen" class="fullscreen-panel hidden"></div>
+        <div id="title-screen" class="fullscreen-panel"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
