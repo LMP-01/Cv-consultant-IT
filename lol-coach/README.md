@@ -406,7 +406,12 @@ Le plus simple : **double-clique `overlay.command` (macOS) / `overlay.bat` (Wind
 - `Ctrl+Shift+H` = **masquer / afficher** tout l'overlay.
 - **Flèches gauche / droite** = **cycle la cible** du panneau Duel (proba trade/all-in) même quand League a le focus (raccourci global ; les flèches ne servent pas en jeu). Personnalisable via `OVERLAY_CYCLE_PREV`/`OVERLAY_CYCLE_NEXT` (ex. `Alt+Left`/`Alt+Right`).
 - **Réduire chaque panneau** : bouton **–** en haut à droite de chaque panneau (état mémorisé). Clique-le pour replier/déplier un overlay individuellement.
-- **Déplacer** : glisse un **titre de panneau** pour bouger toute la fenêtre ; les bords la **redimensionnent**.
+- **Disposition libre** : bouton **« Disposition libre »** (bas-gauche) → chaque panneau devient un **widget flottant déplaçable** (glisse-le par son titre), position **mémorisée**. Bouton de **réinitialisation** à côté. Tu composes ainsi ton HUD exactement où tu veux.
+- **Déplacer toute la fenêtre** : glisse un **titre de panneau** (hors disposition libre) ; les bords la **redimensionnent**.
+
+### 🐺 App Overwolf (prototype)
+
+Une app **Overwolf** est fournie dans **`overwolf/`** (Overwolf est **sanctionné par Riot** et s'affiche **par-dessus le plein écran exclusif**). Elle **réutilise l'UI web locale** (iframe vers `http://localhost:3000/?overlay=1`) : **une seule source de vérité** — toute mise à jour du HUD dans `public/` met à jour Overwolf automatiquement. Voir **`overwolf/README.md`** pour charger l'app (mode développeur, Windows). La version est alignée sur `package.json` via `npm run sync-overwolf-version`.
 
 Alternatives :
 - **Source navigateur OBS** (sans rien installer) vers `http://localhost:3000/?overlay=1` — pratique pour le stream.

@@ -1441,6 +1441,20 @@ body.overlay .feed-panel { max-height: 100vh; }
 .dh-count { font-size: 15px; font-weight: 800; color: var(--text); }
 .dh-label { position: absolute; bottom: 3px; font-size: 9.5px; color: var(--faint); }
 
+/* ── Disposition libre : panneaux flottants déplaçables ───────────────────── */
+.layout-bar { position: fixed; left: 10px; bottom: 10px; z-index: 60; display: flex; gap: 6px; }
+.layout-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 6px 10px; border-radius: 9px; cursor: pointer; background: rgba(11,15,26,.82); border: 1px solid var(--border); color: var(--muted); backdrop-filter: blur(4px); }
+.layout-btn:hover { border-color: var(--primary-2); color: var(--text); }
+.layout-btn.on { border-color: var(--primary-2); color: var(--primary-2); background: rgba(139,92,246,.14); }
+body:not(.overlay) .layout-bar { opacity: .55; }
+body.overlay .layout-bar { -webkit-app-region: no-drag; }
+
+body.free-layout #inGame { position: relative; }
+body.free-layout #inGame .panel { position: fixed; z-index: 20; margin: 0 !important; max-width: 380px; box-shadow: 0 12px 34px rgba(0,0,0,.5); }
+body.free-layout #inGame .panel .panel-title { cursor: move; -webkit-app-region: no-drag; }
+body.free-layout #inGame .panel.dragging { z-index: 40; outline: 1px solid var(--primary-2); opacity: .96; }
+body.free-layout #inGame .panel .panel-title::before { content: "⠿"; margin-right: 6px; color: var(--faint); letter-spacing: -2px; }
+
 /* ── Panneaux réductibles (bouton "réduire" par overlay) ──────────────────── */
 .panel-title { position: relative; }
 .panel-collapse { position: absolute; top: 0; right: 0; width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
