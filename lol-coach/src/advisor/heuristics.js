@@ -1,6 +1,8 @@
 'use strict';
 
-const { analyzeComp, defensiveSuggestions, classifyDamage } = require('./profile');
+const fs = require('fs');
+const path = require('path');
+const { analyzeComp, defensiveSuggestions, classifyDamage, dataset } = require('./profile');
 const { getBuild } = require('./builds');
 
 // Suivi du dragon soul à partir des events (type + équipe ayant tué).
@@ -330,6 +332,61 @@ function computeRisk({ me, scoreboard, stats, active, objectives, dragons, gameT
   return null;
 }
 
+// Champions à fort heal/shield notable (pour l'anti-soin + les odds de duel).
+const SUSTAIN_CHAMPS = new Set([
+  'aatrox', 'soraka', 'yuumi', 'sylas', 'vladimir', 'swain', 'nami', 'senna', 'sona',
+  'warwick', 'drmundo', 'olaf', 'aphelios', 'sett', 'irelia', 'fiora', 'ramus', 'ramus',
+  'mordekaiser', 'kayn', 'nautilus', 'renekton', 'gwen', 'briar', 'bel', 'seraphine', 'taric',
+  'kled', 'volibear', 'zac', 'yasuo', 'yone', 'samira', 'nilah',
+]);
+const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Traits d'un ennemi (pour le calcul de duel + l'anti-soin).
+function enemyTraits(enemy, ds, ddragon) {
+  const spells = (enemy.summonerSpells || []).map((s) => norm(s));
+  const tags = enemy.tags || [];
+  const nid = norm(enemy.championId || enemy.champion);
+  const ccSet = new Set((ds.ccHeavy || []).map(norm));
+  // Sustain : champion connu OU objets de vol de vie/omnivamp/soin.
+  let itemSustain = false;
+  for (const id of enemy.itemIds || []) {
+    const info = ddragon && ddragon.itemInfo(id);
+    if (!info) continue;
+    const t = info.tags || [];
+    if (t.includes('LifeSteal') || t.includes('SpellVamp')) itemSustain = true;
+    if (/gourdin|bloodthirster|soif-de-sang|sterak|goredrinker|avidité|death.?s dance|danse de la mort/i.test(info.name || '')) itemSustain = true;
+  }
+  const itemGold = enemy.itemGold || 0;
+  return {
+    sustain: SUSTAIN_CHAMPS.has(nid) || itemSustain,
+    exhaust: spells.some((s) => /fatigue|exhaust/.test(s)),
+    ignite: spells.some((s) => /embrasement|ignite|dot/.test(s)),
+    hardCC: ccSet.has(nid) || tags.includes('Tank'),
+    tank: tags.includes('Tank'),
+    hasSpike: itemGold >= 3000, // ~1 objet complet et plus
+    itemGold,
+  };
+}
+
+// Combo d'engage/trade selon le champion joué (data/combos.json), avec repli par classe.
+let COMBOS = undefined;
+function loadCombos() {
+  if (COMBOS !== undefined) return COMBOS;
+  try {
+    COMBOS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'combos.json'), 'utf8'));
+  } catch {
+    COMBOS = { champions: {}, byClass: {} };
+  }
+  return COMBOS;
+}
+function comboFor(meChamp) {
+  if (!meChamp) return null;
+  const c = loadCombos();
+  if (c.champions && c.champions[meChamp.id]) return c.champions[meChamp.id];
+  const cls = (meChamp.tags || []).find((t) => c.byClass && c.byClass[t]);
+  return cls ? c.byClass[cls] : null;
+}
+
 function analyzeInGame(data, ddragon) {
   const advice = [];
   const gameTime = data.gameData ? data.gameData.gameTime : 0;
@@ -347,6 +404,12 @@ function analyzeInGame(data, ddragon) {
     .filter(Boolean);
   const enemyComp = enemyChamps.length ? analyzeComp(enemyChamps) : null;
   const meChamp = me && ddragon ? ddragon.resolveChampionByName(me.champion) : null;
+
+  // Traits de chaque ennemi (sustain/exhaust/ignite/CC/spike) pour le calcul de
+  // duel et l'anti-soin. On les attache directement au scoreboard pour le client.
+  const ds = dataset();
+  for (const e of scoreboard.enemies) e.traits = enemyTraits(e, ds, ddragon);
+  const enemySustain = scoreboard.enemies.filter((e) => e.traits && e.traits.sustain);
 
   // Données live enrichies : dragons/soul, structures, vision.
   const dragons = analyzeDragons(events, scoreboard);
@@ -620,6 +683,30 @@ function analyzeInGame(data, ddragon) {
   const cb = counterBuildAdvice(scoreboard, ddragon, meChamp);
   if (cb && gameTime > 600) advice.push(cb);
 
+  // 8e-bis. Jungler adverse « pas vu » : proxy via les events (il apparaît dans
+  // les ganks/objectifs). Pas de positions dans l'API -> heuristique honnête.
+  if (me && gameTime > 240) {
+    const ejg = scoreboard.enemies.find((e) => e.position === 'JUNGLE');
+    if (ejg && !ejg.isDead) {
+      let lastSeen = null;
+      for (const e of events) {
+        if (e.EventName !== 'ChampionKill') continue;
+        const involved = [e.KillerName, e.VictimName].concat(e.Assisters || []);
+        if (involved.includes(ejg.summoner)) lastSeen = Math.max(lastSeen || 0, e.EventTime || 0);
+      }
+      const since = lastSeen != null ? gameTime - lastSeen : gameTime;
+      if (since > 75) {
+        advice.push({
+          id: 'jungler-mia',
+          priority: 'medium',
+          category: 'Vision',
+          title: 'Jungler adverse discret',
+          message: `${ejg.championDisplay || ejg.champion} n'est pas apparu dans un combat depuis ${Math.round(since)}s — pose une ward et respecte un gank possible, surtout si tu es poussé. Recule d'un cran si tu n'as pas de vision.`,
+        });
+      }
+    }
+  }
+
   // 8e. Vision : si tu es sous la moyenne de ton équipe.
   if (me && gameTime > 360 && allyWardAvg > 0 && myWard < allyWardAvg * 0.6) {
     advice.push({
@@ -655,6 +742,28 @@ function analyzeInGame(data, ddragon) {
       });
     }
   }
+
+  // 9b. Anti-soin : si l'équipe adverse heal/shield notablement et que tu fais
+  // des dégâts, recommande l'anti-soin (Fléau/Grievous) — à ajouter à tes achats.
+  const iDealDamage = meChamp && classifyDamage(meChamp) !== null && !(meChamp.tags || []).includes('Support');
+  if (gameTime > 480 && iDealDamage && enemySustain.length >= 2) {
+    const names = enemySustain.slice(0, 2).map((e) => e.championDisplay || e.champion).join(', ');
+    advice.push({
+      id: 'anti-heal',
+      priority: 'high',
+      category: 'Build',
+      title: 'Anti-soin nécessaire (heal/shield en face)',
+      message: `${names} et d'autres soignent/bouclient fort. Prends un objet d'anti-soin (Fléau / Blessures graves) à ton prochain achat — sans ça, tu ne les tueras pas en fight prolongé.`,
+    });
+  }
+
+  // Contexte de combat : combo conseillé + cible par défaut (adversaire de lane).
+  const laneOppCombat = me && me.position ? scoreboard.enemies.find((e) => e.position === me.position) : null;
+  const combat = {
+    combo: comboFor(meChamp),
+    defaultTargetKey: laneOppCombat ? laneOppCombat.championKey : null,
+    antiHeal: enemySustain.length >= 2,
+  };
 
   // Avance économique estimée (équipe + lane) pour l'indicateur du tableau de bord.
   const allyNet = scoreboard.allies.reduce((s, p) => s + (p.netWorth || 0), 0) + (active.currentGold || 0);
@@ -770,6 +879,9 @@ function analyzeInGame(data, ddragon) {
           csExpected: minutes > 0 ? Math.round(10 * minutes) : 0,
           csIsJungle: me.position === 'JUNGLE',
           gold: active.currentGold != null ? Math.round(active.currentGold) : null,
+          netWorth: me.itemGold || 0,
+          hasUlt: (active.abilities && active.abilities.R && active.abilities.R.abilityLevel > 0) || me.level >= 6,
+          hasSpike: (me.itemGold || 0) >= 3000,
           hpPct: stats.maxHealth ? pct(stats.currentHealth / stats.maxHealth) : null,
           stats: {
             armor: Math.round(stats.armor || 0),
@@ -781,6 +893,7 @@ function analyzeInGame(data, ddragon) {
         }
       : null,
     enemyComp,
+    combat,
     teamGold,
     laneGold,
     dragons,
