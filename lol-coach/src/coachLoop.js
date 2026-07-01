@@ -460,6 +460,8 @@ class CoachLoop {
     const win = endEvent ? endEvent.Result === 'Win' : null;
     const record = {
       date: new Date().toISOString(),
+      source: 'live',
+      queue: 'En direct',
       durationSec: Math.round(result.summary.gameTime || 0),
       durationText: result.summary.gameTimeText,
       win,

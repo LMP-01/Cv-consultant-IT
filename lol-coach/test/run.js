@@ -233,18 +233,22 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
   await test('GameHistory : import Riot dédoublonné par matchId', () => {
     const tmp = require('path').join(require('os').tmpdir(), `lolcoach-hist-${process.pid}.json`);
     const h = new GameHistory(tmp);
-    h.games = [{ id: 1, matchId: 'EUW1_A', win: true, kills: 5, deaths: 2, assists: 3 }];
+    h.games = [{ id: 1, matchId: 'EUW1_A', source: 'live', queue: 'En direct', win: true, kills: 5, deaths: 2, assists: 3 }];
     h._seq = 1;
     const added = h.importMany([
       { matchId: 'EUW1_A', win: true, date: '2026-06-01T00:00:00Z' }, // doublon -> ignoré
-      { matchId: 'EUW1_B', win: false, kills: 2, deaths: 6, assists: 1, csPerMin: 6, date: '2026-06-02T00:00:00Z', deathTimes: [200, 700] },
-      { matchId: 'EUW1_C', win: true, kills: 9, deaths: 1, assists: 7, csPerMin: 8.5, date: '2026-06-03T00:00:00Z', deathTimes: [800] },
+      { matchId: 'EUW1_B', source: 'riot', queue: 'Solo/Duo', win: false, kills: 2, deaths: 6, assists: 1, csPerMin: 6, date: '2026-06-02T00:00:00Z', deathTimes: [200, 700] },
+      { matchId: 'EUW1_C', source: 'riot', queue: 'Solo/Duo', win: true, kills: 9, deaths: 1, assists: 7, csPerMin: 8.5, date: '2026-06-03T00:00:00Z', deathTimes: [800] },
     ]);
     assert(added === 2, '2 nouvelles parties importées (1 doublon ignoré), eu: ' + added);
     assert(h.games.length === 3, 'total 3 parties');
     const s = h.list().stats;
     assert(s.deathHeatmap.totalDeaths === 3, 'morts importées comptées dans la heatmap');
-    assert(s.profileByResult.win.games === 2, '2 victoires dans le profil');
+    // Filtre par file : "Solo/Duo" (2 imports) et "En direct" (1 partie live).
+    assert(Array.isArray(s.queues) && s.queues.some((q) => q.queue === 'Solo/Duo' && q.games === 2), 'files listées (Solo/Duo x2)');
+    const solo = h.list({ queue: 'Solo/Duo' }).stats;
+    assert(solo.played === 2, 'filtre Solo/Duo ne garde que les imports, eu: ' + solo.played);
+    assert(solo.profileByResult.win.games === 1 && solo.profileByResult.loss.games === 1, 'profil filtré 1 win / 1 loss');
     try { require('fs').unlinkSync(tmp); } catch { /* nettoyage best-effort */ }
   });
 

@@ -1381,6 +1381,10 @@ body.overlay .feed-panel { max-height: 100vh; }
 .rc-reset { font-size: 12px; color: #fcd34d; margin-top: 7px; line-height: 1.45; }
 .rc-empty { font-size: 12px; color: var(--faint); }
 
+/* Filtre par file (page Historique) */
+.queue-filter { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.queue-filter .ic { color: var(--primary-2); }
+
 /* Profil victoires vs défaites (page Historique) */
 .win-profile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
 .win-profile .sub { display: flex; align-items: center; gap: 7px; margin-top: 0; }

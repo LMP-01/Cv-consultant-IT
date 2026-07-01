@@ -340,6 +340,10 @@ La page Historique compare ton **profil moyen en victoire vs en défaite** (CS/m
 
 Sur la page **Historique**, le bouton **« Importer mes 20 dernières (Riot) »** récupère tes vraies parties (Match-V5) **et leur timeline** pour en extraire : résultat, KDA, **CS/min**, **KP%**, **vision**, durée **et les timings de chaque mort**. Elles sont **fusionnées dans ton historique local** (dédoublonnées par `matchId`) et alimentent directement toutes tes analyses : winrate, **profil victoires/défaites**, **heatmap des morts**, courbes de progression. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
 
+### 🗂️ Filtre par file & progression datée unifiée
+
+La page **Historique** a un **filtre par file** (Solo/Duo, Flex, Normal… + « En direct » pour les parties jouées avec le coach) : tout se recalcule pour la file choisie (winrate, profil victoires/défaites, heatmap des morts, courbes). La **courbe de progression est datée** : tes parties **jouées en live et importées de Riot sont fusionnées dans l'ordre chronologique**, pour lire ta vraie évolution dans le temps.
+
 ### 🎯 Jalons de CS (10/20 min), mort avant objectif & résumé vocal
 
 - **Jalons de CS** : ton CS est figé à **10:00 et 20:00** et comparé à ton objectif (ton rythme de win, sinon 8/min) directement dans le HUD.

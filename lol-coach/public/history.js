@@ -117,8 +117,12 @@ function lineChart(values, opts) {
 function renderCharts(games) {
   const box = $('histCharts');
   if (!box) return;
-  // Du plus ancien au plus récent pour lire la progression de gauche à droite.
-  const chrono = (games || []).slice().reverse();
+  // Progression datée : on trie par date (parties live + importées Riot mélangées
+  // chronologiquement). Repli sur l'ordre inverse du tableau si pas de date.
+  const hasDates = (games || []).every((g) => g.date);
+  const chrono = hasDates
+    ? (games || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date))
+    : (games || []).slice().reverse();
   const deaths = chrono.filter((g) => g.deaths != null).map((g) => g.deaths);
   const cspm = chrono.filter((g) => g.csPerMin != null).map((g) => g.csPerMin);
   // Winrate glissant (cumulatif).
@@ -241,8 +245,10 @@ function gamesToCsv(games) {
 function initCsv(games) {
   const btn = $('exportCsv');
   if (!btn) return;
-  if (!games.length) { btn.style.display = 'none'; return; }
-  btn.addEventListener('click', () => {
+  btn.style.display = games.length ? '' : 'none';
+  if (!games.length) return;
+  // onclick (et non addEventListener) : réappelable à chaque filtre sans doublon.
+  btn.onclick = () => {
     const blob = new Blob([gamesToCsv(games)], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -250,7 +256,7 @@ function initCsv(games) {
     a.download = 'lol-coach-historique.csv';
     a.click();
     URL.revokeObjectURL(url);
-  });
+  };
 }
 
 // Profil moyen des games gagnées vs perdues (benchmark de ton rythme de win).
@@ -460,21 +466,37 @@ function initImportRiot() {
   });
 }
 
+// Peuple le sélecteur de file à partir des files réellement présentes.
+function fillQueueFilter(queues) {
+  const sel = $('queueFilter');
+  if (!sel) return;
+  const current = sel.value || 'all';
+  const opts = ['<option value="all">Toutes les files</option>']
+    .concat((queues || []).map((q) => `<option value="${esc(q.queue)}">${esc(q.queue)} (${q.games})</option>`));
+  sel.innerHTML = opts.join('');
+  // Rétablit la sélection courante si elle existe encore.
+  if ([...sel.options].some((o) => o.value === current)) sel.value = current;
+}
+
 function loadHistory() {
-  return fetch('/api/history')
+  const sel = $('queueFilter');
+  const queue = sel ? sel.value : 'all';
+  return fetch('/api/history?queue=' + encodeURIComponent(queue || 'all'))
     .then((r) => r.json())
     .then((data) => {
+      fillQueueFilter((data.stats && data.stats.queues) || []);
       render(data);
       renderTilt(data.games || []);
       renderOneTrick(data.stats || {});
       renderCharts(data.games || []);
       renderGoal(data.games || []);
-      // On ne lie les écouteurs (CSV/analyse) qu'une seule fois, même après réimport.
+      // On ne lie les écouteurs qu'une seule fois (CSV / analyse / filtre).
       if (!loadHistory._bound) {
         loadHistory._bound = true;
-        initCsv(data.games || []);
+        if (sel) sel.addEventListener('change', () => loadHistory());
         if (data.games && data.games.length) initAnalyze();
       }
+      initCsv(data.games || []); // relie l'export au jeu de données filtré courant
       const b = $('analyzeBtn'); if (b) b.style.display = data.games && data.games.length ? '' : 'none';
     })
     .catch((e) => {
