@@ -459,8 +459,36 @@ function renderInGame(game) {
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
   renderTeam('enemies', game.scoreboard ? game.scoreboard.enemies : []);
 
+  renderHudBuys(game.itemPlan);
   renderItemPlan(game.itemPlan);
   renderTimers(game.scoreboard ? game.scoreboard.enemies : []);
+}
+
+// ── 3 prochains achats (icônes réelles) — bandeau HUD/overlay ───────────────
+function renderHudBuys(plan) {
+  const el = $('hudBuys');
+  if (!el) return;
+  if (!plan || !plan.next || !plan.next.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  const chips = plan.next
+    .map((it, i) => {
+      const prio = it.priority ? ' hb-prio' : '';
+      const img = it.icon
+        ? `<img src="${esc(it.icon)}" alt="" loading="lazy" onerror="this.style.display='none'"/>`
+        : `<span class="hb-noimg">${iconSvg('cart')}</span>`;
+      const badge = it.priority ? `<span class="hb-badge">${iconSvg('shield')} prioritaire</span>` : '';
+      return `<div class="hb-item${prio}" title="${esc(it.name || '')}">
+          <span class="hb-step">${i + 1}</span>${img}
+          <span class="hb-txt"><span class="hb-name">${esc(it.name || '')}</span>${badge}</span>
+        </div>`;
+    })
+    .join('');
+  const prioReason = (plan.next.find((n) => n.priority && n.reason) || {}).reason;
+  el.innerHTML = `
+    <div class="hb-head">${iconSvg('cart')} Prochains achats</div>
+    <div class="hb-row">${chips}</div>
+    ${prioReason ? `<div class="hb-reason">${iconSvg('shield', 'ic-amber')} ${esc(prioReason)}</div>` : ''}`;
+  if (window.hydrateIcons) hydrateIcons();
 }
 
 // ── Objectifs pris (dragons / tours / baron) + plaques ──────────────────────
@@ -516,7 +544,7 @@ function renderRisk(risk) {
     el.classList.remove('risk-flash');
     void el.offsetWidth; // relance l'animation
     el.classList.add('risk-flash');
-    notify('⚠️ ATTENTION', risk.title);
+    notify('ATTENTION', risk.title);
     if (tts.enabled) speak('Attention, ' + risk.title);
   }
 }
@@ -849,9 +877,12 @@ function renderItemPlan(plan) {
           it.components && it.components.length
             ? `<div class="plan-comp">${it.components.map((c) => itemIco(c, 'plan-mini')).join('<span class="plan-plus">+</span>')}</div>`
             : '';
-        return `<div class="plan-next-item ${i === 0 ? 'first' : ''}">
+        const prio = it.priority
+          ? `<div class="plan-prio">${iconSvg('shield', 'ic-amber')} ${esc(it.reason || 'conseillé maintenant')}</div>`
+          : '';
+        return `<div class="plan-next-item ${i === 0 ? 'first' : ''}${it.priority ? ' plan-prio-item' : ''}">
             <div class="plan-next-head"><span class="plan-step">${i + 1}</span>${itemIco(it, 'plan-target')}</div>
-            ${comps}
+            ${prio}${comps}
           </div>`;
       })
       .join('');

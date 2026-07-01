@@ -50,6 +50,53 @@ function counterBuildAdvice(scoreboard, ddragon, meChamp) {
   return null;
 }
 
+// Choisit l'OBJET DÉFENSIF prioritaire à acheter selon la menace dominante,
+// ancré sur le situationnel du build joué (nom + icône garantis). Renvoie
+// { item, id, icon, reason, urgency, when } ou null. Sert de source unique :
+// le conseil ET la mise à jour des prochains achats en découlent.
+function choosePriorityDefensive(scoreboard, enemyComp, meChamp, me, ddragon) {
+  if (!me || !me.championId || !ddragon || !enemyComp) return null;
+  const build = getBuild(me.championId, me.position || null);
+  if (!build || !Array.isArray(build.situational) || !build.situational.length) return null;
+  const owned = new Set(me.itemIds || []);
+  const myTags = meChamp ? meChamp.tags || [] : [];
+  const squishy = ['Mage', 'Marksman', 'Assassin'].some((t) => myTags.includes(t));
+  const burst = enemyComp.burstCount >= 2;
+  const apThreat = enemyComp.profile === 'à dominante AP';
+  const adThreat = enemyComp.profile === 'à dominante AD';
+  const heavyCC = enemyComp.ccCount >= 3;
+
+  let want = null, reason = null, urgency = 'medium', when = 'dans tes 1-2 prochains objets';
+  if (squishy && burst) {
+    want = /(sablier|zhonya|garde.?ange|angel|banshee|maw)/i;
+    reason = `burst adverse élevé (${enemyComp.burstCount}) — de quoi survivre à leur combo d'engage`;
+    urgency = 'high';
+    when = 'ton prochain retour (en priorité)';
+  } else if (apThreat && squishy) {
+    want = /(banshee|maw|mercure|adaptativ|vandale|abysse|force of nature|magique)/i;
+    reason = 'comp majoritairement AP — prends de la résistance magique';
+  } else if (adThreat) {
+    want = /(armure|plated|randuin|thornmail|épineuse|acier|frozen|tabis|steelcaps|zhonya|sablier|gardien)/i;
+    reason = 'comp majoritairement AD — prends de l’armure';
+  } else if (heavyCC) {
+    want = /(mercure|silvermere|quicksilver|argent|ténacité|mercurial)/i;
+    reason = `beaucoup de CC (${enemyComp.ccCount}) — un objet qui purge/tenacité aide`;
+  }
+  if (!want) return null;
+
+  for (const name of build.situational) {
+    if (!want.test(String(name || ''))) continue;
+    const r = ddragon.resolveItemByName(name);
+    if (r && r.id) {
+      if (owned.has(r.id)) return null; // déjà l'objet -> plus besoin du conseil
+      return { item: r.name, id: r.id, icon: r.icon, reason, urgency, when };
+    }
+    // Data Dragon indisponible (hors-ligne) : on renvoie au moins le nom.
+    if (!r) return { item: name, id: null, icon: null, reason, urgency, when };
+  }
+  return null;
+}
+
 // ── Timings des objectifs neutres (Faille de l'invocateur) ────────────────
 // Valeurs vérifiées pour le patch 26.13 (juin 2026). Elles évoluent à chaque
 // saison : ajuste-les ici si le patch change.
@@ -171,24 +218,25 @@ function computeObjectives(gameTime, events) {
   const add = (name, icon, spawnAt) =>
     objectives.push({ name, icon, spawnAt, etaSeconds: Math.max(0, Math.round(spawnAt - gameTime)) });
 
+  // Icônes gérées côté UI (SVG) ; on ne stocke pas d'emoji ici.
   // Dragon (respawn 5:00 après un kill).
-  add('Dragon', '🐉', lastDragon != null ? lastDragon + OBJ.DRAGON_RESPAWN : OBJ.DRAGON_FIRST);
+  add('Dragon', '', lastDragon != null ? lastDragon + OBJ.DRAGON_RESPAWN : OBJ.DRAGON_FIRST);
 
   // Voidgrubs : apparition 6:00, pas de respawn. Affiché jusqu'à un peu après
   // l'apparition (ou jusqu'à ce qu'ils soient pris), pas pendant tout l'early.
   if (!grubsDone && gameTime < OBJ.VOIDGRUBS_SPAWN + 90) {
-    add('Voidgrubs', '🪲', OBJ.VOIDGRUBS_SPAWN);
+    add('Voidgrubs', '', OBJ.VOIDGRUBS_SPAWN);
   }
 
   // Rift Herald (15:00, sans respawn, despawn ~19:45).
   if (!heraldDead && gameTime < 1185) {
-    add('Héraut', '👁️', OBJ.HERALD_SPAWN);
+    add('Héraut', '', OBJ.HERALD_SPAWN);
   }
 
   // Baron Nashor (20:00, respawn 6:00).
   const baronSpawnAt = lastBaron != null ? lastBaron + OBJ.BARON_RESPAWN : OBJ.BARON_SPAWN;
   if (gameTime >= OBJ.HERALD_SPAWN - 120 || baronSpawnAt - gameTime <= 180) {
-    add('Baron', '🟣', baronSpawnAt);
+    add('Baron', '', baronSpawnAt);
   }
 
   return objectives;
@@ -332,7 +380,7 @@ function analyzeInGame(data, ddragon) {
         id: `obj-now-${obj.name}`,
         priority: obj.name === 'Baron' || obj.name === 'Dragon' ? 'high' : 'medium',
         category: 'Objectif',
-        title: `${obj.icon} ${obj.name} disponible`,
+        title: `${obj.name} disponible`,
         message: `${obj.name} est apparu — prends la vision autour et regroupe pour le contester.`,
       });
     } else if (obj.etaSeconds > 0 && obj.etaSeconds <= 45) {
@@ -340,7 +388,7 @@ function analyzeInGame(data, ddragon) {
         id: `obj-soon-${obj.name}`,
         priority: 'medium',
         category: 'Objectif',
-        title: `${obj.icon} ${obj.name} dans ${mmss(obj.etaSeconds)}`,
+        title: `${obj.name} dans ${mmss(obj.etaSeconds)}`,
         message: `Place la vision et positionne-toi ${obj.etaSeconds <= 25 ? 'maintenant' : 'tôt'} pour le ${obj.name.toLowerCase()}.`,
       });
     }
@@ -500,7 +548,7 @@ function analyzeInGame(data, ddragon) {
         id: 'tempo-ahead',
         priority: 'medium',
         category: 'Tempo',
-        title: '⚡ Fenêtre de force',
+        title: 'Fenêtre de force',
         message: `Tu es plus fort que ${oppName} (${bits.join(', ')}). Cherche un trade/all-in ou un play sur la map avant qu'il rattrape.`,
       });
     } else if (goldDiff <= -550 || lvlDiff <= -2) {
@@ -508,7 +556,7 @@ function analyzeInGame(data, ddragon) {
         id: 'tempo-behind',
         priority: 'medium',
         category: 'Tempo',
-        title: '🛡️ Adversaire en avance',
+        title: 'Adversaire en avance',
         message: `${oppName} a un spike d'avance — temporise, farm en sécurité, et évite les trades prolongés jusqu'à ton prochain objet.`,
       });
     }
@@ -553,7 +601,7 @@ function analyzeInGame(data, ddragon) {
       id: 'dragon-soul',
       priority: 'high',
       category: 'Macro',
-      title: dragons.soulTeam === 'ally' ? '🐉 Vous avez le Dragon Soul' : '🐉 L’ennemi a le Dragon Soul',
+      title: dragons.soulTeam === 'ally' ? 'Vous avez le Dragon Soul' : 'L’ennemi a le Dragon Soul',
       message: dragons.soulTeam === 'ally' ? 'Avantage de teamfight majeur — force les objectifs et les fights groupés.' : 'Désavantage en teamfight prolongé — privilégie les pick et les objectifs rapides, évite les 5v5 à rallonge.',
     });
   } else if (dragons.soulPointTeam) {
@@ -561,7 +609,7 @@ function analyzeInGame(data, ddragon) {
       id: 'dragon-soulpoint',
       priority: 'high',
       category: 'Macro',
-      title: '🐉 Prochain dragon = SOUL',
+      title: 'Prochain dragon = SOUL',
       message: dragons.soulPointTeam === 'ally'
         ? 'Vous êtes à 3 drakes : le prochain donne le Soul. Prends la vision tôt et regroupe pour le sécuriser.'
         : 'L’ennemi est à 3 drakes : le prochain leur donne le Soul. Vision + contest obligatoire, ou refuse-le proprement.',
@@ -583,8 +631,19 @@ function analyzeInGame(data, ddragon) {
     });
   }
 
-  // 9. Conseil défensif unique selon la team adverse
-  if (enemyComp && gameTime > 60 && gameTime < 900) {
+  // 9. Objet défensif prioritaire (source unique) : conseil AVEC timing + met à
+  // jour les prochains achats (via summary.priorityBuy, lu par buildItemPlan).
+  const priorityBuy = choosePriorityDefensive(scoreboard, enemyComp, meChamp, me, ddragon);
+  if (priorityBuy && gameTime > 120) {
+    advice.push({
+      id: 'priority-buy',
+      priority: priorityBuy.urgency === 'high' ? 'high' : 'medium',
+      category: 'Build',
+      title: `Achète ${priorityBuy.item} — ${priorityBuy.when}`,
+      message: `${priorityBuy.reason}. Je l'ai placé en tête de tes prochains achats — prends-le ${priorityBuy.urgency === 'high' ? 'dès ton prochain retour, avant de continuer ton core' : 'dans tes 1-2 prochains objets'}.`,
+    });
+  } else if (enemyComp && gameTime > 60 && gameTime < 900) {
+    // Repli : conseil défensif générique si aucun objet prioritaire n'est identifié.
     const sugg = defensiveSuggestions(enemyComp)[0];
     if (sugg) {
       advice.push({
@@ -618,7 +677,7 @@ function analyzeInGame(data, ddragon) {
       category: 'ATTENTION',
       alert: true,
       cue: { kind: 'beep', freq: 300, ms: 260 },
-      title: `⚠️ ATTENTION — ${risk.title}`,
+      title: `ATTENTION — ${risk.title}`,
       message: risk.message,
     });
   }
@@ -698,6 +757,7 @@ function analyzeInGame(data, ddragon) {
     risk,
     waves,
     recall,
+    priorityBuy,
     me: me
       ? {
           champion: me.champion,

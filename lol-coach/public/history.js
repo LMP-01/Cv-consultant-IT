@@ -403,7 +403,7 @@ function renderRiotProfile() {
       const nextTier = TIER_ORDER[TIER_ORDER.indexOf(r.tier) + 1];
       const toNext = ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? null : 100 - r.lp;
       let toMaster = '';
-      if (r.toMaster && r.toMaster.reached) toMaster = `<span>${iconSvg('trophy')} Master atteint 🎉</span>`;
+      if (r.toMaster && r.toMaster.reached) toMaster = `<span>${iconSvg('trophy')} Master atteint</span>`;
       else if (r.toMaster) toMaster = `<span>${iconSvg('trophy')} <b>${r.toMaster.gamesToWin}</b> games à win → Master (${r.toMaster.remainingLp} LP, ~${r.toMaster.lpPerWin} LP/win)</span>`;
       box.innerHTML = `
         <div class="riot-card">

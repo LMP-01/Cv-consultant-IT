@@ -324,6 +324,14 @@ Le HUD affiche aussi :
 - **Spike d'objet de ton adversaire de lane** : quand il complète un objet (1ᵉ/2ᵉ/3ᵉ) avant toi, un rappel te dit de **respecter ses trades** jusqu'à ce que tu combles.
 - **Ping ATTENTION en voix** : si la voix est activée, l'alerte de move risqué est **lue à voix haute** (« Attention, infériorité numérique ») en plus du bip.
 
+### 🧩 Conseils d'objets cohérents (achat prioritaire + timing)
+
+Quand la situation appelle un objet défensif (ex. **Sablier de Zhonya** face à un gros burst), le coach ne se contente plus de le suggérer : il **précise QUAND l'acheter** (« ton prochain retour, en priorité ») **et le met automatiquement en tête de tes prochains achats**, avec la raison. Conseil et plan d'objets parlent donc d'une seule voix (source unique : la menace adverse dominante × ton build). L'objet prioritaire est mis en évidence dans le HUD.
+
+### 🛒 3 prochains achats (icônes réelles) dans le HUD/overlay
+
+Un bandeau **« Prochains achats »** toujours visible affiche tes **3 prochains objets avec leurs vraies icônes** (Data Dragon), l'objet **prioritaire** surligné. Les icônes d'objets, d'emblèmes de rang et les portraits sont de **vraies images League of Legends** ; le reste de l'interface utilise des **icônes SVG** (plus d'emojis).
+
 ### 🔄 Planificateur de recall & timing des vagues
 
 Un panneau **« Recall & vagues »** en jeu affiche : le **prochain achat conseillé** avec la barre d'or (as-tu de quoi ?), un **conseil de recall optimal** (pousser la vague — surtout si un **canon** arrive — puis reset pour prendre ton spike), le **compte à rebours de la prochaine vague de canon** (déduit de l'horloge), et un rappel **« reset MAINTENANT »** quand un **objectif majeur** (dragon/baron/héraut) tombe dans ~15-55 s pour que tu sois présent avec ton item.
