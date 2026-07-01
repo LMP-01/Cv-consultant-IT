@@ -645,6 +645,22 @@ function analyzeInGame(data, ddragon) {
     });
   }
 
+  // Mort juste avant un objectif majeur : tu vas le rater (death timer perdu).
+  if (me && me.isDead && me.respawnTimer > 0) {
+    const obj = (objectives || [])
+      .filter((o) => o.etaSeconds > 0 && ['Dragon', 'Baron', 'Héraut'].includes(o.name) && o.etaSeconds <= me.respawnTimer + 8)
+      .sort((a, b) => a.etaSeconds - b.etaSeconds)[0];
+    if (obj) {
+      advice.push({
+        id: 'dead-before-obj',
+        priority: 'high',
+        category: 'ATTENTION',
+        title: `Mort avant ${obj.name}`,
+        message: `Tu ressuscites dans ${me.respawnTimer}s et ${obj.name} arrive dans ${mmss(obj.etaSeconds)} — tu risques de le rater. Dis à ton équipe de temporiser ou de ne pas le prendre en infériorité.`,
+      });
+    }
+  }
+
   // ── Planificateur de recall + timing des vagues ───────────────────────────
   const waves = computeWaves(gameTime);
   let recall = null;

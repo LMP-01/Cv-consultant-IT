@@ -439,21 +439,50 @@ function initRiotMatches() {
   });
 }
 
+// Importe les 20 dernières parties Riot dans l'historique local puis recharge.
+function initImportRiot() {
+  const btn = $('importRiot');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    const prev = btn.innerHTML;
+    btn.textContent = 'Import en cours… (récupération match + timeline)';
+    fetch('/api/riot/import?count=20')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.enabled) { alert('Configure RIOT_API_KEY + RIOT_ID dans .env.'); return; }
+        if (d.error) { alert('Riot API : ' + d.error); return; }
+        alert(`${d.imported} nouvelle(s) partie(s) importée(s) sur ${d.fetched} récupérée(s). Tes analyses (rythme de win, heatmap des morts, winrate) sont mises à jour.`);
+        loadHistory();
+      })
+      .catch((e) => alert('Erreur : ' + e.message))
+      .finally(() => { btn.disabled = false; btn.innerHTML = prev; });
+  });
+}
+
+function loadHistory() {
+  return fetch('/api/history')
+    .then((r) => r.json())
+    .then((data) => {
+      render(data);
+      renderTilt(data.games || []);
+      renderOneTrick(data.stats || {});
+      renderCharts(data.games || []);
+      renderGoal(data.games || []);
+      // On ne lie les écouteurs (CSV/analyse) qu'une seule fois, même après réimport.
+      if (!loadHistory._bound) {
+        loadHistory._bound = true;
+        initCsv(data.games || []);
+        if (data.games && data.games.length) initAnalyze();
+      }
+      const b = $('analyzeBtn'); if (b) b.style.display = data.games && data.games.length ? '' : 'none';
+    })
+    .catch((e) => {
+      $('histRoot').innerHTML = `<div class="empty">Erreur de chargement : ${esc(e.message)}</div>`;
+    });
+}
+
 renderRiotProfile();
 initRiotMatches();
-
-fetch('/api/history')
-  .then((r) => r.json())
-  .then((data) => {
-    render(data);
-    renderTilt(data.games || []);
-    renderOneTrick(data.stats || {});
-    renderCharts(data.games || []);
-    renderGoal(data.games || []);
-    initCsv(data.games || []);
-    if (data.games && data.games.length) initAnalyze();
-    else { const b = $('analyzeBtn'); if (b) b.style.display = 'none'; }
-  })
-  .catch((e) => {
-    $('histRoot').innerHTML = `<div class="empty">Erreur de chargement : ${esc(e.message)}</div>`;
-  });
+initImportRiot();
+loadHistory();
