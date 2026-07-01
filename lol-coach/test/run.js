@@ -100,6 +100,16 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert((p.recommendedSetup.notes || []).some((n) => /[Aa]utofill/.test(n)), 'note autofill dans le setup');
   });
 
+  await test('cohérence conseil ↔ achats : objet prioritaire (Zhonya vs burst)', () => {
+    const r = analyzeInGame(mockAllGameData(700), dd);
+    const pb = r.summary.priorityBuy;
+    assert(pb && /zhonya|sablier/i.test(pb.item), 'un objet défensif prioritaire est identifié vs le burst');
+    assert(pb.when && r.advice.some((a) => a.id === 'priority-buy' && a.title.includes(pb.item)), 'le conseil précise QUAND acheter l’objet');
+    const plan = buildItemPlan(r, dd);
+    assert(plan.next[0] && plan.next[0].priority && plan.next[0].name === pb.item, 'l’objet prioritaire passe en tête des prochains achats');
+    assert(plan.next[0].reason, 'la raison est attachée à l’achat');
+  });
+
   await test('buildItemPlan : build du champion joué', () => {
     const plan = buildItemPlan(analyzeInGame(mockAllGameData(600), dd), dd);
     assert(plan && plan.champion === 'Zoe', 'plan pour Zoe');

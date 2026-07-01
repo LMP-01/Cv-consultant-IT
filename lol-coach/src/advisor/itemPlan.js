@@ -70,12 +70,24 @@ function buildItemPlan(result, ddragon) {
   // Prochains achats : objets finis (core puis bottes/situationnel) non encore possédés.
   const owned = new Set(me.itemIds || []);
   const priorityOrder = [...core, ...boots, ...situational].filter(Boolean);
-  const next = [];
+  let next = [];
   for (const it of priorityOrder) {
     if (next.length >= 3) break;
     if (it.id && owned.has(it.id)) continue;
     if (next.some((n) => n.id && n.id === it.id)) continue;
     next.push(it);
+  }
+
+  // Cohérence conseil ↔ achats : si un objet défensif prioritaire est conseillé
+  // (summary.priorityBuy, ex. Zhonya vs burst), il PASSE EN TÊTE des prochains
+  // achats, avec sa raison — pour que le conseil et le plan disent la même chose.
+  const pb = result.summary && result.summary.priorityBuy;
+  if (pb && (pb.id || pb.item)) {
+    const entry = pb.id ? resolveItem(pb.item, ddragon) : { id: null, name: pb.item, icon: pb.icon || null, components: [] };
+    entry.priority = true;
+    entry.reason = pb.reason || null;
+    entry.when = pb.when || null;
+    next = [entry, ...next.filter((n) => !(n.id && entry.id && n.id === entry.id) && n.name !== entry.name)].slice(0, 3);
   }
 
   // Stratégie évolutive synthétique selon la compo adverse.
