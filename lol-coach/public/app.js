@@ -665,6 +665,105 @@ function initPanelControls() {
 }
 document.addEventListener('DOMContentLoaded', initPanelControls);
 
+// ── Disposition libre : panneaux flottants déplaçables (position mémorisée) ──
+function loadLayout() { try { return JSON.parse(localStorage.getItem('coach_layout') || '{}'); } catch { return {}; } }
+function saveLayout(o) { try { localStorage.setItem('coach_layout', JSON.stringify(o)); } catch { /* ignore */ } }
+function panelsForLayout() { return [...document.querySelectorAll('#inGame .panel')]; }
+
+function applyFreeLayout(on) {
+  const panels = panelsForLayout();
+  if (!on) {
+    document.body.classList.remove('free-layout');
+    try { localStorage.setItem('coach_free_layout', '0'); } catch { /* ignore */ }
+    panels.forEach((p) => { p.style.left = p.style.top = p.style.width = ''; });
+    const tt = $('layoutToggle'); if (tt) tt.classList.remove('on');
+    return;
+  }
+  const pos = loadLayout();
+  const rects = panels.map((p) => p.getBoundingClientRect());
+  document.body.classList.add('free-layout');
+  try { localStorage.setItem('coach_free_layout', '1'); } catch { /* ignore */ }
+  // Sans position sauvegardée, on CASCADE les panneaux près du haut (titres décalés)
+  // pour qu'ils soient tous attrapables ; l'utilisateur les écarte ensuite.
+  let cascade = 0;
+  panels.forEach((panel, i) => {
+    const key = panel.dataset.pkey || panelKey(panel);
+    panel.dataset.pkey = key;
+    const saved = pos[key];
+    let x, y;
+    if (saved) { x = saved.x; y = saved.y; }
+    else { x = 12 + (cascade % 3) * 26; y = 12 + cascade * 46; cascade++; }
+    panel.style.left = Math.max(0, Math.min(window.innerWidth - 60, x)) + 'px';
+    panel.style.top = Math.max(0, Math.min(window.innerHeight - 24, y)) + 'px';
+    if (rects[i].width) panel.style.width = Math.round(Math.min(360, rects[i].width || 340)) + 'px';
+  });
+  const t = $('layoutToggle');
+  if (t) t.classList.add('on');
+}
+function resetLayout() {
+  saveLayout({});
+  panelsForLayout().forEach((p) => { p.style.left = p.style.top = p.style.width = ''; });
+  if (document.body.classList.contains('free-layout')) applyFreeLayout(true);
+}
+function initFreeLayout() {
+  // Barre de contrôle (visible surtout en overlay).
+  if (!$('layoutBar')) {
+    const bar = document.createElement('div');
+    bar.id = 'layoutBar';
+    bar.className = 'layout-bar';
+    bar.innerHTML =
+      `<button id="layoutToggle" class="layout-btn" title="Activer/désactiver la disposition libre (déplacer chaque panneau)">${iconSvg('sliders')} Disposition libre</button>` +
+      `<button id="layoutReset" class="layout-btn" title="Réinitialiser les positions">${iconSvg('repeat')}</button>`;
+    document.body.appendChild(bar);
+    if (window.hydrateIcons) hydrateIcons();
+    $('layoutToggle').addEventListener('click', () => applyFreeLayout(!document.body.classList.contains('free-layout')));
+    $('layoutReset').addEventListener('click', resetLayout);
+  }
+
+  // Drag d'un panneau par son titre (uniquement en disposition libre).
+  let drag = null;
+  document.addEventListener('pointerdown', (ev) => {
+    if (!document.body.classList.contains('free-layout')) return;
+    const title = ev.target.closest && ev.target.closest('#inGame .panel .panel-title');
+    if (!title) return;
+    if (ev.target.closest('.panel-collapse')) return; // ne pas gêner le bouton réduire
+    const panel = title.closest('.panel');
+    const r = panel.getBoundingClientRect();
+    drag = { panel, dx: ev.clientX - r.left, dy: ev.clientY - r.top };
+    panel.classList.add('dragging');
+    try { title.setPointerCapture(ev.pointerId); } catch { /* ignore */ }
+    ev.preventDefault();
+  });
+  document.addEventListener('pointermove', (ev) => {
+    if (!drag) return;
+    const x = Math.max(0, Math.min(window.innerWidth - 60, ev.clientX - drag.dx));
+    const y = Math.max(0, Math.min(window.innerHeight - 24, ev.clientY - drag.dy));
+    drag.panel.style.left = Math.round(x) + 'px';
+    drag.panel.style.top = Math.round(y) + 'px';
+  });
+  document.addEventListener('pointerup', () => {
+    if (!drag) return;
+    drag.panel.classList.remove('dragging');
+    const key = drag.panel.dataset.pkey || panelKey(drag.panel);
+    const pos = loadLayout();
+    pos[key] = { x: parseInt(drag.panel.style.left, 10) || 0, y: parseInt(drag.panel.style.top, 10) || 0 };
+    saveLayout(pos);
+    drag = null;
+  });
+
+  // Restaure l'état sauvegardé.
+  try { if (localStorage.getItem('coach_free_layout') === '1') applyFreeLayout(true); } catch { /* ignore */ }
+}
+document.addEventListener('DOMContentLoaded', initFreeLayout);
+
+// Pont pour un hôte externe (ex. fenêtre Overwolf) : permet de piloter le coach
+// depuis un parent via postMessage (cycle de cible, etc.).
+window.addEventListener('message', (e) => {
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  if (d.type === 'coach-cycle-target') window.coachCycleTarget(d.dir === -1 ? -1 : 1);
+});
+
 // Cycle la cible du duel vers l'ennemi VIVANT précédent/suivant (dir = -1 / +1).
 // Sélection unique (remplace) — pensé pour les flèches gauche/droite en jeu.
 // Exposé en global pour être appelé par le raccourci global Electron.

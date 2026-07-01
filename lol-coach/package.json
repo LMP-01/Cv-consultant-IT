@@ -14,6 +14,7 @@
     "fetch-counters": "node scripts/fetch-counters.js",
     "fetch-builds": "node scripts/fetch-builds.js",
     "overlay": "electron electron/main.js",
+    "sync-overwolf-version": "node scripts/sync-overwolf-version.js",
     "test": "node test/run.js"
   },
   "keywords": [
