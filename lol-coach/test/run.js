@@ -73,6 +73,32 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(hasReasons, 'les picks ont des raisons');
   });
 
+  await test('analyzeChampSelect : setup sorts/runes adapté au matchup + équipe', () => {
+    const s = mockChampSelectSession();
+    // Je pick un mage fragile (Lux) au mid ; l'adversaire Zed prend Embrasement.
+    s.myTeam[0].championId = 99; // Lux
+    const zed = s.theirTeam.find((m) => m.championId === 238);
+    zed.spell1Id = 4; // Flash
+    zed.spell2Id = 14; // Embrasement / Ignite
+    const p = analyzeChampSelect(s, dd);
+    assert(p.recommendedSetup, 'un setup recommandé est renvoyé');
+    assert(typeof p.recommendedSetup.summoners === 'string', 'des sorts d’invoc conseillés');
+    assert(p.recommendedSetup.enemySpells.includes('Embrasement'), 'lit les sorts d’invoc adverses réels');
+    // Zed (assassin) + Embrasement + je suis fragile => Barrière conseillée.
+    assert(/Barrière/.test(p.recommendedSetup.summoners), 'swap vers Barrière vs Zed Embrasement, eu: ' + p.recommendedSetup.summoners);
+    assert(p.autofilled === false, 'mid est dans ma pool => pas autofill');
+  });
+
+  await test('analyzeChampSelect : détection autofill hors pool', () => {
+    const s = mockChampSelectSession();
+    s.myTeam[0].assignedPosition = 'top'; // hors pool (MIDDLE/BOTTOM)
+    const p = analyzeChampSelect(s, dd);
+    assert(p.autofilled === true, 'top hors pool => autofill détecté');
+    assert(typeof p.autofillNote === 'string' && p.autofillNote.length > 0, 'une note autofill est fournie');
+    assert(p.recommendedSetup && p.recommendedSetup.autofilled === true, 'le setup reflète l’autofill');
+    assert((p.recommendedSetup.notes || []).some((n) => /[Aa]utofill/.test(n)), 'note autofill dans le setup');
+  });
+
   await test('buildItemPlan : build du champion joué', () => {
     const plan = buildItemPlan(analyzeInGame(mockAllGameData(600), dd), dd);
     assert(plan && plan.champion === 'Zoe', 'plan pour Zoe');
