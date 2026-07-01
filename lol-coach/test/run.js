@@ -201,6 +201,9 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(r.summary.enemyKeystones.length >= 4, 'keystones ennemis lus');
     assert(r.summary.me.stats && r.summary.me.stats.ap === 180, 'tes stats complètes (AP)');
     assert(r.summary.enemySpells.some((s) => (s.spells || []).includes('Flash')), 'sorts d’invoc ennemis lus');
+    assert(typeof r.summary.me.kp === 'number', 'participation aux kills (KP%) calculée');
+    assert(r.summary.objectivesTaken && r.summary.objectivesTaken.dragons.enemy === 3, 'objectifs pris : 3 drakes adverses');
+    assert(r.summary.plates && r.summary.plates.active === false, 'plaques terminées après 14:00');
   });
 
   await test('CoachLoop._computePlayerProfile : profil de faiblesses', () => {

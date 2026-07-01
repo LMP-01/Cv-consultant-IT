@@ -436,6 +436,7 @@ function renderInGame(game) {
       ['Champion', s.champion],
       ['Niveau', s.level],
       ['KDA', s.kda],
+      ['KP', s.kp != null ? s.kp + '%' : '—'],
       ['CS', `${s.cs} (${s.csPerMin}/min)`],
       ['Or', s.gold != null ? s.gold : '—'],
       ['PV', s.hpPct != null ? s.hpPct + '%' : '—'],
@@ -451,6 +452,7 @@ function renderInGame(game) {
   renderRisk(game.summary && game.summary.risk);
   renderCsTracker(s);
   renderRankCard();
+  renderObjectivesTaken(game.summary);
 
   renderGoldLead(game.summary);
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
@@ -458,6 +460,32 @@ function renderInGame(game) {
 
   renderItemPlan(game.itemPlan);
   renderTimers(game.scoreboard ? game.scoreboard.enemies : []);
+}
+
+// ── Objectifs pris (dragons / tours / baron) + plaques ──────────────────────
+function renderObjectivesTaken(summary) {
+  const el = $('objectivesTaken');
+  if (!el || !summary) return;
+  const o = summary.objectivesTaken;
+  const chips = [];
+  const chip = (icon, label, ally, enemy) => {
+    const cls = ally > enemy ? 'ot-good' : enemy > ally ? 'ot-bad' : 'ot-even';
+    return `<span class="ot-chip ${cls}">${iconSvg(icon)} ${label} <b>${ally}</b><span class="ot-sep">–</span><b>${enemy}</b></span>`;
+  };
+  if (o) {
+    chips.push(chip('dragon', 'Drakes', o.dragons.ally, o.dragons.enemy));
+    chips.push(chip('shield', 'Tours', o.towers.ally, o.towers.enemy));
+    if (o.baron && (o.baron.ally || o.baron.enemy)) chips.push(chip('baron', 'Nashor', o.baron.ally, o.baron.enemy));
+  }
+  // Fenêtre de plaques (avant 14:00).
+  if (summary.plates && summary.plates.active) {
+    const left = summary.plates.secondsLeft;
+    const mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
+    const urgent = left <= 90 ? ' ot-plate-urgent' : '';
+    chips.push(`<span class="ot-chip ot-plate${urgent}">${iconSvg('shield')} Plaques ${mm}:${ss}</span>`);
+  }
+  el.innerHTML = chips.join('');
+  if (window.hydrateIcons) hydrateIcons();
 }
 
 // ── Alerte move risqué (ping ATTENTION) ─────────────────────────────────────
@@ -488,6 +516,7 @@ function renderRisk(risk) {
     void el.offsetWidth; // relance l'animation
     el.classList.add('risk-flash');
     notify('⚠️ ATTENTION', risk.title);
+    if (tts.enabled) speak('Attention, ' + risk.title);
   }
 }
 

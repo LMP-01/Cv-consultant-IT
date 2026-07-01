@@ -312,6 +312,16 @@ Le HUD affiche en continu tes **CS/minute** avec une **barre de progression vers
 
 En haut du HUD in-game, une **carte de rang** montre ton **palier avec son emblème** (Fer → Challenger — image officielle Community Dragon, avec blason SVG coloré en repli), tes **LP**, ton **winrate**, et surtout une **estimation du nombre de games à GAGNER pour atteindre Master** (`RANK_LP_PER_WIN`, ~22 LP/win par défaut). La carte apparaît aussi sur la page **Historique**. Nécessite `RIOT_ID` + `RIOT_API_KEY` dans `.env`.
 
+### 📊 Data live supplémentaires (KP, objectifs pris, plaques, spikes)
+
+Le HUD affiche aussi :
+
+- **Participation aux kills (KP%)** dans le tableau de bord — alerte douce si elle est faible pour un rôle de combat (tu farmes isolé au lieu de rôter sur les fights).
+- **Objectifs pris** : chips **Drakes / Tours / Nashor** (ton équipe – adverse) d'un coup d'œil.
+- **Fenêtre de plaques** : compte à rebours jusqu'à leur chute à **14:00**, avec rappel de pousser pour les gratter (~160 or/plaque).
+- **Spike d'objet de ton adversaire de lane** : quand il complète un objet (1ᵉ/2ᵉ/3ᵉ) avant toi, un rappel te dit de **respecter ses trades** jusqu'à ce que tu combles.
+- **Ping ATTENTION en voix** : si la voix est activée, l'alerte de move risqué est **lue à voix haute** (« Attention, infériorité numérique ») en plus du bip.
+
 ### 💰 Avance économique & tempo d'équipe
 
 Le tableau de bord affiche une **barre d'avance d'or estimée** (ton équipe vs l'adverse) + une **courbe du différentiel** et ton **avance de lane**. Des callouts apparaissent : *« avantage d'équipe → force les objectifs »* ou *« déficit → joue safe/scaling »*. L'or des autres joueurs n'étant pas exposé par l'API, c'est une **estimation** (valeur des objets + farm + kills).
