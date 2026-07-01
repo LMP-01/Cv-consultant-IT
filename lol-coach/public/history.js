@@ -253,12 +253,76 @@ function initCsv(games) {
   });
 }
 
+// Profil moyen des games gagnées vs perdues (benchmark de ton rythme de win).
+function renderWinProfile(p) {
+  const box = $('winProfile');
+  if (!box) return;
+  if (!p || (!p.win && !p.loss)) { box.innerHTML = ''; return; }
+  const row = (label, key, unit, higherBetter) => {
+    const w = p.win ? p.win[key] : null;
+    const l = p.loss ? p.loss[key] : null;
+    if (w == null && l == null) return '';
+    let cmp = '';
+    if (w != null && l != null) {
+      const good = higherBetter ? w >= l : w <= l;
+      cmp = `<span class="wp-cmp ${good ? 'wp-up' : 'wp-down'}">${good ? '▲' : '▼'} ${higherBetter ? (w - l >= 0 ? '+' : '') + (+(w - l).toFixed(1)) : (+(w - l).toFixed(1))}</span>`;
+    }
+    return `<tr><td>${label}</td><td class="wp-win">${w != null ? w + unit : '—'}</td><td class="wp-loss">${l != null ? l + unit : '—'}</td><td>${cmp}</td></tr>`;
+  };
+  const rows = [
+    row('CS / min', 'csPerMin', '', true),
+    row('Morts', 'deaths', '', false),
+    row('Kills', 'kills', '', true),
+    row('Assists', 'assists', '', true),
+    row('KP', 'kp', '%', true),
+    row('Vision', 'vision', '', true),
+    row('Durée', 'durationMin', ' min', false),
+  ].filter(Boolean).join('');
+  box.innerHTML = `
+    <div class="win-profile">
+      <h3 class="sub">${iconSvg('trophy')} Ton rythme : games gagnées vs perdues</h3>
+      <table class="wp-table">
+        <thead><tr><th></th><th class="wp-win">Victoires${p.win ? ` (${p.win.games})` : ''}</th><th class="wp-loss">Défaites${p.loss ? ` (${p.loss.games})` : ''}</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="wp-note">Reproduis ton profil de victoire (surtout CS/min, morts et vision) : c'est ton « rythme de win » à viser en partie.</p>
+    </div>`;
+  if (window.hydrateIcons) hydrateIcons();
+}
+
+// Heatmap temporelle des morts (par tranche de minutes) sur tes parties.
+function renderDeathHeatmap(h) {
+  const box = $('deathHeatmap');
+  if (!box) return;
+  if (!h || !h.gamesWithData) { box.innerHTML = ''; return; }
+  const cells = h.buckets
+    .map((b) => {
+      const intensity = h.peak ? b.deaths / h.peak : 0;
+      const bg = intensity > 0 ? `background:rgba(251,113,133,${(0.15 + intensity * 0.75).toFixed(2)})` : '';
+      return `<div class="dh-cell" style="${bg}" title="${b.from}-${b.to} min : ${b.deaths} mort(s)">
+        <span class="dh-count">${b.deaths || ''}</span>
+        <span class="dh-label">${b.from}</span>
+      </div>`;
+    })
+    .join('');
+  const worst = h.worst && h.worst.deaths ? `Tu meurs le plus entre <b>${h.worst.from}-${h.worst.to} min</b>.` : '';
+  box.innerHTML = `
+    <div class="death-heatmap">
+      <h3 class="sub">${iconSvg('alert')} Quand tu meurs (heatmap temporelle)</h3>
+      <div class="dh-grid">${cells}</div>
+      <p class="wp-note">${h.totalDeaths} morts sur ${h.gamesWithData} partie(s) avec horodatage. ${worst} Cible cette fenêtre : recall/positionnement/vision avant qu'elle n'arrive.</p>
+    </div>`;
+  if (window.hydrateIcons) hydrateIcons();
+}
+
 function render(data) {
   const stats = data.stats || {};
   const badge = $('statsBadge');
   if (badge) badge.textContent = `${stats.played || 0} partie${(stats.played || 0) > 1 ? 's' : ''}` + (stats.winrate != null ? ` · ${stats.winrate}% WR` : '');
 
   $('histStats').innerHTML = statsBlock(stats);
+  renderWinProfile(stats.profileByResult);
+  renderDeathHeatmap(stats.deathHeatmap);
 
   const root = $('histRoot');
   if (!data.games || !data.games.length) {

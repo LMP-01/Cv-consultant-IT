@@ -74,8 +74,58 @@ class GameHistory {
         winrate,
         avgKda: n ? { k: +(k / n).toFixed(1), d: +(d / n).toFixed(1), a: +(a / n).toFixed(1) } : null,
         byChampion: Object.values(byChamp).sort((x, y) => y.games - x.games),
+        deathHeatmap: this._deathHeatmap(),
+        profileByResult: this._profileByResult(),
       },
     };
+  }
+
+  // Heatmap temporelle des morts : nb de morts par tranche de minutes, agrégé
+  // sur les parties qui ont enregistré les horodatages (deathTimes en secondes).
+  _deathHeatmap() {
+    const BUCKET = 5; // minutes par tranche
+    const MAXMIN = 40;
+    const buckets = [];
+    for (let m = 0; m < MAXMIN; m += BUCKET) buckets.push({ from: m, to: m + BUCKET, deaths: 0 });
+    let gamesWithData = 0;
+    let totalDeaths = 0;
+    for (const g of this.games) {
+      if (!Array.isArray(g.deathTimes) || !g.deathTimes.length) continue;
+      gamesWithData++;
+      for (const sec of g.deathTimes) {
+        const min = Math.floor((sec || 0) / 60);
+        const idx = Math.min(buckets.length - 1, Math.floor(min / BUCKET));
+        buckets[idx].deaths++;
+        totalDeaths++;
+      }
+    }
+    const peak = buckets.reduce((mx, b) => Math.max(mx, b.deaths), 0);
+    const worst = totalDeaths ? buckets.slice().sort((x, y) => y.deaths - x.deaths)[0] : null;
+    return { bucketMinutes: BUCKET, buckets, gamesWithData, totalDeaths, peak, worst };
+  }
+
+  // Profil moyen des games GAGNÉES vs PERDUES (pour se benchmarker sur son rythme
+  // de victoire) : CS/min, KDA, morts, vision, durée.
+  _profileByResult() {
+    const agg = (pred) => {
+      const g = this.games.filter((x) => pred(x) && x.kills != null);
+      if (!g.length) return null;
+      const avg = (f) => {
+        const vals = g.map(f).filter((v) => typeof v === 'number' && !isNaN(v));
+        return vals.length ? +(vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
+      };
+      return {
+        games: g.length,
+        csPerMin: avg((x) => x.csPerMin),
+        kills: avg((x) => x.kills),
+        deaths: avg((x) => x.deaths),
+        assists: avg((x) => x.assists),
+        vision: avg((x) => x.wardScore),
+        durationMin: avg((x) => (x.durationSec ? x.durationSec / 60 : null)),
+        kp: avg((x) => x.kp),
+      };
+    };
+    return { win: agg((x) => x.win === true), loss: agg((x) => x.win === false) };
   }
 }
 

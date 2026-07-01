@@ -194,6 +194,29 @@ function computeObjectives(gameTime, events) {
   return objectives;
 }
 
+// Timing des vagues de sbires (déterministe à partir de l'horloge).
+// 1re vague à 1:05, puis toutes les 30 s. Sbire de siège (canon) : toutes les
+// 3 vagues avant 15:00, toutes les 2 de 15:00 à 25:00, puis chaque vague.
+function isCannonWave(waveNum, spawnTime) {
+  if (spawnTime >= 1500) return true;
+  if (spawnTime >= 900) return waveNum % 2 === 0;
+  return waveNum % 3 === 0;
+}
+function computeWaves(gameTime) {
+  const FIRST = 65;
+  const period = 30;
+  if (gameTime < FIRST) return { nextWaveSeconds: Math.round(FIRST - gameTime), nextCannonSeconds: null };
+  const curWave = Math.floor((gameTime - FIRST) / period) + 1;
+  const nextWaveTime = FIRST + curWave * period; // prochaine vague à venir
+  let nextCannonSeconds = null;
+  for (let n = curWave; n < curWave + 24; n++) {
+    const t = FIRST + (n - 1) * period;
+    if (t < gameTime) continue;
+    if (isCannonWave(n, t)) { nextCannonSeconds = Math.round(t - gameTime); break; }
+  }
+  return { nextWaveSeconds: Math.round(nextWaveTime - gameTime), nextCannonSeconds };
+}
+
 /**
  * Moteur de conseils en jeu basé sur des règles.
  * @returns {{summary, objectives, scoreboard, advice}}
@@ -622,11 +645,43 @@ function analyzeInGame(data, ddragon) {
     });
   }
 
+  // ── Planificateur de recall + timing des vagues ───────────────────────────
+  const waves = computeWaves(gameTime);
+  let recall = null;
+  const nextItemForRecall = nextRecommendedItem(me, ddragon);
+  if (me && !me.isDead && active.currentGold != null && nextItemForRecall) {
+    const gold = active.currentGold;
+    const missing = Math.max(0, nextItemForRecall.cost - Math.round(gold));
+    const affordable = gold >= nextItemForRecall.cost;
+    // Objectif majeur imminent : conseille de reset MAINTENANT pour être présent.
+    const nextObj = (objectives || [])
+      .filter((o) => o.etaSeconds > 0 && ['Dragon', 'Baron', 'Héraut'].includes(o.name))
+      .sort((a, b) => a.etaSeconds - b.etaSeconds)[0];
+    let objectiveReset = null;
+    if (nextObj && nextObj.etaSeconds >= 15 && nextObj.etaSeconds <= 55) {
+      objectiveReset = `${nextObj.name} dans ${mmss(nextObj.etaSeconds)} — reset MAINTENANT (achat + retour à temps).`;
+    }
+    const tip = affordable
+      ? `Achat dispo : pousse ta vague${waves.nextCannonSeconds != null && waves.nextCannonSeconds <= 25 ? ' (canon dans ' + waves.nextCannonSeconds + 's)' : ''} puis recall pour prendre ton spike.`
+      : `Encore ${missing} or pour ${nextItemForRecall.name} — farme ${missing > 600 ? 'une vague ou deux' : 'une vague'} avant de reset.`;
+    recall = {
+      gold: Math.round(gold),
+      item: { name: nextItemForRecall.name, cost: nextItemForRecall.cost, id: nextItemForRecall.id },
+      missing,
+      affordable,
+      pct: Math.min(100, Math.round((gold / nextItemForRecall.cost) * 100)),
+      objectiveReset,
+      tip,
+    };
+  }
+
   const minutes = gameTime / 60;
   const summary = {
     gameTime,
     gameTimeText: mmss(gameTime),
     risk,
+    waves,
+    recall,
     me: me
       ? {
           champion: me.champion,
@@ -671,4 +726,4 @@ function analyzeInGame(data, ddragon) {
 // Patch pour lequel les timings OBJ ci-dessus ont été vérifiés.
 const OBJ_PATCH = '26.13';
 
-module.exports = { analyzeInGame, mmss, OBJ, OBJ_PATCH };
+module.exports = { analyzeInGame, computeWaves, mmss, OBJ, OBJ_PATCH };

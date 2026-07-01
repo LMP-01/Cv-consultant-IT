@@ -30,7 +30,7 @@ async function test(name, fn) {
 const { DataDragon } = require('../src/data/ddragon');
 const { classifyDamage, analyzeComp } = require('../src/advisor/profile');
 const { analyzeChampSelect } = require('../src/advisor/pickAdvisor');
-const { analyzeInGame } = require('../src/advisor/heuristics');
+const { analyzeInGame, computeWaves } = require('../src/advisor/heuristics');
 const { buildItemPlan } = require('../src/advisor/itemPlan');
 const { getBuild } = require('../src/advisor/builds');
 const { GameHistory } = require('../src/data/history');
@@ -204,6 +204,30 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(typeof r.summary.me.kp === 'number', 'participation aux kills (KP%) calculée');
     assert(r.summary.objectivesTaken && r.summary.objectivesTaken.dragons.enemy === 3, 'objectifs pris : 3 drakes adverses');
     assert(r.summary.plates && r.summary.plates.active === false, 'plaques terminées après 14:00');
+  });
+
+  await test('heuristics : timing des vagues (canon)', () => {
+    assert(computeWaves(50).nextCannonSeconds === null, 'pas de canon avant la 1re vague');
+    const w = computeWaves(200);
+    assert(typeof w.nextCannonSeconds === 'number' && w.nextCannonSeconds >= 0, 'prochain canon calculé');
+    assert(typeof w.nextWaveSeconds === 'number', 'prochaine vague calculée');
+    assert(computeWaves(1600).nextCannonSeconds != null, 'après 25:00, canon à chaque vague');
+  });
+
+  await test('GameHistory : heatmap morts + profil victoires/défaites', () => {
+    const h = new GameHistory();
+    h.games = [
+      { win: true, kills: 8, deaths: 2, assists: 6, csPerMin: 8.2, wardScore: 20, durationSec: 1800, kp: 65, deathTimes: [420, 700] },
+      { win: true, kills: 6, deaths: 3, assists: 8, csPerMin: 7.8, wardScore: 24, durationSec: 1700, kp: 70, deathTimes: [500] },
+      { win: false, kills: 2, deaths: 8, assists: 3, csPerMin: 6.0, wardScore: 9, durationSec: 2100, kp: 45, deathTimes: [180, 300, 650, 1400] },
+    ];
+    const s = h.list().stats;
+    assert(s.profileByResult.win.csPerMin === 8, 'CS/min moyen des victoires = 8.0, eu: ' + s.profileByResult.win.csPerMin);
+    assert(s.profileByResult.loss.deaths === 8, 'morts moyennes des défaites = 8');
+    assert(s.deathHeatmap.totalDeaths === 7, 'total morts horodatées = 7');
+    assert(s.deathHeatmap.gamesWithData === 3, '3 parties avec horodatage');
+    const b5 = s.deathHeatmap.buckets.find((b) => b.from === 5);
+    assert(b5 && b5.deaths === 3, '3 morts dans la tranche 5-10 min, eu: ' + (b5 && b5.deaths));
   });
 
   await test('CoachLoop._computePlayerProfile : profil de faiblesses', () => {

@@ -450,9 +450,10 @@ function renderInGame(game) {
   }
 
   renderRisk(game.summary && game.summary.risk);
-  renderCsTracker(s);
+  renderCsTracker(s, game.benchmark);
   renderRankCard();
   renderObjectivesTaken(game.summary);
+  renderRecall(game.summary);
 
   renderGoldLead(game.summary);
   renderTeam('allies', game.scoreboard ? game.scoreboard.allies : []);
@@ -520,14 +521,20 @@ function renderRisk(risk) {
   }
 }
 
-// ── Suivi CS/min (objectif 10) ──────────────────────────────────────────────
-function renderCsTracker(s) {
+// ── Suivi CS/min (objectif 10) + benchmark rythme de win ────────────────────
+function renderCsTracker(s, benchmark) {
   const el = $('csTracker');
   if (!el) return;
   if (!s) { el.innerHTML = ''; return; }
+  // Comparaison à ton rythme des games GAGNÉES (si l'historique le permet).
+  let bench = '';
+  if (benchmark && benchmark.csPerMin) {
+    const d = benchmark.csPerMin.delta;
+    const cls = d >= 0 ? 'cs-good' : 'cs-bad';
+    bench = `<div class="cs-bench">vs ton rythme de win (${benchmark.csPerMin.win}/min) : <span class="${cls}">${d >= 0 ? '+' : ''}${d}</span></div>`;
+  }
   if (s.csIsJungle) {
-    // Le jungler farm différemment : objectif indicatif plus bas, pas d'alerte.
-    el.innerHTML = `<div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min <b>${s.csPerMin}</b> <span class="cs-note">(jungle)</span></div>`;
+    el.innerHTML = `<div class="cs-head"><span class="ic" data-ic="swords"></span> CS/min <b>${s.csPerMin}</b> <span class="cs-note">(jungle)</span></div>${bench}`;
     if (window.hydrateIcons) hydrateIcons();
     return;
   }
@@ -544,8 +551,40 @@ function renderCsTracker(s) {
       <b class="${cls}">${s.csPerMin}</b> <span class="cs-target">/ ${target} objectif</span>
     </div>
     <div class="cs-bar"><div class="cs-fill ${cls}" style="width:${pctBar}%"></div><div class="cs-goal"></div></div>
-    <div class="cs-sub">${s.cs} CS · ${deltaTxt}</div>`;
+    <div class="cs-sub">${s.cs} CS · ${deltaTxt}</div>${bench}`;
   if (window.hydrateIcons) hydrateIcons();
+}
+
+// ── Planificateur de recall + timing des vagues ─────────────────────────────
+function renderRecall(summary) {
+  const el = $('recallBody');
+  if (!el || !summary) return;
+  const w = summary.waves;
+  const r = summary.recall;
+  const parts = [];
+  if (w && w.nextCannonSeconds != null) {
+    const urgent = w.nextCannonSeconds <= 20 ? ' rc-cannon-soon' : '';
+    parts.push(`<div class="rc-wave${urgent}">${iconSvg('swords')} Vague de canon dans <b>${mmssShort(w.nextCannonSeconds)}</b></div>`);
+  }
+  if (r) {
+    const pctCls = r.affordable ? 'cs-good' : 'cs-mid';
+    parts.push(`
+      <div class="rc-item">
+        <div class="rc-item-head">${iconSvg('cart')} Prochain achat : <b>${esc(r.item.name)}</b>
+          <span class="rc-gold">${r.gold} / ${r.item.cost} or</span></div>
+        <div class="cs-bar"><div class="cs-fill ${pctCls}" style="width:${r.pct}%"></div></div>
+        <div class="rc-tip ${r.affordable ? 'rc-ready' : ''}">${esc(r.tip)}</div>
+        ${r.objectiveReset ? `<div class="rc-reset">${iconSvg('alert', 'ic-amber')} ${esc(r.objectiveReset)}</div>` : ''}
+      </div>`);
+  }
+  if (!parts.length) parts.push('<div class="rc-empty">Recall optimal et vagues s’affichent en partie (or + objets résolus).</div>');
+  el.innerHTML = parts.join('');
+  if (window.hydrateIcons) hydrateIcons();
+}
+function mmssShort(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
 }
 
 // ── Carte de rang (emblème + LP + games à Master) ───────────────────────────

@@ -198,10 +198,14 @@ class CoachLoop {
       this.prevGame = null;
       this.gameFinalized = false;
       this.playerProfile = this._computePlayerProfile();
+      this.deathTimes = [];
+      this.seenDeaths = new Set();
+      this.winProfile = (this.history.list().stats.profileByResult || {}).win || null;
     }
     this.lastPhase = 'ingame';
 
     const result = analyzeInGame(gameData, this.ddragon);
+    this._captureDeaths(result, gameData);
     this._pushAdvice(result.advice);
 
     // Déclencheur réactif : mort, chute de PV, kill/objectif... => conseil immédiat.
@@ -219,6 +223,7 @@ class CoachLoop {
         objectives: result.objectives,
         scoreboard: result.scoreboard,
         itemPlan,
+        benchmark: this._benchmark(result.summary),
       },
       pick: null,
       feed: this.feed,
@@ -367,6 +372,38 @@ class CoachLoop {
 
   // ── Historique de fin de partie ─────────────────────────────────────────────
   // Sauvegarde la dernière partie (si non encore faite) + critique IA async.
+  // Enregistre l'horodatage de tes morts (events ChampionKill dont tu es la
+  // victime), dédoublonné, pour la heatmap temporelle de l'historique.
+  _captureDeaths(result, gameData) {
+    if (!this.seenDeaths) { this.seenDeaths = new Set(); this.deathTimes = []; }
+    const me = result.scoreboard && result.scoreboard.me;
+    if (!me) return;
+    const meName = me.summoner;
+    const events = (gameData.events && gameData.events.Events) || [];
+    for (const e of events) {
+      if (e.EventName !== 'ChampionKill' || e.VictimName !== meName) continue;
+      const key = e.EventID != null ? 'id' + e.EventID : 't' + e.EventTime;
+      if (this.seenDeaths.has(key)) continue;
+      this.seenDeaths.add(key);
+      this.deathTimes.push(Math.round(e.EventTime || 0));
+    }
+  }
+
+  // Compare tes stats LIVE à ton profil moyen des games GAGNÉES (rythme de win).
+  _benchmark(summary) {
+    const wp = this.winProfile;
+    if (!wp || !summary || !summary.me) return null;
+    const me = summary.me;
+    const out = { basedOn: wp.games };
+    if (wp.csPerMin != null && me.csPerMin != null) {
+      out.csPerMin = { you: me.csPerMin, win: wp.csPerMin, delta: +(me.csPerMin - wp.csPerMin).toFixed(1) };
+    }
+    if (wp.kp != null && me.kp != null) {
+      out.kp = { you: me.kp, win: Math.round(wp.kp), delta: me.kp - Math.round(wp.kp) };
+    }
+    return out.csPerMin || out.kp ? out : null;
+  }
+
   _finalizeGameIfNeeded() {
     if (this.gameFinalized || !this.lastInGame) return;
     const { result, events } = this.lastInGame;
@@ -390,6 +427,9 @@ class CoachLoop {
       assists: me ? me.assists : null,
       cs: me ? me.cs : null,
       csPerMin: result.summary.me ? result.summary.me.csPerMin : null,
+      wardScore: me ? me.wardScore : null,
+      kp: result.summary.me ? result.summary.me.kp : null,
+      deathTimes: Array.isArray(this.deathTimes) ? this.deathTimes.slice() : [],
       allies: result.scoreboard.allies.map((p) => p.championDisplay || p.champion),
       enemies: result.scoreboard.enemies.map((p) => p.championDisplay || p.champion),
       enemyProfile: result.summary.enemyComp ? result.summary.enemyComp.profile : null,
@@ -494,6 +534,8 @@ class CoachLoop {
       killParticipation: summary.me && summary.me.kp != null ? summary.me.kp + '%' : null,
       objectivesTaken: summary.objectivesTaken || null,
       platesActive: summary.plates ? summary.plates.active : null,
+      nextCannonWaveSeconds: summary.waves ? summary.waves.nextCannonSeconds : null,
+      recall: summary.recall ? { nextItem: summary.recall.item.name, affordable: summary.recall.affordable, missingGold: summary.recall.missing } : null,
       goldLead: summary.teamGold ? { team: summary.teamGold.diff, lane: summary.laneGold ? summary.laneGold.diff : null } : null,
       dragons: summary.dragons ? { ally: summary.dragons.ally, enemy: summary.dragons.enemy, soulTeam: summary.dragons.soulTeam, soulPointTeam: summary.dragons.soulPointTeam } : null,
       towers: summary.towers || null,

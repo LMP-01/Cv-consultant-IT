@@ -324,6 +324,18 @@ Le HUD affiche aussi :
 - **Spike d'objet de ton adversaire de lane** : quand il complète un objet (1ᵉ/2ᵉ/3ᵉ) avant toi, un rappel te dit de **respecter ses trades** jusqu'à ce que tu combles.
 - **Ping ATTENTION en voix** : si la voix est activée, l'alerte de move risqué est **lue à voix haute** (« Attention, infériorité numérique ») en plus du bip.
 
+### 🔄 Planificateur de recall & timing des vagues
+
+Un panneau **« Recall & vagues »** en jeu affiche : le **prochain achat conseillé** avec la barre d'or (as-tu de quoi ?), un **conseil de recall optimal** (pousser la vague — surtout si un **canon** arrive — puis reset pour prendre ton spike), le **compte à rebours de la prochaine vague de canon** (déduit de l'horloge), et un rappel **« reset MAINTENANT »** quand un **objectif majeur** (dragon/baron/héraut) tombe dans ~15-55 s pour que tu sois présent avec ton item.
+
+### 💀 Heatmap de tes morts (page Historique)
+
+Le coach enregistre **l'horodatage de chaque mort** en partie (events de la Live Client API) et en fait une **heatmap temporelle** (morts par tranche de 5 min) sur la page Historique — tu vois d'un coup d'œil **à quelle minute tu meurs le plus** (ex. 5-10 min = mauvais timing de recall/roam) pour corriger cette fenêtre précise.
+
+### 🏅 Ton rythme des games gagnées (benchmark)
+
+La page Historique compare ton **profil moyen en victoire vs en défaite** (CS/min, morts, kills, assists, KP, vision, durée) : tu identifies ce qui change vraiment quand tu gagnes. **En partie**, le HUD affiche en plus ton **CS/min live comparé à ton rythme de win** (« vs ton rythme de win : +0.4 »).
+
 ### 💰 Avance économique & tempo d'équipe
 
 Le tableau de bord affiche une **barre d'avance d'or estimée** (ton équipe vs l'adverse) + une **courbe du différentiel** et ton **avance de lane**. Des callouts apparaissent : *« avantage d'équipe → force les objectifs »* ou *« déficit → joue safe/scaling »*. L'or des autres joueurs n'étant pas exposé par l'API, c'est une **estimation** (valeur des objets + farm + kills).
