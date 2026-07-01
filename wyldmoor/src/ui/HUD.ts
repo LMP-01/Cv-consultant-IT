@@ -174,6 +174,10 @@ export class HUD {
     this.btnCapture.style.display = enabled ? 'inline-block' : 'none';
   }
 
+  setFleeEnabled(enabled: boolean): void {
+    this.btnFlee.style.display = enabled ? 'inline-block' : 'none';
+  }
+
   private static readonly MOVE_WHEEL_POSITIONS = [
     { top: '0%', left: '50%' },
     { top: '50%', left: '0%' },

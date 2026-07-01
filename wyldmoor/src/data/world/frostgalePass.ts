@@ -1,0 +1,99 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Gym 7: Ingrid Solveig, Ice specialist, awards the Rime Badge.
+export const FROSTGALE_PASS: MapDef = {
+  id: 'frostgale_pass',
+  name: 'Frostgale Pass',
+  width: 18,
+  height: 14,
+  skyColor: '#e5f2fa',
+  groundColor: '#dce8ee',
+  tiles: [
+    '##################',
+    '#........D.......#',
+    '#........B.......#',
+    '#..^.............#',
+    '#..B..,,,,,...^..#',
+    '#..D..,,,,,...B..#',
+    '#.....,,,,,...D..#',
+    '#................#',
+    '#....B......G....#',
+    '#....D......G....#',
+    '#..^.............#',
+    '#................#',
+    '#........,.......#',
+    '########..########',
+  ],
+  warps: [
+    { x: 9, y: 0, toMapId: 'route_7', spawnX: 6, spawnY: 13, spawnFacing: 'up' },
+    { x: 9, y: 12, toMapId: 'route_8', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 32, minLevel: 48, maxLevel: 51, weight: 4 },
+    { speciesId: 33, minLevel: 49, maxLevel: 51, weight: 3 },
+    { speciesId: 35, minLevel: 48, maxLevel: 51, weight: 3 },
+    { speciesId: 76, minLevel: 49, maxLevel: 52, weight: 2 },
+    { speciesId: 102, minLevel: 49, maxLevel: 52, weight: 1 },
+  ],
+  npcs: [
+    {
+      id: 'frostgale_elder',
+      x: 4,
+      y: 3,
+      facing: 'down',
+      name: 'Ancienne Isolde',
+      sprite: 'elder',
+      dialogue: [
+        "Frostgale Pass n'accueille que les plus tenaces. Le froid trie les dresseurs.",
+        "Ingrid est aussi glaciale au combat qu'elle est chaleureuse avec ses proches.",
+      ],
+    },
+    {
+      id: 'frostgale_ranger',
+      x: 13,
+      y: 3,
+      facing: 'down',
+      name: 'Garde-foret Sigrun',
+      sprite: 'ranger',
+      dialogue: [
+        "Les Frostmane rodent pres du sommet. Magnifiques, mais redoutables.",
+      ],
+      team: [{ speciesId: 33, level: 51 }],
+      postBattleDialogue: ["Bien resiste au froid !"],
+      setFlagOnComplete: 'frostgale_sigrun_defeated',
+    },
+    {
+      id: 'frostgale_gym_leader_ingrid',
+      x: 12,
+      y: 9,
+      facing: 'down',
+      name: 'Ingrid Solveig',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Bienvenue au gymnase du gel. Je suis Ingrid, et mon coeur est aussi froid que mes Wyldes.",
+        "Voyons si ta flamme interieure suffit a me faire fondre !",
+      ],
+      team: [
+        { speciesId: 35, level: 51 },
+        { speciesId: 33, level: 52 },
+        { speciesId: 34, level: 54 },
+      ],
+      postBattleDialogue: [
+        "Impressionnant... tu as perce ma glace la plus epaisse.",
+        "Voici le Badge du Givre.",
+      ],
+      setFlagOnComplete: 'gym7_ingrid_defeated',
+    },
+  ],
+  gym: {
+    leaderName: 'Ingrid Solveig',
+    leaderNpcId: 'frostgale_gym_leader_ingrid',
+    badgeName: 'Badge du Givre',
+    team: [
+      { speciesId: 35, level: 51 },
+      { speciesId: 33, level: 52 },
+      { speciesId: 34, level: 54 },
+    ],
+    flagOnDefeat: 'gym7_ingrid_defeated',
+  },
+};
