@@ -1306,3 +1306,9 @@ body.overlay .feed-panel { max-height: 100vh; }
     radial-gradient(1200px 600px at 85% -5%, rgba(99,102,241,0.10), transparent 60%);
 }
 body.has-champ .topbar { background: linear-gradient(180deg, rgba(12,14,20,0.92), rgba(8,9,13,0.7)); }
+
+/* ── Overlay Electron : zones déplaçables (fenêtre sans bordure) ───────────── */
+body.overlay .panel-title { -webkit-app-region: drag; cursor: move; }
+body.overlay button, body.overlay input, body.overlay select, body.overlay a,
+body.overlay .timer-btn, body.overlay .pick, body.overlay .item-pill { -webkit-app-region: no-drag; }
+body.overlay { cursor: default; }

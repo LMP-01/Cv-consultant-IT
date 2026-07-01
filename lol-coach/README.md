@@ -302,11 +302,17 @@ F1::
 return
 ```
 
-### 🖥️ Overlay transparent (1 seul écran)
+### 🖥️ Overlay transparent (HUD par-dessus le jeu, 1 seul écran)
 
-Pour superposer le coach **par-dessus le jeu** :
-- **Sans rien installer** : ajoute une **source navigateur OBS** vers `http://localhost:3000/?overlay=1`.
-- **Fenêtre flottante** : `npm i -D electron` puis `npm run overlay` (fenêtre transparente always-on-top ; `Ctrl+Shift+X` = clic-traversant, `Ctrl+Shift+H` = masquer).
+> ⚠️ **Condition indispensable** : mets League en **mode « Sans bordure / Borderless »** (Options → Vidéo → Mode d'affichage). Une fenêtre always-on-top **ne s'affiche PAS au-dessus du plein écran exclusif** — c'est une limite de Windows, pas un bug. En « Sans bordure », l'overlay apparaît correctement.
+
+Le plus simple : **double-clique `overlay.command` (macOS) / `overlay.bat` (Windows)**. Le lanceur installe Electron au 1er lancement, démarre le serveur si besoin, puis ouvre la **fenêtre transparente flottante**. Raccourcis : `Ctrl+Shift+X` = clic-traversant (la souris passe à travers), `Ctrl+Shift+H` = masquer/afficher. Déplace la fenêtre en glissant un **titre de panneau**.
+
+Alternatives :
+- **Source navigateur OBS** (sans rien installer) vers `http://localhost:3000/?overlay=1` — pratique pour le stream.
+- Manuel : `npm i -D electron` puis `npm run overlay`.
+
+> Note : `start.command`/`start.bat` lancent seulement le **serveur + navigateur** (pas l'overlay). Pour le HUD par-dessus le jeu, utilise **`overlay.command`/`overlay.bat`**.
 
 ### 🎛️ Filtre, export & économie de quota
 
