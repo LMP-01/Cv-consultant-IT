@@ -47,6 +47,20 @@ function createWindow() {
     if (win.isVisible()) win.hide();
     else win.show();
   });
+
+  // Flèches gauche/droite : cycle la CIBLE du panneau Duel (proba trade/all-in),
+  // même quand League a le focus (raccourci GLOBAL). Les flèches ne servent pas en
+  // jeu par défaut. Personnalisable via OVERLAY_CYCLE_PREV / OVERLAY_CYCLE_NEXT
+  // (ex. "Alt+Left"/"Alt+Right" si la capture globale des flèches te gêne).
+  const cycle = (dir) => {
+    if (win && win.webContents) {
+      win.webContents.executeJavaScript(`window.coachCycleTarget && window.coachCycleTarget(${dir})`).catch(() => {});
+    }
+  };
+  const prevKey = process.env.OVERLAY_CYCLE_PREV || 'Left';
+  const nextKey = process.env.OVERLAY_CYCLE_NEXT || 'Right';
+  try { globalShortcut.register(prevKey, () => cycle(-1)); } catch (e) { console.warn('Raccourci', prevKey, 'indisponible:', e.message); }
+  try { globalShortcut.register(nextKey, () => cycle(1)); } catch (e) { console.warn('Raccourci', nextKey, 'indisponible:', e.message); }
 }
 
 app.whenReady().then(createWindow);

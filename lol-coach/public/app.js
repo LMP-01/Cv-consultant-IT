@@ -619,6 +619,101 @@ document.addEventListener('click', (ev) => {
   }
 });
 
+// ── Panneaux réductibles / masquables (chaque overlay individuellement) ─────
+// Ajoute un bouton "réduire" à chaque panneau ; l'état est mémorisé (localStorage).
+function panelKey(panel) {
+  const t = panel.querySelector('.panel-title');
+  const base = (t ? t.textContent : panel.id || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return base || 'panel';
+}
+function loadCollapsed() {
+  try { return new Set(JSON.parse(localStorage.getItem('coach_collapsed') || '[]')); } catch { return new Set(); }
+}
+function saveCollapsed(set) {
+  try { localStorage.setItem('coach_collapsed', JSON.stringify([...set])); } catch { /* ignore */ }
+}
+function initPanelControls() {
+  const collapsed = loadCollapsed();
+  const panels = document.querySelectorAll('#inGame .panel, #champSelect.panel, #champSelect .panel');
+  panels.forEach((panel) => {
+    const title = panel.querySelector('.panel-title');
+    if (!title || title.querySelector('.panel-collapse')) return;
+    const key = panelKey(panel);
+    panel.dataset.pkey = key;
+    const btn = document.createElement('button');
+    btn.className = 'panel-collapse';
+    btn.type = 'button';
+    btn.title = 'Réduire / afficher ce panneau';
+    btn.setAttribute('aria-label', 'Réduire ce panneau');
+    title.appendChild(btn);
+    const paint = () => {
+      const isC = panel.classList.contains('panel-collapsed');
+      btn.innerHTML = iconSvg(isC ? 'maximize' : 'minimize');
+      if (window.hydrateIcons) hydrateIcons();
+    };
+    if (collapsed.has(key)) panel.classList.add('panel-collapsed');
+    paint();
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.classList.toggle('panel-collapsed');
+      const set = loadCollapsed();
+      if (panel.classList.contains('panel-collapsed')) set.add(key); else set.delete(key);
+      saveCollapsed(set);
+      paint();
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded', initPanelControls);
+
+// Cycle la cible du duel vers l'ennemi VIVANT précédent/suivant (dir = -1 / +1).
+// Sélection unique (remplace) — pensé pour les flèches gauche/droite en jeu.
+// Exposé en global pour être appelé par le raccourci global Electron.
+window.coachCycleTarget = function (dir) {
+  if (!lastCombatGame || !combatSel.keys) return;
+  const enemies = (lastCombatGame.scoreboard && lastCombatGame.scoreboard.enemies) || [];
+  const alive = enemies.filter((e) => !e.isDead);
+  const list = alive.length ? alive : enemies;
+  if (!list.length) return;
+  let idx = list.findIndex((e) => combatSel.keys.has(e.championKey));
+  if (idx < 0) idx = dir > 0 ? -1 : 0;
+  const next = list[(idx + dir + list.length) % list.length];
+  combatSel.keys = new Set([next.championKey]);
+  saveCombatSel();
+  renderCombat(lastCombatGame);
+  flashCombatTarget(next.championDisplay || next.champion);
+};
+
+// Petit repère visuel (et vocal si activé) du changement de cible.
+function flashCombatTarget(name) {
+  let t = $('cbtToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'cbtToast';
+    t.className = 'cbt-toast';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `${iconSvg('target')} Cible : <b>${esc(name)}</b>`;
+  if (window.hydrateIcons) hydrateIcons();
+  t.classList.remove('show');
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(flashCombatTarget._to);
+  flashCombatTarget._to = setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+// Flèches gauche/droite quand la fenêtre du coach a le focus (2e écran / alt-tab).
+// En jeu (League focus), c'est le raccourci global Electron qui appelle la fonction.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+  const el = document.activeElement;
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+  const ig = document.getElementById('inGame');
+  if (ig && !ig.classList.contains('hidden')) {
+    ev.preventDefault();
+    window.coachCycleTarget(ev.key === 'ArrowLeft' ? -1 : 1);
+  }
+});
+
 // ── 3 prochains achats (icônes réelles) — bandeau HUD/overlay ───────────────
 function renderHudBuys(plan) {
   const el = $('hudBuys');
