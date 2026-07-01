@@ -1359,6 +1359,44 @@ body.overlay .feed-panel { max-height: 100vh; }
 .ot-plate { border-color: rgba(240,179,48,.4); color: #f0b330; }
 .ot-plate-urgent { animation: timerPulse 1.2s ease-in-out infinite; }
 
+/* Benchmark rythme de win (sous le CS/min) */
+.cs-bench { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+/* Planificateur de recall + vagues */
+.recall-body { display: flex; flex-direction: column; gap: 12px; }
+.rc-wave { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; align-self: flex-start; }
+.rc-wave b { color: var(--primary-2); }
+.rc-cannon-soon { border-color: rgba(240,179,48,.55); color: #f0b330; animation: timerPulse 1.2s ease-in-out infinite; }
+.rc-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; }
+.rc-item-head { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 8px; }
+.rc-gold { margin-left: auto; font-size: 12px; color: var(--muted); }
+.rc-tip { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+.rc-ready { color: var(--green); font-weight: 600; }
+.rc-reset { font-size: 12px; color: #fcd34d; margin-top: 7px; line-height: 1.45; }
+.rc-empty { font-size: 12px; color: var(--faint); }
+
+/* Profil victoires vs défaites (page Historique) */
+.win-profile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
+.win-profile .sub { display: flex; align-items: center; gap: 7px; margin-top: 0; }
+.wp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.wp-table th, .wp-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.wp-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+.wp-table td:first-child { color: var(--muted); }
+.wp-win { color: var(--green); }
+.wp-loss { color: #fb7185; }
+.wp-cmp { font-size: 12px; font-weight: 700; }
+.wp-up { color: var(--green); }
+.wp-down { color: #fb7185; }
+.wp-note { font-size: 12px; color: var(--muted); margin: 10px 0 0; line-height: 1.5; }
+
+/* Heatmap temporelle des morts */
+.death-heatmap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
+.death-heatmap .sub { display: flex; align-items: center; gap: 7px; margin-top: 0; }
+.dh-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+.dh-cell { position: relative; flex: 1 1 0; min-width: 46px; height: 56px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(148,163,184,.06); }
+.dh-count { font-size: 15px; font-weight: 800; color: var(--text); }
+.dh-label { position: absolute; bottom: 3px; font-size: 9.5px; color: var(--faint); }
+
 /* ── Icônes SVG (remplacent les emojis) ───────────────────────────────────── */
 .ic { display: inline-block; width: 1.05em; height: 1.05em; vertical-align: -0.16em; flex: 0 0 auto; }
 .ic-lg { width: 1.35em; height: 1.35em; }
