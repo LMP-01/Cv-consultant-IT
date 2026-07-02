@@ -4,6 +4,7 @@ import { HUD } from '../ui/HUD.ts';
 import { OverworldScene } from '../world/OverworldScene.ts';
 import { BattleView } from '../battle/BattleView.ts';
 import { BattleController, type BattleResult } from '../battle/BattleController.ts';
+import { loadAssetLibrary } from '../gfx/AssetLibrary.ts';
 import { GameState, STARTER_TOWN_MAP_ID } from '../systems/GameState.ts';
 import { hasSaveGame, loadGame, saveGame } from '../systems/SaveSystem.ts';
 import { CreatureInstance } from '../systems/CreatureInstance.ts';
@@ -25,17 +26,20 @@ export class GameApp {
   private clock = new THREE.Clock();
   private mode: 'title' | 'starter' | 'overworld' | 'battle' = 'title';
   private saveTimer = 0;
+  private assetsReady: Promise<unknown>;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.95;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     this.resize();
     window.addEventListener('resize', () => this.resize());
+
+    this.assetsReady = loadAssetLibrary();
 
     this.input = new InputManager(
       document.getElementById('scene-canvas')!,
@@ -65,16 +69,18 @@ export class GameApp {
     }
   }
 
-  private startNewGame(): void {
+  private async startNewGame(): Promise<void> {
     this.state = new GameState();
     this.hud.hideTitleScreen();
+    await this.assetsReady;
     this.showStarterSelect();
   }
 
-  private continueGame(): void {
+  private async continueGame(): Promise<void> {
     const loaded = loadGame();
     if (loaded) this.state = loaded;
     this.hud.hideTitleScreen();
+    await this.assetsReady;
     this.enterOverworld();
   }
 
@@ -110,7 +116,7 @@ export class GameApp {
     this.battleView?.end();
     if (!this.overworld) {
       const aspect = window.innerWidth / window.innerHeight;
-      this.overworld = new OverworldScene(aspect, this.state, {
+      this.overworld = new OverworldScene(this.renderer, aspect, this.state, {
         onStartWildBattle: (actor) => this.startWildBattle(actor),
         onTalkNpc: (npc) => this.talkToNpc(npc),
         onEnterMap: () => {},

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildHumanoid } from '../gfx/HumanoidModel.ts';
+import { buildHumanoid, animateHumanoidWalk } from '../gfx/HumanoidModel.ts';
 import type { MapRuntime } from './MapRuntime.ts';
 import type { MoveVector } from '../core/Input.ts';
 
@@ -11,14 +11,12 @@ export class PlayerController {
   private facingAngle = Math.PI;
   private walking = false;
   private map: MapRuntime;
-  private legPair?: THREE.Object3D;
   private walkTime = 0;
 
   constructor(map: MapRuntime, spawnWorld: THREE.Vector3) {
     this.map = map;
     this.object = buildHumanoid('player');
     this.object.position.copy(spawnWorld);
-    this.legPair = this.object.userData.legPair as THREE.Object3D | undefined;
   }
 
   setMap(map: MapRuntime): void {
@@ -45,11 +43,9 @@ export class PlayerController {
       const dz = move.z * MOVE_SPEED * dt;
       this.tryMove(dx, dz);
 
-      this.walkTime += dt * 10;
-      if (this.legPair) this.legPair.rotation.x = Math.sin(this.walkTime) * 0.5;
-    } else if (this.legPair) {
-      this.legPair.rotation.x *= 0.8;
+      this.walkTime += dt * 9;
     }
+    animateHumanoidWalk(this.object, this.walkTime, this.walking);
   }
 
   private tryMove(dx: number, dz: number): void {
