@@ -31,6 +31,12 @@ les packs officiels de l'auteur.
   via gltf-transform pour le mobile.
   Source : https://quaternius.com/packs/ultimatestylizednature.html —
   https://poly.pizza/bundle/Ultimate-Stylized-Nature-Pack-zyIyYd9yGr
+- **Stylized Nature MegaKit** → `public/assets/nature/` (`Fern`, `Tall_Grass`,
+  `Grass_Wispy`, `Clover`, `Mushroom`, `Mushroom_Laetiporus`, `Twisted_Tree`).
+  Fougères et hautes herbes des zones de rencontre, trèfles, champignons et
+  arbres tordus des zones sombres.
+  Source : https://quaternius.com/packs/stylizednaturemegakit.html —
+  https://poly.pizza/bundle/Stylized-Nature-MegaKit-T34GZFA0fm
 
 ## Kenney (licence CC0 — domaine public)
 

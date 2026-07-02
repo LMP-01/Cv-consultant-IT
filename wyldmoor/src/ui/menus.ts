@@ -1,7 +1,8 @@
 import type { HUD } from './HUD.ts';
 import type { GameState } from '../systems/GameState.ts';
 import { SPECIES } from '../data/species.ts';
-import { getItem } from '../data/items.ts';
+import { getItem, ITEMS } from '../data/items.ts';
+import { OUTFITS } from '../gfx/HumanoidModel.ts';
 import { grantHealingItemEffect } from '../battle/BattleController.ts';
 
 export interface MainMenuCallbacks {
@@ -15,7 +16,7 @@ export interface MainMenuCallbacks {
 export function openMainMenu(hud: HUD, state: GameState, cb: MainMenuCallbacks): void {
   hud.showMenu((root, close) => {
     const title = document.createElement('h2');
-    title.textContent = `${state.playerName} — ${state.badges.length} badge(s)`;
+    title.textContent = `${state.playerName} — ${state.badges.length} badge(s) — ${state.money} pièces`;
     root.appendChild(title);
     const row = document.createElement('div');
     row.style.display = 'flex';
@@ -146,6 +147,111 @@ export function openWyldexMenu(hud: HUD, state: GameState): void {
     back.className = 'menu-btn secondary';
     back.textContent = 'Retour';
     back.onclick = () => openMainMenuFromClose(hud, state, close);
+    root.appendChild(back);
+  });
+}
+
+/** Boutique : achat d'objets avec les pièces gagnées contre les dresseurs. */
+export function openShopMenu(hud: HUD, state: GameState, onClose: () => void): void {
+  hud.showMenu((root, close) => {
+    const title = document.createElement('h2');
+    title.textContent = `Boutique — ${state.money} pièces`;
+    root.appendChild(title);
+    const list = document.createElement('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '10px';
+    list.style.maxHeight = '60vh';
+    list.style.overflowY = 'auto';
+    list.style.width = 'min(560px, 90vw)';
+    for (const item of Object.values(ITEMS)) {
+      if (item.buyPrice <= 0) continue;
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.gap = '12px';
+      row.style.background = 'rgba(255,255,255,0.08)';
+      row.style.padding = '10px 14px';
+      row.style.borderRadius = '8px';
+      const label = document.createElement('span');
+      label.style.textAlign = 'left';
+      label.textContent = `${item.name} — ${item.buyPrice} p. (x${state.bag[item.id] ?? 0})`;
+      label.title = item.description;
+      row.appendChild(label);
+      const buyBtn = document.createElement('button');
+      buyBtn.className = 'menu-btn';
+      buyBtn.textContent = 'Acheter';
+      buyBtn.disabled = state.money < item.buyPrice;
+      buyBtn.onclick = () => {
+        if (state.spendMoney(item.buyPrice)) {
+          state.addItem(item.id, 1);
+          openShopMenu(hud, state, onClose);
+        }
+      };
+      row.appendChild(buyBtn);
+      list.appendChild(row);
+    }
+    root.appendChild(list);
+    const back = document.createElement('button');
+    back.className = 'menu-btn secondary';
+    back.textContent = 'Quitter la boutique';
+    back.onclick = () => { close(); onClose(); };
+    root.appendChild(back);
+  });
+}
+
+/** Centre commercial : change la tenue du joueur (achat unique par tenue). */
+export function openOutfitMenu(hud: HUD, state: GameState, onPick: (outfitKey: string) => void, onClose: () => void): void {
+  hud.showMenu((root, close) => {
+    const title = document.createElement('h2');
+    title.textContent = `Vestiaire — ${state.money} pièces`;
+    root.appendChild(title);
+    const list = document.createElement('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '10px';
+    list.style.maxHeight = '60vh';
+    list.style.overflowY = 'auto';
+    list.style.width = 'min(560px, 90vw)';
+    for (const outfit of OUTFITS) {
+      const owned = outfit.price === 0 || state.flags.has(`outfit_${outfit.key}`);
+      const worn = state.outfit === outfit.key;
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.gap = '12px';
+      row.style.background = worn ? 'rgba(232,201,58,0.25)' : 'rgba(255,255,255,0.08)';
+      row.style.padding = '10px 14px';
+      row.style.borderRadius = '8px';
+      const label = document.createElement('span');
+      label.style.textAlign = 'left';
+      label.textContent = `${outfit.label}${worn ? ' (portée)' : owned ? '' : ` — ${outfit.price} p.`}`;
+      row.appendChild(label);
+      if (!worn) {
+        const btn = document.createElement('button');
+        btn.className = 'menu-btn';
+        btn.textContent = owned ? 'Porter' : 'Acheter';
+        btn.disabled = !owned && state.money < outfit.price;
+        btn.onclick = () => {
+          if (!owned) {
+            if (!state.spendMoney(outfit.price)) return;
+            state.flags.add(`outfit_${outfit.key}`);
+          }
+          state.outfit = outfit.key;
+          onPick(outfit.key);
+          openOutfitMenu(hud, state, onPick, onClose);
+        };
+        row.appendChild(btn);
+      }
+      list.appendChild(row);
+    }
+    root.appendChild(list);
+    const back = document.createElement('button');
+    back.className = 'menu-btn secondary';
+    back.textContent = 'Quitter le vestiaire';
+    back.onclick = () => { close(); onClose(); };
     root.appendChild(back);
   });
 }

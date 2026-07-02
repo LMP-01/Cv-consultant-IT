@@ -29,7 +29,31 @@ export const BIRCHWOOD_HOLLOW: MapDef = {
     { x: 8, y: 13, toMapId: 'route_1', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
   ],
   encounters: [],
+  buildings: [
+    { x: 3, y: 2, kind: 'heal' },
+    { x: 12, y: 2, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'birchwood_nurse',
+      x: 2,
+      y: 3,
+      facing: 'down',
+      name: 'Infirmière Maëlle',
+      sprite: 'nurse',
+      dialogue: ['Bienvenue au Centre de Soin de Birchwood ! Je remets vos Wyldes sur pied.'],
+      service: 'heal',
+    },
+    {
+      id: 'birchwood_merchant',
+      x: 13,
+      y: 3,
+      facing: 'down',
+      name: 'Marchand Tobin',
+      sprite: 'merchant',
+      dialogue: ['Orbes et potions fraîches ! Jetez un œil à ma boutique.'],
+      service: 'shop',
+    },
     {
       id: 'birchwood_professor_ilma',
       x: 12,

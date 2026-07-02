@@ -35,7 +35,31 @@ export const FROSTGALE_PASS: MapDef = {
     { speciesId: 76, minLevel: 49, maxLevel: 52, weight: 2 },
     { speciesId: 102, minLevel: 49, maxLevel: 52, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 5, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'frostgale_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmière Neige',
+      sprite: 'nurse',
+      dialogue: ['Le froid mord fort ici. Venez réchauffer et soigner vos Wyldes !'],
+      service: 'heal',
+    },
+    {
+      id: 'frostgale_merchant',
+      x: 15,
+      y: 6,
+      facing: 'down',
+      name: 'Marchand Ulf',
+      sprite: 'merchant',
+      dialogue: ['Provisions du col ! Tout dresseur prudent fait le plein ici.'],
+      service: 'shop',
+    },
     {
       id: 'frostgale_elder',
       x: 4,

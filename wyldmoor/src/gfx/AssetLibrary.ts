@@ -38,13 +38,16 @@ const BIOME_TREE_FILES: Record<Biome, (typeof NATURE_FILES)[number][]> = {
   alpine: ['Pine_Trees'],
   volcanic: ['Dead_Trees'],
   marsh: ['Birch_Trees'],
-  gloom: ['Dead_Trees', 'Birch_Trees'],
+  gloom: ['Dead_Trees', 'Twisted_Tree'],
   coastal: ['Palm_Trees', 'Trees'],
 };
 
 const NATURE_FILES = [
   'Trees', 'Maple_Trees', 'Pine_Trees', 'Dead_Trees', 'Birch_Trees', 'Palm_Trees',
   'Bushes', 'Flower_Bushes', 'Flowers', 'Grass', 'Rocks',
+  // Stylized Nature MegaKit (voir ASSETS.md) : sous-bois et herbes de rencontre.
+  'Fern', 'Tall_Grass', 'Grass_Wispy', 'Clover', 'Mushroom', 'Mushroom_Laetiporus',
+  'Twisted_Tree',
 ] as const;
 
 const TOWN_PIECES = [

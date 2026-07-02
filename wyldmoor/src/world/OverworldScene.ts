@@ -82,7 +82,7 @@ export class OverworldScene {
       this.player.setMap(this.map);
       this.player.position.copy(spawnWorld);
     } else {
-      this.player = new PlayerController(this.map, spawnWorld);
+      this.player = new PlayerController(this.map, spawnWorld, this.state.outfit);
       this.scene.add(this.player.object);
       this.thirdPerson = new ThirdPersonCamera(this.camera, this.player.object);
     }
@@ -248,6 +248,11 @@ export class OverworldScene {
       if (d < nearestWyldeDist) { nearestWylde = wylde; nearestWyldeDist = d; }
     }
     if (nearestWylde) this.callbacks.onStartWildBattle(nearestWylde);
+  }
+
+  /** Applique la tenue choisie au centre commercial sur le modèle du joueur. */
+  setPlayerOutfit(outfit: string): void {
+    this.player.setOutfit(outfit);
   }
 
   get currentMap(): MapDef {

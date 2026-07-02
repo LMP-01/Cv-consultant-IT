@@ -30,7 +30,28 @@ export const PALETTES: Record<string, HumanoidPalette> = {
   ranger: { skin: '#c98a5a', outfit: '#3a6b3a', outfitAccent: '#284a28', hair: '#3a2a1e', cap: '#c9a25c' },
   gymLeader: { skin: '#e3b18a', outfit: '#2a2a3a', outfitAccent: '#e8c93a', hair: '#8a3ac4' },
   villain: { skin: '#d8a97a', outfit: '#4a2a4a', outfitAccent: '#c94a4a', hair: '#1e1e1e' },
+  // Personnel des services de ville.
+  nurse: { skin: '#e3b18a', outfit: '#e88a9a', outfitAccent: '#f5f0ea', hair: '#e8c9a0' },
+  merchant: { skin: '#c98a5a', outfit: '#3a6b9e', outfitAccent: '#e8c93a', hair: '#5a3a1e' },
+  officer: { skin: '#d8a97a', outfit: '#2a3a5e', outfitAccent: '#1a2338', hair: '#2a2a2a' },
+  stylist: { skin: '#e3b18a', outfit: '#c94a8a', outfitAccent: '#3a2a4a', hair: '#f0e0d0' },
+  // Tenues du joueur (déblocables au centre commercial).
+  outfit_scarlet: { skin: '#e3b18a', outfit: '#c93a3a', outfitAccent: '#2a2a2a', hair: '#3a2a1e' },
+  outfit_forest: { skin: '#e3b18a', outfit: '#3a6b3a', outfitAccent: '#c9a25c', hair: '#3a2a1e' },
+  outfit_azure: { skin: '#e3b18a', outfit: '#3a8a9e', outfitAccent: '#e8e4d8', hair: '#3a2a1e' },
+  outfit_dusk: { skin: '#e3b18a', outfit: '#4a3a6b', outfitAccent: '#e8c93a', hair: '#3a2a1e' },
+  outfit_sunny: { skin: '#e3b18a', outfit: '#e8c93a', outfitAccent: '#c94a2a', hair: '#3a2a1e' },
 };
+
+/** Tenues proposées au centre commercial : palette + modèle de personnage. */
+export const OUTFITS: { key: string; label: string; price: number }[] = [
+  { key: 'player', label: 'Tenue de voyage', price: 0 },
+  { key: 'outfit_scarlet', label: 'Veste écarlate', price: 800 },
+  { key: 'outfit_forest', label: 'Tenue des bois', price: 800 },
+  { key: 'outfit_azure', label: 'Ensemble azur', price: 800 },
+  { key: 'outfit_dusk', label: 'Manteau crépuscule', price: 1200 },
+  { key: 'outfit_sunny', label: 'Tenue solaire', price: 1200 },
+];
 
 /** Which Quaternius character model plays each role. */
 const ROLE_MODELS: Record<string, string> = {
@@ -46,6 +67,15 @@ const ROLE_MODELS: Record<string, string> = {
   ranger: 'Man_in_Long_Sleeves',
   gymLeader: 'Woman_in_Tank_Top',
   villain: 'Man_in_Suit',
+  nurse: 'Woman_in_Dress',
+  merchant: 'Man_in_Long_Sleeves',
+  officer: 'Man_in_Suit',
+  stylist: 'Woman_Casual',
+  outfit_scarlet: 'Man_in_Long_Sleeves',
+  outfit_forest: 'Man',
+  outfit_azure: 'Man_in_Long_Sleeves',
+  outfit_dusk: 'Man_in_Suit',
+  outfit_sunny: 'Man',
 };
 
 const HUMAN_HEIGHT = 1.7;

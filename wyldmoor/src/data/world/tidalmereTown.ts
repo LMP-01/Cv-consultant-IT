@@ -35,7 +35,31 @@ export const TIDALMERE_TOWN: MapDef = {
     { speciesId: 116, minLevel: 21, maxLevel: 24, weight: 2 },
     { speciesId: 98, minLevel: 22, maxLevel: 24, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'tidalmere_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmière Coraline',
+      sprite: 'nurse',
+      dialogue: ['L’air marin requinque, mais un vrai soin fait des miracles. Approchez !'],
+      service: 'heal',
+    },
+    {
+      id: 'tidalmere_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchand Émile',
+      sprite: 'merchant',
+      dialogue: ['Marchandise fraîchement débarquée du port ! Regardez donc.'],
+      service: 'shop',
+    },
     {
       id: 'tidalmere_elder',
       x: 4,

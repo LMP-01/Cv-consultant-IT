@@ -39,7 +39,20 @@ export const WYRMSPIRE_HEIGHTS: MapDef = {
     { speciesId: 47, minLevel: 67, maxLevel: 69, weight: 1 },
     { speciesId: 129, minLevel: 66, maxLevel: 68, weight: 1 },
   ],
+  buildings: [
+    { x: 4, y: 4, kind: 'heal' },
+  ],
   npcs: [
+    {
+      id: 'wyrmspire_nurse',
+      x: 3,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmière Wyra',
+      sprite: 'nurse',
+      dialogue: ['Dernier soin avant les spires. Ne montez pas sans être prêts !'],
+      service: 'heal',
+    },
     {
       id: 'wyrmspire_ashfall_grunt_4',
       x: 4,

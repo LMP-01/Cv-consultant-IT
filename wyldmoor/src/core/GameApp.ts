@@ -11,7 +11,7 @@ import { CreatureInstance } from '../systems/CreatureInstance.ts';
 import { getSpecies } from '../data/species.ts';
 import type { WyldeActor } from '../world/WyldeActor.ts';
 import type { NpcDef } from '../data/mapSchema.ts';
-import { openPartyMenu, openBagMenu, openWyldexMenu, openMainMenu } from '../ui/menus.ts';
+import { openPartyMenu, openBagMenu, openWyldexMenu, openMainMenu, openShopMenu, openOutfitMenu } from '../ui/menus.ts';
 
 const STARTER_SPECIES_IDS = [1, 4, 7];
 
@@ -170,10 +170,38 @@ export class GameApp {
         if (npc.givesItem) this.state.addItem(npc.givesItem, 1);
         if (npc.team && !alreadyDone && this.state.playerTeam.length > 0) {
           this.startTrainerBattle(npc);
+        } else if (npc.service) {
+          this.runNpcService(npc);
         } else {
           if (this.overworld) this.overworld.frozen = false;
         }
       });
+  }
+
+  /** Services de ville : soin de l'équipe, boutique d'objets, vestiaire de tenues. */
+  private runNpcService(npc: NpcDef): void {
+    const unfreeze = () => { if (this.overworld) this.overworld.frozen = false; };
+    switch (npc.service) {
+      case 'heal':
+        this.state.healParty();
+        this.hud
+          .playDialogue([{ speaker: npc.name, text: 'Vos Wyldes sont en pleine forme. Revenez quand vous voulez !' }])
+          .then(unfreeze);
+        break;
+      case 'shop':
+        openShopMenu(this.hud, this.state, () => { this.hud.hideMenu(); unfreeze(); });
+        break;
+      case 'outfit':
+        openOutfitMenu(
+          this.hud,
+          this.state,
+          (outfitKey) => this.overworld?.setPlayerOutfit(outfitKey),
+          () => { this.hud.hideMenu(); unfreeze(); },
+        );
+        break;
+      default:
+        unfreeze();
+    }
   }
 
   private startTrainerBattle(npc: NpcDef): void {
@@ -192,10 +220,16 @@ export class GameApp {
   }
 
   private endTrainerBattle(npc: NpcDef, result: BattleResult): void {
-    if (result.outcome === 'victory' && npc.setFlagOnComplete) {
-      this.state.flags.add(npc.setFlagOnComplete);
-      if (this.overworld?.currentMap.gym?.leaderNpcId === npc.id) {
-        this.state.badges.push(this.overworld.currentMap.gym.badgeName);
+    if (result.outcome === 'victory') {
+      // Prime du dresseur vaincu, proportionnelle au niveau de son équipe.
+      const prize = (npc.team ?? []).reduce((sum, m) => sum + m.level * 40, 100);
+      this.state.earnMoney(prize);
+      this.hud.playDialogue([{ speaker: npc.name, text: `Vous remportez ${prize} pièces !` }]);
+      if (npc.setFlagOnComplete) {
+        this.state.flags.add(npc.setFlagOnComplete);
+        if (this.overworld?.currentMap.gym?.leaderNpcId === npc.id) {
+          this.state.badges.push(this.overworld.currentMap.gym.badgeName);
+        }
       }
     }
     if (this.state.partyWiped) this.handleBlackout();
