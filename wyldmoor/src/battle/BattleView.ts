@@ -43,7 +43,7 @@ export class BattleView {
       ? opts.reuseOpponentObject.position.clone()
       : opts.anchorPos.clone().add(new THREE.Vector3(1.6, 0, -1.6));
 
-    const playerHandle = buildCreatureModel(opts.playerCreature.species.sprite);
+    const playerHandle = buildCreatureModel(opts.playerCreature.species);
     playerHandle.object.position.copy(this.playerPos);
     playerHandle.object.rotation.y = Math.PI * 0.25;
     playerHandle.object.scale.setScalar(1.1);
@@ -55,7 +55,7 @@ export class BattleView {
       opts.reuseOpponentObject.visible = true;
       opts.reuseOpponentObject.rotation.y = Math.PI * 1.25;
     } else {
-      const oppHandle = buildCreatureModel(opts.opponentCreature.species.sprite);
+      const oppHandle = buildCreatureModel(opts.opponentCreature.species);
       oppHandle.object.position.copy(this.opponentPos);
       oppHandle.object.rotation.y = Math.PI * 1.25;
       this.scene.add(oppHandle.object);
@@ -77,7 +77,7 @@ export class BattleView {
     const rot = combatant.handle.object.rotation.y;
     this.scene.remove(combatant.handle.object);
     disposeObject3D(combatant.handle.object);
-    const handle = buildCreatureModel(creature.species.sprite);
+    const handle = buildCreatureModel(creature.species);
     handle.object.position.copy(pos);
     handle.object.rotation.y = rot;
     this.scene.add(handle.object);

@@ -1,5 +1,13 @@
 import * as THREE from 'three';
-import { organicNoiseTexture } from './TextureFactory.ts';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { getAssetLibrary } from './AssetLibrary.ts';
+
+/**
+ * Humanoids are the CC0 Quaternius "Animated Men/Women" GLB characters
+ * (see ASSETS.md), re-tinted per role with the palettes below (skin, outfit,
+ * hair…) so every NPC role keeps its own look. The GLB loads lazily; the
+ * returned object can be placed immediately.
+ */
 
 export interface HumanoidPalette {
   skin: string;
@@ -24,121 +32,114 @@ export const PALETTES: Record<string, HumanoidPalette> = {
   villain: { skin: '#d8a97a', outfit: '#4a2a4a', outfitAccent: '#c94a4a', hair: '#1e1e1e' },
 };
 
-export interface HumanoidRig {
-  legLeft: THREE.Object3D;
-  legRight: THREE.Object3D;
-  armLeft: THREE.Object3D;
-  armRight: THREE.Object3D;
+/** Which Quaternius character model plays each role. */
+const ROLE_MODELS: Record<string, string> = {
+  player: 'Man',
+  rival: 'Man_in_Long_Sleeves',
+  professor: 'Man_in_Suit',
+  youth: 'Man',
+  lass: 'Woman_Casual',
+  hiker: 'Man_in_Long_Sleeves',
+  fisher: 'Man',
+  scientist: 'Man_in_Suit',
+  elder: 'Woman_in_Dress',
+  ranger: 'Man_in_Long_Sleeves',
+  gymLeader: 'Woman_in_Tank_Top',
+  villain: 'Man_in_Suit',
+};
+
+const HUMAN_HEIGHT = 1.7;
+const FADE = 0.22;
+
+interface HumanoidAnim {
+  mixer: THREE.AnimationMixer;
+  idle?: THREE.AnimationAction;
+  walk?: THREE.AnimationAction;
+  current?: THREE.AnimationAction;
+}
+
+function findClip(clips: THREE.AnimationClip[], suffix: string): THREE.AnimationClip | undefined {
+  return clips.find((c) => c.name.endsWith(suffix));
+}
+
+/** Tints the character's flat-colour materials (Shirt, Pants, Skin, Hair…) from the palette. */
+function tintHumanoid(root: THREE.Object3D, palette: HumanoidPalette): void {
+  const groups: [RegExp, string][] = [
+    [/^(Shirt2?|Jacket|LightJacket)$/i, palette.outfit],
+    [/^(Pants|Details|TieTexture|Shoes|Socks)$/i, palette.outfitAccent],
+    [/^Skin$/i, palette.skin],
+    [/^(Hair2?|HairBase|Eyebrows)$/i, palette.hair],
+  ];
+  const seen = new Map<THREE.Material, THREE.Material>();
+  root.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const replaced = materials.map((mat) => {
+      const cached = seen.get(mat);
+      if (cached) return cached;
+      const rule = groups.find(([re]) => re.test(mat.name || ''));
+      if (!rule) {
+        seen.set(mat, mat);
+        return mat;
+      }
+      const tinted = (mat as THREE.MeshStandardMaterial).clone();
+      tinted.color.set(rule[1]);
+      tinted.userData = {};
+      seen.set(mat, tinted);
+      return tinted;
+    });
+    mesh.material = Array.isArray(mesh.material) ? replaced : replaced[0];
+  });
 }
 
 /**
- * Builds a stylized humanoid ~1.7 units tall with separately-pivoted limbs
- * (pivot groups at hip/shoulder height) so the walk cycle can swing them.
- * The rig is stashed in `userData.rig`.
+ * Builds a humanoid for the given role (palette key). The returned group can be
+ * positioned/rotated immediately; the animated model attaches when loaded.
  */
 export function buildHumanoid(paletteKey: keyof typeof PALETTES | string): THREE.Object3D {
   const palette = PALETTES[paletteKey] ?? PALETTES.youth;
+  const model = ROLE_MODELS[paletteKey] ?? 'Man';
   const group = new THREE.Object3D();
-  const noise = organicNoiseTexture();
 
-  const skinMat = new THREE.MeshStandardMaterial({ color: palette.skin, map: noise, roughness: 0.65 });
-  const outfitMat = new THREE.MeshStandardMaterial({ color: palette.outfit, map: noise, roughness: 0.85 });
-  const accentMat = new THREE.MeshStandardMaterial({ color: palette.outfitAccent, map: noise, roughness: 0.85 });
-  const hairMat = new THREE.MeshStandardMaterial({ color: palette.hair, map: noise, roughness: 0.55 });
-  const shoeMat = new THREE.MeshStandardMaterial({ color: '#2e2620', map: noise, roughness: 0.7 });
+  getAssetLibrary()
+    .animatedTemplate(`assets/characters/${model}.glb`)
+    .then((template) => {
+      const inner = cloneSkeleton(template.scene);
+      tintHumanoid(inner, palette);
+      inner.scale.setScalar(HUMAN_HEIGHT / template.height);
+      group.add(inner);
 
-  const makeLimb = (
-    pivotY: number,
-    pivotX: number,
-    radius: number,
-    length: number,
-    material: THREE.Material,
-    withShoe: boolean,
-  ): THREE.Object3D => {
-    const pivot = new THREE.Object3D();
-    pivot.position.set(pivotX, pivotY, 0);
-    const limb = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 3, 8), material);
-    limb.position.y = -(length / 2 + radius * 0.5);
-    pivot.add(limb);
-    if (withShoe) {
-      const shoe = new THREE.Mesh(new THREE.BoxGeometry(radius * 2.3, radius * 1.3, radius * 3.4), shoeMat);
-      shoe.position.set(0, -(length + radius * 1.4), radius * 0.7);
-      pivot.add(shoe);
-    }
-    return pivot;
-  };
+      const mixer = new THREE.AnimationMixer(inner);
+      const anim: HumanoidAnim = { mixer };
+      const idleClip = findClip(template.clips, '_Idle');
+      const walkClip = findClip(template.clips, '_Walk');
+      if (idleClip) anim.idle = mixer.clipAction(idleClip);
+      if (walkClip) anim.walk = mixer.clipAction(walkClip);
+      // Desynchronize NPCs sharing a template so they don't move in lockstep.
+      anim.idle?.play();
+      if (anim.idle) anim.idle.time = Math.random() * (idleClip?.duration ?? 1);
+      anim.current = anim.idle;
+      group.userData.anim = anim;
+    })
+    .catch((err) => console.error(`Character model failed to load (${model})`, err));
 
-  // Legs pivot at the hips.
-  const legLeft = makeLimb(0.82, -0.13, 0.09, 0.56, accentMat, true);
-  const legRight = makeLimb(0.82, 0.13, 0.09, 0.56, accentMat, true);
-  group.add(legLeft, legRight);
-
-  // Torso: jacket with slight taper.
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.44, 4, 10), outfitMat);
-  torso.position.y = 1.12;
-  torso.scale.set(1, 1, 0.8);
-  group.add(torso);
-
-  // Arms pivot at the shoulders.
-  const armLeft = makeLimb(1.32, -0.3, 0.07, 0.42, outfitMat, false);
-  const armRight = makeLimb(1.32, 0.3, 0.07, 0.42, outfitMat, false);
-  group.add(armLeft, armRight);
-  for (const arm of [armLeft, armRight]) {
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), skinMat);
-    hand.position.y = -0.56;
-    arm.add(hand);
-  }
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), skinMat);
-  head.position.y = 1.66;
-  head.scale.set(1, 1.05, 1);
-  group.add(head);
-
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.25, 14, 10, 0, Math.PI * 2, 0, Math.PI / 1.9), hairMat);
-  hair.position.y = 1.72;
-  group.add(hair);
-
-  if (palette.cap) {
-    const capMat = new THREE.MeshStandardMaterial({ color: palette.cap, map: noise, roughness: 0.7 });
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2.4), capMat);
-    cap.position.y = 1.76;
-    group.add(cap);
-    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.03, 12, 1, false, -Math.PI / 3, Math.PI / 1.5), capMat);
-    brim.position.set(0, 1.82, 0.2);
-    brim.rotation.x = -0.15;
-    group.add(brim);
-  }
-
-  for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), new THREE.MeshStandardMaterial({ color: '#12130f' }));
-    eye.position.set(side * 0.085, 1.68, 0.215);
-    group.add(eye);
-  }
-
-  group.traverse((child) => {
-    if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; }
-  });
-
-  const rig: HumanoidRig = { legLeft, legRight, armLeft, armRight };
-  group.userData.rig = rig;
-  // Back-compat: previous animation code rotated a single legPair object.
-  group.userData.legPair = legLeft;
   return group;
 }
 
-/** Drives the limb swing; phase advances while walking, limbs settle when idle. */
-export function animateHumanoidWalk(group: THREE.Object3D, phase: number, walking: boolean): void {
-  const rig = group.userData.rig as HumanoidRig | undefined;
-  if (!rig) return;
-  if (walking) {
-    const swing = Math.sin(phase) * 0.55;
-    rig.legLeft.rotation.x = swing;
-    rig.legRight.rotation.x = -swing;
-    rig.armLeft.rotation.x = -swing * 0.7;
-    rig.armRight.rotation.x = swing * 0.7;
-  } else {
-    for (const limb of [rig.legLeft, rig.legRight, rig.armLeft, rig.armRight]) {
-      limb.rotation.x *= 0.82;
-    }
+/**
+ * Advances the character animation. `dt` is the frame delta in seconds;
+ * crossfades between the Idle and Walk GLTF clips based on `walking`.
+ */
+export function animateHumanoidWalk(group: THREE.Object3D, dt: number, walking: boolean): void {
+  const anim = group.userData.anim as HumanoidAnim | undefined;
+  if (!anim) return;
+  const target = walking ? anim.walk ?? anim.idle : anim.idle;
+  if (target && target !== anim.current) {
+    target.reset();
+    if (anim.current) target.crossFadeFrom(anim.current, FADE, false);
+    target.play();
+    anim.current = target;
   }
+  anim.mixer.update(dt);
 }

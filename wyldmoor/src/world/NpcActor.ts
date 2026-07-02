@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildHumanoid } from '../gfx/HumanoidModel.ts';
+import { buildHumanoid, animateHumanoidWalk } from '../gfx/HumanoidModel.ts';
 import { disposeObject3D } from '../gfx/dispose.ts';
 import type { NpcDef, Facing } from '../data/mapSchema.ts';
 
@@ -14,6 +14,10 @@ export class NpcActor {
     this.object = buildHumanoid(def.sprite);
     this.object.position.copy(worldPos);
     this.object.rotation.y = FACING_ANGLE[def.facing];
+  }
+
+  update(dt: number): void {
+    animateHumanoidWalk(this.object, dt, false);
   }
 
   distanceTo(x: number, z: number): number {

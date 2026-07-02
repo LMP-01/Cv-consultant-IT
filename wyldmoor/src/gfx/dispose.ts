@@ -9,9 +9,13 @@ import * as THREE from 'three';
 export function disposeObject3D(root: THREE.Object3D): void {
   root.traverse((child) => {
     if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
+      // GLB-backed clones share their geometry with the cached template
+      // (flagged in AssetLibrary); only their tinted material clones are owned.
+      if (!child.userData.sharedGeometry) child.geometry.dispose();
       const materials = Array.isArray(child.material) ? child.material : [child.material];
-      for (const mat of materials) mat.dispose();
+      for (const mat of materials) {
+        if (!mat.userData.sharedMaterial) mat.dispose();
+      }
     }
   });
 }

@@ -26,8 +26,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,glb}'],
+        // Precache the app shell only; the (large) 3D assets are cached on
+        // first use by the runtime route below so installs stay light.
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        globIgnores: ['assets/creatures/**', 'assets/characters/**', 'assets/nature/**', 'assets/town/**', 'assets/village/**', 'assets/textures/**', 'assets/env/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: /assets\/(creatures|characters|nature|town|village|textures|env|models)\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'wyldmoor-3d-assets',
+              expiration: { maxEntries: 300 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
