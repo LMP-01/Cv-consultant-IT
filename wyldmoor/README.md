@@ -4,9 +4,9 @@ Un RPG de créatures sauvages en monde ouvert, jouable sur mobile comme sur navi
 
 ## Caractéristiques
 
-- **Exploration 3D temps réel à la 3e personne** (Three.js) : caméra à l'épaule, monde bas-poly stylisé, aucun assets externe (tout est généré procéduralement en code).
+- **Exploration 3D temps réel à la 3e personne** (Three.js) : caméra à l'épaule, monde bas-poly stylisé habillé avec de vrais assets 3D libres (CC0) — voir `ASSETS.md`.
 - **Combats en temps réel superposés au monde** : pas d'écran de transition — le combat se déclenche directement là où le Wylde sauvage ou le dresseur se trouve, avec roue de capacités, barres de vie et journal de combat qui défile, comme dans Legends Z-A.
-- **151 créatures 100% originales**, réparties en familles d'évolution, sur 15 types élémentaires, avec un modèle 3D bas-poly généré proceduralement pour chacune.
+- **151 créatures 100% originales**, réparties en familles d'évolution, sur 15 types élémentaires : chaque espèce s'appuie sur un monstre 3D animé (pack CC0 Quaternius) re-teinté avec sa palette et redimensionné, avec animations d'idle, de déplacement et de combat.
 - **Une région complète** : ville de départ, routes, 8 arènes, un conseil d'élite, un champion, une équipe adverse et un Wylde légendaire.
 - **Progressive Web App** : installable sur l'écran d'accueil (iOS/Android), fonctionne hors-ligne après le premier chargement.
 - Sauvegarde locale automatique (`localStorage`).
@@ -41,5 +41,6 @@ src/
 
 ## Notes de conception
 
-- Tous les modèles 3D (créatures, personnages, décor) sont **générés par code** à partir de primitives géométriques (Three.js), sans aucun asset externe : chaque espèce a un descripteur (silhouette, palette, motif) qui produit un modèle bas-poly distinct et déterministe.
+- Les modèles 3D (créatures, personnages, bâtiments, végétation) proviennent de **packs libres CC0** (Quaternius, Kenney, Poly Haven — attribution complète dans `ASSETS.md`). Chaque espèce garde son **descripteur** (palette, taille, silhouette) qui pilote la re-coloration et l'échelle de son modèle : le même descripteur produit toujours le même rendu, distinct et déterministe.
+- Les décors sont instanciés par variante (herbe, fleurs, arbres par biome, rochers, clôtures) pour rester fluides sur mobile ; les sols utilisent des textures PBR 1K et l'éclairage d'ambiance vient d'un HDRI en `scene.environment`.
 - Le monde, le scénario, les noms de créatures et de lieux sont une création originale pour ce projet.
