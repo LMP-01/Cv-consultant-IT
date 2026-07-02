@@ -56,6 +56,11 @@ export class GameApp {
     this.hud.bindMenu(() => this.openMenu());
     this.hud.bindInteract(() => this.input.queueInteract());
 
+    if (import.meta.env.DEV) {
+      // Dev-only hook so scripted browser tests can drive the game from the console.
+      (window as unknown as Record<string, unknown>).__wyld = this;
+    }
+
     requestAnimationFrame(() => this.loop());
   }
 

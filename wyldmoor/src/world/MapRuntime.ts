@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import type { MapDef, TileCode } from '../data/mapSchema.ts';
-import { sandTexture, stoneTexture, barkTexture, roofTexture, wallTexture, fenceTexture, waterTexture, dirtPathTexture } from '../gfx/TextureFactory.ts';
-import { getAssetLibrary, type MeshAsset, type TreeVariant } from '../gfx/AssetLibrary.ts';
+import { barkTexture, waterTexture } from '../gfx/TextureFactory.ts';
+import {
+  getAssetLibrary, biomeForMap, variantHeight,
+  type Biome, type MeshAsset, type PropVariant, type VillageModel,
+} from '../gfx/AssetLibrary.ts';
 import { applyWindSway } from '../gfx/Wind.ts';
 
 export const TILE_SIZE = 2;
@@ -13,6 +16,12 @@ const WALKABLE: Record<TileCode, boolean> = {
 
 const ENCOUNTER_TILE: Partial<Record<TileCode, number>> = { ',': 0.06, '"': 0.14 };
 
+/** Building variety per map cell, chosen deterministically (see buildBuildings). */
+const HOUSE_MODELS: VillageModel[] = [
+  'Fantasy_House', 'Fantasy_House', 'Fantasy_House', 'Fantasy_Inn',
+  'Blacksmith', 'Fantasy_Stable', 'Fantasy_Sawmill', 'Market_Stand',
+];
+
 export interface CellQuery {
   walkable: boolean;
   encounterChance: number;
@@ -20,8 +29,9 @@ export interface CellQuery {
 }
 
 interface Cell { x: number; y: number }
+interface Placement { x: number; y: number; z: number; rotY: number; scale: number }
 
-/** Deterministic per-cell pseudo-random in [0,1) so vegetation layouts are stable across visits. */
+/** Deterministic per-cell pseudo-random in [0,1) so layouts are stable across visits. */
 function cellRandom(x: number, y: number, salt: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
   return n - Math.floor(n);
@@ -31,20 +41,23 @@ export class MapRuntime {
   readonly def: MapDef;
   readonly group = new THREE.Object3D();
   private grid: TileCode[][];
+  private biome: Biome;
   private waterMaterial?: THREE.MeshStandardMaterial;
   private elapsed = 0;
-  /** Procedurally-created resources owned by this map (shared AssetLibrary resources are never registered here). */
+  /** Resources owned by this map (shared AssetLibrary resources are never registered here). */
   private owned: { dispose(): void }[] = [];
   private instancedMeshes: THREE.InstancedMesh[] = [];
 
   constructor(def: MapDef) {
     this.def = def;
     this.grid = def.tiles.map((row) => row.split('') as TileCode[]);
+    this.biome = biomeForMap(def.id);
     this.buildGround();
     this.buildWater();
     this.buildVegetation();
     this.buildRocks();
     this.buildBuildings();
+    this.buildGymGates();
     this.buildFences();
   }
 
@@ -81,6 +94,10 @@ export class MapRuntime {
     return resource;
   }
 
+  private tileAt(x: number, y: number): TileCode {
+    return this.grid[y]?.[x] ?? ' ';
+  }
+
   private cellsWhere(predicate: (tile: TileCode) => boolean): Cell[] {
     const cells: Cell[] = [];
     for (let y = 0; y < this.def.height; y += 1) {
@@ -97,13 +114,16 @@ export class MapRuntime {
    */
   private instantiate(
     asset: MeshAsset,
-    placements: { x: number; y: number; z: number; rotY: number; scale: number }[],
+    placements: Placement[],
     opts: { castShadow?: boolean; receiveShadow?: boolean; colorJitter?: number } = {},
   ): THREE.InstancedMesh | undefined {
     if (placements.length === 0) return undefined;
     const mesh = new THREE.InstancedMesh(asset.geometry, asset.material, placements.length);
     mesh.castShadow = opts.castShadow ?? true;
     mesh.receiveShadow = opts.receiveShadow ?? true;
+    // The auto bounding sphere only covers the source geometry, not the
+    // instance placements spread across the map — never cull these.
+    mesh.frustumCulled = false;
     const matrix = new THREE.Matrix4();
     const pos = new THREE.Vector3();
     const quat = new THREE.Quaternion();
@@ -125,9 +145,37 @@ export class MapRuntime {
     return mesh;
   }
 
-  private static assetHeight(asset: MeshAsset): number {
-    if (!asset.geometry.boundingBox) asset.geometry.computeBoundingBox();
-    return Math.max(0.001, asset.geometry.boundingBox!.max.y);
+  /** Instances every mesh part of a prop variant with the same placements, scaled to targetHeight. */
+  private placeVariant(
+    variant: PropVariant,
+    placements: Placement[],
+    targetHeight: number,
+    opts: { castShadow?: boolean; colorJitter?: number; sway?: number } = {},
+  ): void {
+    if (placements.length === 0) return;
+    const height = variantHeight(variant);
+    const normalized = placements.map((p) => ({ ...p, scale: (p.scale * targetHeight) / height }));
+    for (const part of variant) {
+      let material = part.material;
+      if (opts.sway) {
+        material = this.own((part.material as THREE.MeshStandardMaterial).clone());
+        applyWindSway(material, opts.sway);
+      }
+      this.instantiate({ geometry: part.geometry, material }, normalized, {
+        castShadow: opts.castShadow,
+        colorJitter: opts.colorJitter,
+      });
+    }
+  }
+
+  /** Spreads placements across variants deterministically (salt keeps layers independent). */
+  private splitAcrossVariants(variants: PropVariant[], placements: Placement[], salt: number): Placement[][] {
+    const byVariant: Placement[][] = variants.map(() => []);
+    for (const p of placements) {
+      const index = Math.floor(cellRandom(p.x, p.z, salt) * variants.length);
+      byVariant[index].push(p);
+    }
+    return byVariant;
   }
 
   // ---------------- Ground ----------------
@@ -135,24 +183,35 @@ export class MapRuntime {
   private buildGround(): void {
     const assets = getAssetLibrary();
     const groundGeom = this.own(new THREE.BoxGeometry(TILE_SIZE, 0.12, TILE_SIZE));
+    // Alpine maps read as snowfields: their grass is snow.
+    const grassSet = this.biome === 'alpine' ? assets.ground.snow : assets.ground.grass;
+    const grassTint = this.biome === 'alpine' ? new THREE.Color(1, 1, 1.04) : new THREE.Color(0.78, 0.98, 0.62);
+
+    const makeMat = (set: { map: THREE.Texture; normalMap: THREE.Texture }, color: THREE.Color, roughness = 0.95) =>
+      this.own(new THREE.MeshStandardMaterial({
+        map: set.map,
+        normalMap: set.normalMap,
+        normalScale: new THREE.Vector2(0.7, 0.7),
+        color,
+        roughness,
+      }));
 
     const groups: { cells: Cell[]; material: THREE.MeshStandardMaterial }[] = [
       {
         cells: this.cellsWhere((t) => t === ',' || t === '"'),
-        // Color components >1 brighten/saturate the texture rather than darken it.
-        material: this.own(new THREE.MeshStandardMaterial({ map: assets.grassTexture, color: new THREE.Color(0.5, 0.82, 0.4), roughness: 0.95 })),
+        material: makeMat(grassSet, grassTint),
       },
       {
         cells: this.cellsWhere((t) => t === '.' || t === 'D'),
-        material: this.own(new THREE.MeshStandardMaterial({ map: dirtPathTexture(), color: new THREE.Color(0.72, 0.58, 0.42), normalMap: assets.dirtNormal, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1 })),
+        material: makeMat(assets.ground.dirt, new THREE.Color(1.05, 0.95, 0.85), 1),
       },
       {
         cells: this.cellsWhere((t) => t === 'S'),
-        material: this.own(new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1 })),
+        material: makeMat(assets.ground.sand, new THREE.Color(1.1, 1.05, 0.95), 1),
       },
       {
         cells: this.cellsWhere((t) => t === 'G'),
-        material: this.own(new THREE.MeshStandardMaterial({ map: stoneTexture(), roughness: 0.85 })),
+        material: makeMat(assets.ground.stone, new THREE.Color(1, 1, 1), 0.85),
       },
       {
         cells: this.cellsWhere((t) => t === 'b'),
@@ -161,7 +220,7 @@ export class MapRuntime {
       {
         // Ground under trees, rocks, buildings and fences so props never float over void.
         cells: this.cellsWhere((t) => t === '#' || t === '^' || t === 'B' || t === 'F'),
-        material: this.own(new THREE.MeshStandardMaterial({ map: assets.grassTexture, color: new THREE.Color(0.55, 0.8, 0.45), roughness: 1 })),
+        material: makeMat(grassSet, grassTint.clone().multiplyScalar(0.92)),
       },
     ];
 
@@ -194,7 +253,7 @@ export class MapRuntime {
     if (waterCells.length === 0) return;
     const assets = getAssetLibrary();
     const geom = this.own(new THREE.BoxGeometry(TILE_SIZE, 0.06, TILE_SIZE));
-    const normalMap = assets.dirtNormal.clone();
+    const normalMap = assets.ground.dirt.normalMap.clone();
     normalMap.needsUpdate = true;
     this.own(normalMap);
     this.waterMaterial = this.own(new THREE.MeshStandardMaterial({
@@ -222,243 +281,225 @@ export class MapRuntime {
 
   private buildVegetation(): void {
     const assets = getAssetLibrary();
-
     const grassCells = this.cellsWhere((t) => t === ',' || t === '"');
-    const clumpPlacements: { x: number; y: number; z: number; rotY: number; scale: number }[] = [];
-    for (const cell of grassCells) {
-      const tall = this.grid[cell.y][cell.x] === '"';
-      const clumps = tall ? 11 : 5;
-      for (let i = 0; i < clumps; i += 1) {
-        const ox = (cellRandom(cell.x, cell.y, 10 + i) - 0.5) * TILE_SIZE * 0.9;
-        const oz = (cellRandom(cell.x, cell.y, 20 + i) - 0.5) * TILE_SIZE * 0.9;
-        clumpPlacements.push({
-          x: cell.x * TILE_SIZE + ox,
+
+    // Grass clumps — dense on tall grass so encounter tiles read at a glance.
+    const grassVariants = assets.nature('Grass');
+    if (grassVariants.length > 0 && this.biome !== 'alpine') {
+      const clumpPlacements: Placement[] = [];
+      for (const cell of grassCells) {
+        const tall = this.grid[cell.y][cell.x] === '"';
+        const clumps = tall ? 6 : 3;
+        for (let i = 0; i < clumps; i += 1) {
+          clumpPlacements.push({
+            x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 10 + i) - 0.5) * TILE_SIZE * 0.9,
+            y: 0,
+            z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 20 + i) - 0.5) * TILE_SIZE * 0.9,
+            rotY: cellRandom(cell.x, cell.y, 30 + i) * Math.PI * 2,
+            scale: (tall ? 1.2 : 0.8) * (0.8 + cellRandom(cell.x, cell.y, 40 + i) * 0.5),
+          });
+        }
+      }
+      this.splitAcrossVariants(grassVariants, clumpPlacements, 47).forEach((placements, i) => {
+        this.placeVariant(grassVariants[i], placements, 0.34, { castShadow: false, colorJitter: 0.3, sway: 0.09 });
+      });
+    }
+
+    // Flowers on a fraction of grass tiles.
+    const flowerVariants = [...assets.nature('Flowers'), ...assets.nature('Flower_Bushes')];
+    if (flowerVariants.length > 0 && this.biome !== 'alpine') {
+      const flowerPlacements: Placement[] = [];
+      for (const cell of grassCells) {
+        if (cellRandom(cell.x, cell.y, 55) > 0.14) continue;
+        flowerPlacements.push({
+          x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 57) - 0.5) * TILE_SIZE * 0.7,
           y: 0,
-          z: cell.y * TILE_SIZE + oz,
-          rotY: cellRandom(cell.x, cell.y, 30 + i) * Math.PI * 2,
-          scale: (tall ? 1.15 : 0.75) * (0.8 + cellRandom(cell.x, cell.y, 40 + i) * 0.5),
+          z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 58) - 0.5) * TILE_SIZE * 0.7,
+          rotY: cellRandom(cell.x, cell.y, 59) * Math.PI * 2,
+          scale: 0.7 + cellRandom(cell.x, cell.y, 60) * 0.4,
         });
       }
-    }
-    if (clumpPlacements.length > 0) {
-      const grassMaterial = (assets.grassClump.material as THREE.MeshStandardMaterial).clone();
-      grassMaterial.color.set(0x53953f);
-      grassMaterial.roughness = 0.9;
-      this.own(grassMaterial);
-      applyWindSway(grassMaterial, 0.09);
-      const clumpHeight = MapRuntime.assetHeight(assets.grassClump);
-      const normalized = clumpPlacements.map((p) => ({ ...p, scale: (p.scale * 0.72) / clumpHeight }));
-      this.instantiate({ geometry: assets.grassClump.geometry, material: grassMaterial }, normalized, { castShadow: false, colorJitter: 0.3 });
-    }
-
-    // Flowers on a fraction of grass tiles, one colour per cell.
-    const flowerPlacementsByType: { x: number; y: number; z: number; rotY: number; scale: number }[][] = [[], [], []];
-    for (const cell of grassCells) {
-      if (cellRandom(cell.x, cell.y, 55) > 0.14) continue;
-      const type = Math.floor(cellRandom(cell.x, cell.y, 56) * 3);
-      flowerPlacementsByType[type].push({
-        x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 57) - 0.5) * TILE_SIZE * 0.7,
-        y: 0,
-        z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 58) - 0.5) * TILE_SIZE * 0.7,
-        rotY: cellRandom(cell.x, cell.y, 59) * Math.PI * 2,
-        scale: 0.6 + cellRandom(cell.x, cell.y, 60) * 0.4,
+      this.splitAcrossVariants(flowerVariants, flowerPlacements, 56).forEach((placements, i) => {
+        this.placeVariant(flowerVariants[i], placements, 0.4, { castShadow: false, sway: 0.05 });
       });
     }
-    flowerPlacementsByType.forEach((placements, type) => {
-      if (placements.length === 0) return;
-      const material = (assets.flowers[type].material as THREE.MeshStandardMaterial).clone();
-      this.own(material);
-      applyWindSway(material, 0.05);
-      const flowerHeight = MapRuntime.assetHeight(assets.flowers[type]);
-      const normalized = placements.map((p) => ({ ...p, scale: (p.scale * 0.45) / flowerHeight }));
-      this.instantiate({ geometry: assets.flowers[type].geometry, material }, normalized, { castShadow: false });
-    });
 
     // Bushes sprinkled on tall grass.
-    const bushVariants = assets.bushes();
-    const bushPlacements: { x: number; y: number; z: number; rotY: number; scale: number }[][] = bushVariants.map(() => []);
-    for (const cell of grassCells) {
-      if (this.grid[cell.y][cell.x] !== '"') continue;
-      if (cellRandom(cell.x, cell.y, 70) > 0.08) continue;
-      const variant = Math.floor(cellRandom(cell.x, cell.y, 71) * bushVariants.length);
-      bushPlacements[variant].push({
-        x: cell.x * TILE_SIZE,
-        y: 0,
-        z: cell.y * TILE_SIZE,
-        rotY: cellRandom(cell.x, cell.y, 72) * Math.PI * 2,
-        scale: 1,
+    const bushVariants = assets.nature('Bushes');
+    if (bushVariants.length > 0) {
+      const bushPlacements: Placement[] = [];
+      for (const cell of grassCells) {
+        if (this.grid[cell.y][cell.x] !== '"') continue;
+        if (cellRandom(cell.x, cell.y, 70) > 0.08) continue;
+        bushPlacements.push({
+          x: cell.x * TILE_SIZE,
+          y: 0,
+          z: cell.y * TILE_SIZE,
+          rotY: cellRandom(cell.x, cell.y, 72) * Math.PI * 2,
+          scale: 0.8 + cellRandom(cell.x, cell.y, 73) * 0.4,
+        });
+      }
+      this.splitAcrossVariants(bushVariants, bushPlacements, 71).forEach((placements, i) => {
+        this.placeVariant(bushVariants[i], placements, 1.1, { colorJitter: 0.25 });
       });
     }
-    bushVariants.forEach((variant, i) => {
-      this.placeTreeVariant(variant, bushPlacements[i], 1.3);
-    });
 
-    // Trees on '#' cells, split across the map's biome variants.
-    const treeVariants = assets.treesForMap(this.def.id);
-    const treePlacements: { x: number; y: number; z: number; rotY: number; scale: number }[][] = treeVariants.map(() => []);
-    for (const cell of this.cellsWhere((t) => t === '#')) {
-      const variant = Math.floor(cellRandom(cell.x, cell.y, 80) * treeVariants.length);
-      treePlacements[variant].push({
-        x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 81) - 0.5) * 0.6,
-        y: 0,
-        z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 82) - 0.5) * 0.6,
-        rotY: cellRandom(cell.x, cell.y, 83) * Math.PI * 2,
-        scale: 0.85 + cellRandom(cell.x, cell.y, 84) * 0.4,
+    // Trees on '#' cells, biome-flavoured (birch marsh, pines up north, dead gloom…).
+    const treeVariants = assets.treesForBiome(this.biome);
+    if (treeVariants.length > 0) {
+      const treePlacements: Placement[] = [];
+      for (const cell of this.cellsWhere((t) => t === '#')) {
+        treePlacements.push({
+          x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 81) - 0.5) * 0.6,
+          y: 0,
+          z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 82) - 0.5) * 0.6,
+          rotY: cellRandom(cell.x, cell.y, 83) * Math.PI * 2,
+          scale: 0.85 + cellRandom(cell.x, cell.y, 84) * 0.4,
+        });
+      }
+      this.splitAcrossVariants(treeVariants, treePlacements, 80).forEach((placements, i) => {
+        this.placeVariant(treeVariants[i], placements, 4.2, { colorJitter: 0.2, sway: 0.012 });
       });
     }
-    treeVariants.forEach((variant, i) => {
-      this.placeTreeVariant(variant, treePlacements[i], 5.2);
-    });
-  }
-
-  /** Trees/bushes are two shared meshes (branches + leaves); scale placements so the tallest point hits `targetHeight`. */
-  private placeTreeVariant(
-    variant: TreeVariant,
-    placements: { x: number; y: number; z: number; rotY: number; scale: number }[],
-    targetHeight: number,
-  ): void {
-    if (placements.length === 0) return;
-    const height = Math.max(MapRuntime.assetHeight(variant.branches), MapRuntime.assetHeight(variant.leaves));
-    const normalized = placements.map((p) => ({ ...p, scale: (p.scale * targetHeight) / height }));
-    this.instantiate(variant.branches, normalized);
-    const leavesMaterial = (variant.leaves.material as THREE.MeshStandardMaterial).clone();
-    this.own(leavesMaterial);
-    applyWindSway(leavesMaterial, 0.012);
-    this.instantiate({ geometry: variant.leaves.geometry, material: leavesMaterial }, normalized);
   }
 
   private buildRocks(): void {
     const assets = getAssetLibrary();
-    const rockCells = this.cellsWhere((t) => t === '^');
-    const placementsByType: { x: number; y: number; z: number; rotY: number; scale: number }[][] = assets.rocks.map(() => []);
-    for (const cell of rockCells) {
-      const type = Math.floor(cellRandom(cell.x, cell.y, 90) * assets.rocks.length);
-      placementsByType[type].push({
-        x: cell.x * TILE_SIZE,
-        y: 0,
-        z: cell.y * TILE_SIZE,
-        rotY: cellRandom(cell.x, cell.y, 91) * Math.PI * 2,
-        scale: 1,
-      });
-    }
-    assets.rocks.forEach((rock, i) => {
-      if (placementsByType[i].length === 0) return;
-      const height = MapRuntime.assetHeight(rock);
-      const normalized = placementsByType[i].map((p) => ({ ...p, scale: ((0.9 + cellRandom(p.x, p.z, 92) * 0.6) * 1.3) / height }));
-      this.instantiate(rock, normalized);
+    const rockVariants = assets.nature('Rocks');
+    if (rockVariants.length === 0) return;
+    const placements: Placement[] = this.cellsWhere((t) => t === '^').map((cell) => ({
+      x: cell.x * TILE_SIZE,
+      y: 0,
+      z: cell.y * TILE_SIZE,
+      rotY: cellRandom(cell.x, cell.y, 91) * Math.PI * 2,
+      scale: 0.9 + cellRandom(cell.x, cell.y, 92) * 0.6,
+    }));
+    this.splitAcrossVariants(rockVariants, placements, 90).forEach((byVariant, i) => {
+      this.placeVariant(rockVariants[i], byVariant, 1.4, { colorJitter: 0.25 });
     });
   }
 
   // ---------------- Structures ----------------
 
+  /** Rotation that makes a building's entrance face the adjacent door tile, if any. */
+  private doorFacing(cell: Cell): number {
+    if (this.tileAt(cell.x, cell.y + 1) === 'D') return 0; // door south (+z)
+    if (this.tileAt(cell.x, cell.y - 1) === 'D') return Math.PI;
+    if (this.tileAt(cell.x + 1, cell.y) === 'D') return Math.PI / 2;
+    if (this.tileAt(cell.x - 1, cell.y) === 'D') return -Math.PI / 2;
+    return 0;
+  }
+
   private buildBuildings(): void {
+    const assets = getAssetLibrary();
     const cells = this.cellsWhere((t) => t === 'B');
     if (cells.length === 0) return;
 
-    const wallMat = this.own(new THREE.MeshStandardMaterial({ map: wallTexture(), roughness: 0.9 }));
-    const roofMat = this.own(new THREE.MeshStandardMaterial({ map: roofTexture(), roughness: 0.7 }));
-    const trimMat = this.own(new THREE.MeshStandardMaterial({ map: stoneTexture(), roughness: 0.85 }));
-    const doorMat = this.own(new THREE.MeshStandardMaterial({ map: barkTexture(), color: 0x8a6a45, roughness: 0.8 }));
-    const glassMat = this.own(new THREE.MeshStandardMaterial({ color: 0xbfe3ef, roughness: 0.1, metalness: 0.3, emissive: 0x334455, emissiveIntensity: 0.25 }));
-
-    const w = TILE_SIZE * 0.98;
-    const baseGeom = this.own(new THREE.BoxGeometry(w, 0.35, w));
-    const wallsGeom = this.own(new THREE.BoxGeometry(w * 0.94, 1.9, w * 0.94));
-    const roofGeom = this.own(MapRuntime.gableRoofGeometry(w * 1.12, w * 1.12, 0.95));
-    const doorGeom = this.own(new THREE.BoxGeometry(0.5, 0.95, 0.06));
-    const windowGeom = this.own(new THREE.BoxGeometry(0.42, 0.42, 0.05));
-    const chimneyGeom = this.own(new THREE.BoxGeometry(0.22, 0.7, 0.22));
-
     for (const cell of cells) {
-      const building = new THREE.Object3D();
+      const roll = cellRandom(cell.x, cell.y, 100);
+      const model = HOUSE_MODELS[Math.floor(roll * HOUSE_MODELS.length)];
+      const building = assets.villageClone(model);
 
-      const base = new THREE.Mesh(baseGeom, trimMat);
-      base.position.y = 0.175;
-      building.add(base);
+      // Fit the building into its tile (buildings may span a bit beyond for depth).
+      const box = new THREE.Box3().setFromObject(building);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const footprint = Math.max(size.x, size.z, 0.001);
+      const scale = (TILE_SIZE * 1.25) / footprint;
+      building.scale.setScalar(scale);
+      building.position.set(
+        cell.x * TILE_SIZE - (box.min.x + size.x / 2) * scale,
+        -box.min.y * scale,
+        cell.y * TILE_SIZE - (box.min.z + size.z / 2) * scale,
+      );
+      const pivot = new THREE.Object3D();
+      pivot.position.set(cell.x * TILE_SIZE, 0, cell.y * TILE_SIZE);
+      building.position.sub(pivot.position);
+      pivot.add(building);
+      pivot.rotation.y = this.doorFacing(cell);
+      this.group.add(pivot);
 
-      const walls = new THREE.Mesh(wallsGeom, wallMat);
-      walls.position.y = 0.35 + 0.95;
-      building.add(walls);
-
-      const roof = new THREE.Mesh(roofGeom, roofMat);
-      roof.position.y = 2.25;
-      roof.rotation.y = cellRandom(cell.x, cell.y, 100) > 0.5 ? Math.PI / 2 : 0;
-      building.add(roof);
-
-      const door = new THREE.Mesh(doorGeom, doorMat);
-      door.position.set(0, 0.35 + 0.475, w * 0.47 + 0.01);
-      building.add(door);
-
-      for (const side of [-1, 1]) {
-        const window = new THREE.Mesh(windowGeom, glassMat);
-        window.position.set(side * 0.55, 1.45, w * 0.47 + 0.01);
-        building.add(window);
+      // A lantern by the entrance and the odd crate/hay give villages some life.
+      if (cellRandom(cell.x, cell.y, 101) < 0.65) {
+        const lantern = assets.townClone('lantern');
+        const lanternBox = new THREE.Box3().setFromObject(lantern);
+        const lanternScale = 1.1 / Math.max(0.001, lanternBox.max.y - lanternBox.min.y);
+        lantern.scale.setScalar(lanternScale);
+        lantern.position.set(TILE_SIZE * 0.42, 0, TILE_SIZE * 0.42);
+        pivot.add(lantern);
       }
-
-      const chimney = new THREE.Mesh(chimneyGeom, trimMat);
-      chimney.position.set(w * 0.28, 2.75, -w * 0.2);
-      building.add(chimney);
-
-      building.position.set(cell.x * TILE_SIZE, 0, cell.y * TILE_SIZE);
-      building.traverse((child) => {
-        if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; }
-      });
-      this.group.add(building);
+      if (cellRandom(cell.x, cell.y, 102) < 0.3) {
+        const propModel: VillageModel = cellRandom(cell.x, cell.y, 103) < 0.5 ? 'Crate' : 'Hay';
+        const prop = assets.villageClone(propModel);
+        const propBox = new THREE.Box3().setFromObject(prop);
+        const propScale = 0.55 / Math.max(0.001, propBox.max.y - propBox.min.y);
+        prop.scale.setScalar(propScale);
+        prop.position.set(-TILE_SIZE * 0.4, 0, TILE_SIZE * 0.34);
+        prop.rotation.y = cellRandom(cell.x, cell.y, 104) * Math.PI;
+        pivot.add(prop);
+      }
     }
   }
 
-  /** Simple triangular-prism gable roof with slight eaves, ridge along Z. */
-  private static gableRoofGeometry(width: number, depth: number, height: number): THREE.BufferGeometry {
-    const w = width / 2;
-    const d = depth / 2;
-    const positions = new Float32Array([
-      // front gable triangle
-      -w, 0, d, w, 0, d, 0, height, d,
-      // back gable triangle
-      w, 0, -d, -w, 0, -d, 0, height, -d,
-      // left slope
-      -w, 0, -d, -w, 0, d, 0, height, d, -w, 0, -d, 0, height, d, 0, height, -d,
-      // right slope
-      w, 0, d, w, 0, -d, 0, height, -d, w, 0, d, 0, height, -d, 0, height, d,
-      // underside
-      -w, 0, -d, w, 0, -d, w, 0, d, -w, 0, -d, w, 0, d, -w, 0, d,
-    ]);
-    const uvs = new Float32Array(positions.length / 3 * 2);
-    for (let i = 0; i < positions.length / 3; i += 1) {
-      uvs[i * 2] = (positions[i * 3] / width + 0.5) * 2;
-      uvs[i * 2 + 1] = (positions[i * 3 + 2] / depth + 0.5) * 2;
+  /** Marks each gym entrance with a stone gate: two pillars and a banner. */
+  private buildGymGates(): void {
+    const assets = getAssetLibrary();
+    const gymCells = this.cellsWhere((t) => t === 'G');
+    for (const cell of gymCells) {
+      // Gate on the entrance side only: the G tile whose south neighbour is a walkable approach.
+      const south = this.tileAt(cell.x, cell.y + 1);
+      if (south === 'G' || !(WALKABLE[south] ?? false)) continue;
+
+      const gate = new THREE.Object3D();
+      gate.position.set(cell.x * TILE_SIZE, 0, cell.y * TILE_SIZE + TILE_SIZE * 0.45);
+      for (const side of [-1, 1]) {
+        const pillar = assets.townClone('pillar-stone');
+        const box = new THREE.Box3().setFromObject(pillar);
+        const scale = 1.9 / Math.max(0.001, box.max.y - box.min.y);
+        pillar.scale.setScalar(scale);
+        pillar.position.set(side * TILE_SIZE * 0.46, 0, 0);
+        gate.add(pillar);
+
+        const banner = assets.townClone(side < 0 ? 'banner-red' : 'banner-green');
+        const bannerBox = new THREE.Box3().setFromObject(banner);
+        const bannerScale = 1.1 / Math.max(0.001, bannerBox.max.y - bannerBox.min.y);
+        banner.scale.setScalar(bannerScale);
+        banner.position.set(side * TILE_SIZE * 0.46, 1.85, 0);
+        gate.add(banner);
+      }
+      this.group.add(gate);
     }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    geometry.computeVertexNormals();
-    return geometry;
   }
 
   private buildFences(): void {
+    const assets = getAssetLibrary();
     const cells = this.cellsWhere((t) => t === 'F');
     if (cells.length === 0) return;
-    const mat = this.own(new THREE.MeshStandardMaterial({ map: fenceTexture(), roughness: 0.9 }));
-    const postGeom = this.own(new THREE.BoxGeometry(0.12, 0.7, 0.12));
-    const railGeom = this.own(new THREE.BoxGeometry(TILE_SIZE, 0.08, 0.06));
 
-    for (const cell of cells) {
-      const fence = new THREE.Object3D();
-      for (const px of [-TILE_SIZE * 0.4, TILE_SIZE * 0.4]) {
-        const post = new THREE.Mesh(postGeom, mat);
-        post.position.set(px, 0.35, 0);
-        fence.add(post);
-      }
-      for (const railY of [0.28, 0.55]) {
-        const rail = new THREE.Mesh(railGeom, mat);
-        rail.position.set(0, railY, 0);
-        fence.add(rail);
-      }
-      fence.position.set(cell.x * TILE_SIZE, 0, cell.y * TILE_SIZE);
-      fence.traverse((child) => {
-        if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; }
-      });
-      this.group.add(fence);
+    const parts = assets.townParts('fence');
+    if (parts.length === 0) return;
+    // Kenney fence section spans ~1 unit along X; stretch to the 2-unit tile.
+    let fenceLength = 0.001;
+    for (const part of parts) {
+      if (!part.geometry.boundingBox) part.geometry.computeBoundingBox();
+      fenceLength = Math.max(fenceLength, part.geometry.boundingBox!.max.x - part.geometry.boundingBox!.min.x);
+    }
+    const scale = TILE_SIZE / fenceLength;
+
+    const placements: Placement[] = cells.map((cell) => {
+      // Follow the fence line: vertical neighbours rotate the section 90°.
+      const vertical = this.tileAt(cell.x, cell.y - 1) === 'F' || this.tileAt(cell.x, cell.y + 1) === 'F';
+      const horizontal = this.tileAt(cell.x - 1, cell.y) === 'F' || this.tileAt(cell.x + 1, cell.y) === 'F';
+      return {
+        x: cell.x * TILE_SIZE,
+        y: 0,
+        z: cell.y * TILE_SIZE,
+        rotY: vertical && !horizontal ? Math.PI / 2 : 0,
+        scale,
+      };
+    });
+    for (const part of parts) {
+      this.instantiate(part, placements);
     }
   }
 }

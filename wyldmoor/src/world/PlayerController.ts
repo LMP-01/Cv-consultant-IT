@@ -45,7 +45,7 @@ export class PlayerController {
 
       this.walkTime += dt * 9;
     }
-    animateHumanoidWalk(this.object, this.walkTime, this.walking);
+    animateHumanoidWalk(this.object, dt, this.walking);
   }
 
   private tryMove(dx: number, dz: number): void {

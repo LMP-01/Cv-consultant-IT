@@ -22,7 +22,7 @@ export class WyldeActor {
   constructor(speciesId: number, level: number, worldX: number, worldZ: number) {
     this.speciesId = speciesId;
     this.level = level;
-    const handle = buildCreatureModel(getSpecies(speciesId).sprite);
+    const handle = buildCreatureModel(getSpecies(speciesId));
     this.object = handle.object;
     this.object.scale.setScalar(0.9);
     this.object.position.set(worldX, 0, worldZ);

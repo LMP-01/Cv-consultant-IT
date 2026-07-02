@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { advanceWind } from '../gfx/Wind.ts';
 import { MapRuntime, TILE_SIZE } from './MapRuntime.ts';
+import { getAssetLibrary } from '../gfx/AssetLibrary.ts';
 import { PlayerController, ThirdPersonCamera } from './PlayerController.ts';
 import { WyldeActor } from './WyldeActor.ts';
 import { NpcActor } from './NpcActor.ts';
@@ -32,14 +33,11 @@ export class OverworldScene {
   private sun: THREE.DirectionalLight;
   private sunDirection = new THREE.Vector3(0.5, 0.8, 0.3);
   private sky: Sky;
-  private pmrem: THREE.PMREMGenerator;
-  private envTarget?: THREE.WebGLRenderTarget;
   private respawnTimers: { speciesId: number; minLevel: number; maxLevel: number; x: number; z: number; timer: number }[] = [];
   frozen = false;
 
-  constructor(renderer: THREE.WebGLRenderer, aspect: number, state: GameState, callbacks: OverworldCallbacks) {
+  constructor(_renderer: THREE.WebGLRenderer, aspect: number, state: GameState, callbacks: OverworldCallbacks) {
     this.camera = new THREE.PerspectiveCamera(58, aspect, 0.1, 3000);
-    this.pmrem = new THREE.PMREMGenerator(renderer);
     this.state = state;
     this.callbacks = callbacks;
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x4f9a4a, 0.6);
@@ -142,32 +140,13 @@ export class OverworldScene {
   }
 
   /**
-   * Renders the current sky dome into a PMREM environment map so every
-   * PBR material picks up image-based ambient light and reflections that
-   * match the map's atmosphere (this is what makes water/glass/creature
-   * surfaces read as "lit by the sky" instead of flat).
+   * Image-based lighting from the Poly Haven sky HDRI (see ASSETS.md): every
+   * PBR material picks up sky ambient light and reflections. The per-map mood
+   * still comes from the Preetham sky dome, fog and the tinted lights above.
    */
   private refreshEnvironment(): void {
-    const captureScene = new THREE.Scene();
-    const captureSky = new Sky();
-    captureSky.scale.setScalar(2000);
-    const target = captureSky.material.uniforms;
-    const source = this.sky.material.uniforms;
-    target.turbidity.value = source.turbidity.value;
-    target.rayleigh.value = source.rayleigh.value;
-    target.mieCoefficient.value = source.mieCoefficient.value;
-    target.mieDirectionalG.value = source.mieDirectionalG.value;
-    target.sunPosition.value.copy(source.sunPosition.value);
-    // Per three's own docs: hide the sun disc while capturing to avoid a blown-out hotspot.
-    target.showSunDisc.value = 0;
-    captureScene.add(captureSky);
-
-    this.envTarget?.dispose();
-    this.envTarget = this.pmrem.fromScene(captureScene, 0, 0.1, 1100);
-    this.scene.environment = this.envTarget.texture;
-    this.scene.environmentIntensity = 0.38;
-    captureSky.material.dispose();
-    captureSky.geometry.dispose();
+    this.scene.environment = getAssetLibrary().envMap;
+    this.scene.environmentIntensity = 0.45;
   }
 
   private spawnWyldes(def: MapDef): void {
@@ -217,6 +196,7 @@ export class OverworldScene {
     this.map.update(dt);
     advanceWind(dt);
     for (const wylde of this.wyldes) wylde.update(dt);
+    for (const npc of this.npcs) npc.update(dt);
 
     // Keep the shadow-casting sun centered on the player so its (deliberately tight,
     // high-resolution) shadow frustum stays useful regardless of map size/offset.
