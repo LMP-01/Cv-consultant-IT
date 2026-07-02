@@ -203,7 +203,10 @@ export class MapRuntime {
       },
       {
         cells: this.cellsWhere((t) => t === '.' || t === 'D'),
-        material: makeMat(assets.ground.dirt, new THREE.Color(1.05, 0.95, 0.85), 1),
+        // Alpine paths read as packed snow rather than mud.
+        material: this.biome === 'alpine'
+          ? makeMat(assets.ground.snow, new THREE.Color(0.94, 0.95, 1), 1)
+          : makeMat(assets.ground.dirt, new THREE.Color(1.05, 0.95, 0.85), 1),
       },
       {
         cells: this.cellsWhere((t) => t === 'S'),
