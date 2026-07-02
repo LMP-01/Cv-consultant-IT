@@ -35,7 +35,31 @@ export const HARROW_RIDGE: MapDef = {
     { speciesId: 137, minLevel: 13, maxLevel: 16, weight: 2 },
     { speciesId: 133, minLevel: 12, maxLevel: 15, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 5, y: 8, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'harrow_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmier Brasque',
+      sprite: 'nurse',
+      dialogue: ['Les cendres irritent les écailles. Laissez-moi soigner vos Wyldes.'],
+      service: 'heal',
+    },
+    {
+      id: 'harrow_merchant',
+      x: 6,
+      y: 9,
+      facing: 'down',
+      name: 'Marchande Fournaise',
+      sprite: 'merchant',
+      dialogue: ['Potions résistantes à la chaleur, testées sur le volcan !'],
+      service: 'shop',
+    },
     {
       id: 'harrow_elder',
       x: 4,

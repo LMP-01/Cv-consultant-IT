@@ -43,8 +43,10 @@ export interface NpcDef {
   y: number;
   facing: Facing;
   name: string;
-  sprite: 'youth' | 'hiker' | 'lass' | 'fisher' | 'scientist' | 'elder' | 'ranger' | 'gymLeader' | 'rival' | 'villain' | 'professor';
+  sprite: 'youth' | 'hiker' | 'lass' | 'fisher' | 'scientist' | 'elder' | 'ranger' | 'gymLeader' | 'rival' | 'villain' | 'professor' | 'nurse' | 'merchant' | 'officer' | 'stylist';
   dialogue: string[];
+  /** Town service offered after the dialogue: heal the party, open the shop, or the outfit boutique. */
+  service?: 'heal' | 'shop' | 'outfit';
   /** If present, talking to this NPC triggers a trainer battle once (per save) using this team. */
   team?: NpcTeamMember[];
   /** Dialogue shown after the battle is won, if `team` is present. */
@@ -66,6 +68,15 @@ export interface GymDef {
   flagOnDefeat: string;
 }
 
+/** Function of a building placed on a 'B' cell — drives its 3D model and signage. */
+export type BuildingKind = 'heal' | 'shop' | 'police' | 'mall' | 'house' | 'inn' | 'forge' | 'stable' | 'sawmill' | 'market';
+
+export interface BuildingDef {
+  x: number;
+  y: number;
+  kind: BuildingKind;
+}
+
 export interface MapDef {
   id: string;
   name: string;
@@ -76,6 +87,8 @@ export interface MapDef {
   warps: Warp[];
   encounters: EncounterEntry[];
   npcs: NpcDef[];
+  /** Optional functions for specific 'B' cells (heal centre, shop…); other cells get generic houses. */
+  buildings?: BuildingDef[];
   gym?: GymDef;
   /** Ambient light/fog tint for this map's mood, as a hex string. */
   skyColor: string;

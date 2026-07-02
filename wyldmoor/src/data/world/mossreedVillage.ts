@@ -35,7 +35,31 @@ export const MOSSREED_VILLAGE: MapDef = {
     { speciesId: 13, minLevel: 5, maxLevel: 8, weight: 2 },
     { speciesId: 145, minLevel: 6, maxLevel: 9, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'mossreed_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmier Loan',
+      sprite: 'nurse',
+      dialogue: ['Le Centre de Soin de Mossreed vous accueille. Confiez-moi vos Wyldes !'],
+      service: 'heal',
+    },
+    {
+      id: 'mossreed_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchande Sylvie',
+      sprite: 'merchant',
+      dialogue: ['Tout l’équipement du dresseur des bois, à bon prix !'],
+      service: 'shop',
+    },
     {
       id: 'mossreed_elder',
       x: 4,

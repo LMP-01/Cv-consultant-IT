@@ -28,6 +28,8 @@ interface SerializedState {
   playerY: number;
   badges: string[];
   playtimeSeconds: number;
+  money?: number;
+  outfit?: string;
 }
 
 function serializeCreature(c: CreatureInstance): SerializedCreature {
@@ -67,6 +69,8 @@ export function saveGame(state: GameState): void {
     playerY: state.playerY,
     badges: state.badges,
     playtimeSeconds: state.playtimeSeconds,
+    money: state.money,
+    outfit: state.outfit,
   };
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
 }
@@ -93,6 +97,8 @@ export function loadGame(): GameState | null {
     state.playerY = data.playerY;
     state.badges = data.badges;
     state.playtimeSeconds = data.playtimeSeconds;
+    state.money = data.money ?? 2500;
+    state.outfit = data.outfit ?? 'player';
     return state;
   } catch {
     return null;

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildHumanoid, animateHumanoidWalk } from '../gfx/HumanoidModel.ts';
+import { disposeObject3D } from '../gfx/dispose.ts';
 import type { MapRuntime } from './MapRuntime.ts';
 import type { MoveVector } from '../core/Input.ts';
 
@@ -8,15 +9,26 @@ const PLAYER_RADIUS = 0.35;
 
 export class PlayerController {
   readonly object: THREE.Object3D;
+  private model: THREE.Object3D;
   private facingAngle = Math.PI;
   private walking = false;
   private map: MapRuntime;
   private walkTime = 0;
 
-  constructor(map: MapRuntime, spawnWorld: THREE.Vector3) {
+  constructor(map: MapRuntime, spawnWorld: THREE.Vector3, outfit = 'player') {
     this.map = map;
-    this.object = buildHumanoid('player');
+    this.object = new THREE.Object3D();
+    this.model = buildHumanoid(outfit);
+    this.object.add(this.model);
     this.object.position.copy(spawnWorld);
+  }
+
+  /** Remplace le modèle du joueur (changement de tenue au centre commercial). */
+  setOutfit(outfit: string): void {
+    this.object.remove(this.model);
+    disposeObject3D(this.model);
+    this.model = buildHumanoid(outfit);
+    this.object.add(this.model);
   }
 
   setMap(map: MapRuntime): void {
@@ -45,7 +57,7 @@ export class PlayerController {
 
       this.walkTime += dt * 9;
     }
-    animateHumanoidWalk(this.object, dt, this.walking);
+    animateHumanoidWalk(this.model, dt, this.walking);
   }
 
   private tryMove(dx: number, dz: number): void {

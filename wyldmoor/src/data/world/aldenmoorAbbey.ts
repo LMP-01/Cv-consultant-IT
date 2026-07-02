@@ -36,7 +36,31 @@ export const ALDENMOOR_ABBEY: MapDef = {
     { speciesId: 69, minLevel: 62, maxLevel: 65, weight: 2 },
     { speciesId: 129, minLevel: 63, maxLevel: 65, weight: 1 },
   ],
+  buildings: [
+    { x: 4, y: 4, kind: 'heal' },
+    { x: 11, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'aldenmoor_nurse',
+      x: 3,
+      y: 5,
+      facing: 'down',
+      name: 'Sœur Hilde',
+      sprite: 'nurse',
+      dialogue: ['L’abbaye offre le repos aux voyageurs et à leurs Wyldes. Approchez.'],
+      service: 'heal',
+    },
+    {
+      id: 'aldenmoor_merchant',
+      x: 12,
+      y: 5,
+      facing: 'down',
+      name: 'Frère Anselme',
+      sprite: 'merchant',
+      dialogue: ['Les remèdes du jardin de l’abbaye, contre une modeste obole.'],
+      service: 'shop',
+    },
     {
       id: 'aldenmoor_monk',
       x: 4,

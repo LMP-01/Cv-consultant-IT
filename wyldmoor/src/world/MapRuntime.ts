@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { MapDef, TileCode } from '../data/mapSchema.ts';
+import type { MapDef, TileCode, BuildingKind } from '../data/mapSchema.ts';
 import { barkTexture, waterTexture } from '../gfx/TextureFactory.ts';
 import {
   getAssetLibrary, biomeForMap, variantHeight,
@@ -21,6 +21,20 @@ const HOUSE_MODELS: VillageModel[] = [
   'Fantasy_House', 'Fantasy_House', 'Fantasy_House', 'Fantasy_Inn',
   'Blacksmith', 'Fantasy_Stable', 'Fantasy_Sawmill', 'Market_Stand',
 ];
+
+/** Modèle + enseigne (bannières) de chaque bâtiment de service. */
+const BUILDING_STYLES: Record<BuildingKind, { model: VillageModel; banners: ('banner-red' | 'banner-green')[]; scale?: number }> = {
+  heal: { model: 'Fantasy_House', banners: ['banner-red', 'banner-red'] },
+  shop: { model: 'Market_Stand', banners: ['banner-green'] },
+  police: { model: 'Fantasy_Barracks', banners: [] },
+  mall: { model: 'Fantasy_Inn', banners: ['banner-green', 'banner-red'], scale: 1.15 },
+  house: { model: 'Fantasy_House', banners: [] },
+  inn: { model: 'Fantasy_Inn', banners: [] },
+  forge: { model: 'Blacksmith', banners: [] },
+  stable: { model: 'Fantasy_Stable', banners: [] },
+  sawmill: { model: 'Fantasy_Sawmill', banners: [] },
+  market: { model: 'Market_Stand', banners: [] },
+};
 
 export interface CellQuery {
   walkable: boolean;
@@ -198,8 +212,13 @@ export class MapRuntime {
 
     const groups: { cells: Cell[]; material: THREE.MeshStandardMaterial }[] = [
       {
-        cells: this.cellsWhere((t) => t === ',' || t === '"'),
+        cells: this.cellsWhere((t) => t === ','),
         material: makeMat(grassSet, grassTint),
+      },
+      {
+        // Les hautes herbes (zones de rencontre) lisent plus sombres et saturées.
+        cells: this.cellsWhere((t) => t === '"'),
+        material: makeMat(grassSet, this.biome === 'alpine' ? grassTint : grassTint.clone().multiply(new THREE.Color(0.62, 0.85, 0.58))),
       },
       {
         cells: this.cellsWhere((t) => t === '.' || t === 'D'),
@@ -286,25 +305,66 @@ export class MapRuntime {
     const assets = getAssetLibrary();
     const grassCells = this.cellsWhere((t) => t === ',' || t === '"');
 
-    // Grass clumps — dense on tall grass so encounter tiles read at a glance.
-    const grassVariants = assets.nature('Grass');
-    if (grassVariants.length > 0 && this.biome !== 'alpine') {
-      const clumpPlacements: Placement[] = [];
+    // Herbes sauvages : les tuiles de rencontre '"' reçoivent des touffes hautes
+    // bien reconnaissables (Tall_Grass + fougères), l'herbe courte des brins légers.
+    const tallVariants = [...assets.nature('Tall_Grass'), ...assets.nature('Fern')];
+    if (tallVariants.length > 0 && this.biome !== 'alpine') {
+      const placements: Placement[] = [];
       for (const cell of grassCells) {
-        const tall = this.grid[cell.y][cell.x] === '"';
-        const clumps = tall ? 6 : 3;
-        for (let i = 0; i < clumps; i += 1) {
-          clumpPlacements.push({
+        if (this.grid[cell.y][cell.x] !== '"') continue;
+        for (let i = 0; i < 5; i += 1) {
+          placements.push({
+            x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 10 + i) - 0.5) * TILE_SIZE * 0.85,
+            y: 0,
+            z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 20 + i) - 0.5) * TILE_SIZE * 0.85,
+            rotY: cellRandom(cell.x, cell.y, 30 + i) * Math.PI * 2,
+            scale: 0.9 + cellRandom(cell.x, cell.y, 40 + i) * 0.5,
+          });
+        }
+      }
+      // Les fougères restent l'accent (1 variante sur 3 environ).
+      this.splitAcrossVariants(tallVariants, placements, 47).forEach((byVariant, i) => {
+        this.placeVariant(tallVariants[i], byVariant, 0.75, { castShadow: false, colorJitter: 0.35, sway: 0.07 });
+      });
+    }
+    const shortVariants = [...assets.nature('Grass'), ...assets.nature('Grass_Wispy'), ...assets.nature('Clover')];
+    if (shortVariants.length > 0 && this.biome !== 'alpine') {
+      const placements: Placement[] = [];
+      for (const cell of grassCells) {
+        if (this.grid[cell.y][cell.x] !== ',') continue;
+        for (let i = 0; i < 3; i += 1) {
+          placements.push({
             x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 10 + i) - 0.5) * TILE_SIZE * 0.9,
             y: 0,
             z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 20 + i) - 0.5) * TILE_SIZE * 0.9,
             rotY: cellRandom(cell.x, cell.y, 30 + i) * Math.PI * 2,
-            scale: (tall ? 1.2 : 0.8) * (0.8 + cellRandom(cell.x, cell.y, 40 + i) * 0.5),
+            scale: 0.8 + cellRandom(cell.x, cell.y, 40 + i) * 0.5,
           });
         }
       }
-      this.splitAcrossVariants(grassVariants, clumpPlacements, 47).forEach((placements, i) => {
-        this.placeVariant(grassVariants[i], placements, 0.34, { castShadow: false, colorJitter: 0.3, sway: 0.09 });
+      this.splitAcrossVariants(shortVariants, placements, 48).forEach((byVariant, i) => {
+        this.placeVariant(shortVariants[i], byVariant, 0.3, { castShadow: false, colorJitter: 0.3, sway: 0.09 });
+      });
+    }
+
+    // Sous-bois : fougères au pied des arbres, champignons dans les zones sombres.
+    const understory = this.biome === 'gloom'
+      ? [...assets.nature('Mushroom'), ...assets.nature('Mushroom_Laetiporus'), ...assets.nature('Fern')]
+      : assets.nature('Fern');
+    if (understory.length > 0 && this.biome !== 'alpine') {
+      const placements: Placement[] = [];
+      for (const cell of this.cellsWhere((t) => t === '#')) {
+        if (cellRandom(cell.x, cell.y, 85) > 0.35) continue;
+        placements.push({
+          x: cell.x * TILE_SIZE + (cellRandom(cell.x, cell.y, 86) - 0.5) * TILE_SIZE * 1.1,
+          y: 0,
+          z: cell.y * TILE_SIZE + (cellRandom(cell.x, cell.y, 87) - 0.5) * TILE_SIZE * 1.1,
+          rotY: cellRandom(cell.x, cell.y, 88) * Math.PI * 2,
+          scale: 0.8 + cellRandom(cell.x, cell.y, 89) * 0.5,
+        });
+      }
+      this.splitAcrossVariants(understory, placements, 84).forEach((byVariant, i) => {
+        this.placeVariant(understory[i], byVariant, 0.5, { castShadow: false, colorJitter: 0.3 });
       });
     }
 
@@ -398,9 +458,14 @@ export class MapRuntime {
     const cells = this.cellsWhere((t) => t === 'B');
     if (cells.length === 0) return;
 
+    const kindByCell = new Map<string, BuildingKind>();
+    for (const b of this.def.buildings ?? []) kindByCell.set(`${b.x},${b.y}`, b.kind);
+
     for (const cell of cells) {
+      const kind = kindByCell.get(`${cell.x},${cell.y}`);
+      const style = kind ? BUILDING_STYLES[kind] : undefined;
       const roll = cellRandom(cell.x, cell.y, 100);
-      const model = HOUSE_MODELS[Math.floor(roll * HOUSE_MODELS.length)];
+      const model = style ? style.model : HOUSE_MODELS[Math.floor(roll * HOUSE_MODELS.length)];
       const building = assets.villageClone(model);
 
       // Fit the building into its tile (buildings may span a bit beyond for depth).
@@ -408,7 +473,7 @@ export class MapRuntime {
       const size = new THREE.Vector3();
       box.getSize(size);
       const footprint = Math.max(size.x, size.z, 0.001);
-      const scale = (TILE_SIZE * 1.25) / footprint;
+      const scale = (TILE_SIZE * 1.25 * (style?.scale ?? 1)) / footprint;
       building.scale.setScalar(scale);
       building.position.set(
         cell.x * TILE_SIZE - (box.min.x + size.x / 2) * scale,
@@ -421,6 +486,19 @@ export class MapRuntime {
       pivot.add(building);
       pivot.rotation.y = this.doorFacing(cell);
       this.group.add(pivot);
+
+      // Les enseignes des bâtiments de service : bannières de part et d'autre de l'entrée.
+      if (style) {
+        style.banners.forEach((bannerPiece, i) => {
+          const banner = assets.townClone(bannerPiece);
+          const bannerBox = new THREE.Box3().setFromObject(banner);
+          const bannerScale = 1.15 / Math.max(0.001, bannerBox.max.y - bannerBox.min.y);
+          banner.scale.setScalar(bannerScale);
+          const side = style.banners.length === 1 ? 1 : i === 0 ? -1 : 1;
+          banner.position.set(side * TILE_SIZE * 0.52, 1.1, TILE_SIZE * 0.5);
+          pivot.add(banner);
+        });
+      }
 
       // A lantern by the entrance and the odd crate/hay give villages some life.
       if (cellRandom(cell.x, cell.y, 101) < 0.65) {

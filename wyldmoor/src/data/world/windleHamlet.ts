@@ -35,7 +35,31 @@ export const WINDLE_HAMLET: MapDef = {
     { speciesId: 123, minLevel: 27, maxLevel: 29, weight: 2 },
     { speciesId: 105, minLevel: 28, maxLevel: 30, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'windle_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmière Prune',
+      sprite: 'nurse',
+      dialogue: ['Vos Wyldes ont l’air fatigués par l’orage. Laissez-moi les soigner !'],
+      service: 'heal',
+    },
+    {
+      id: 'windle_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchand Basile',
+      sprite: 'merchant',
+      dialogue: ['Des orbes qui tiennent même sous la pluie, garantie du hameau !'],
+      service: 'shop',
+    },
     {
       id: 'windle_elder',
       x: 4,

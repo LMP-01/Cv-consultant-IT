@@ -19,6 +19,20 @@ export class GameState {
   playerY = 8;
   badges: string[] = [];
   playtimeSeconds = 0;
+  /** Pièces gagnées contre les dresseurs, dépensées en boutique. */
+  money = 2500;
+  /** Tenue du joueur (clé de palette HumanoidModel), changée au centre commercial. */
+  outfit = 'player';
+
+  spendMoney(amount: number): boolean {
+    if (this.money < amount) return false;
+    this.money -= amount;
+    return true;
+  }
+
+  earnMoney(amount: number): void {
+    this.money += amount;
+  }
 
   get hasStarter(): boolean {
     return this.playerTeam.length > 0;

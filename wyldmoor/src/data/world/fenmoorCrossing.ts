@@ -36,7 +36,31 @@ export const FENMOOR_CROSSING: MapDef = {
     { speciesId: 83, minLevel: 42, maxLevel: 45, weight: 2 },
     { speciesId: 106, minLevel: 43, maxLevel: 45, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'fenmoor_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmier Silas',
+      sprite: 'nurse',
+      dialogue: ['Les marais épuisent les Wyldes. Un soin gratuit avant de repartir ?'],
+      service: 'heal',
+    },
+    {
+      id: 'fenmoor_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchande Rosalie',
+      sprite: 'merchant',
+      dialogue: ['Bottes sèches et potions fortes, c’est par ici !'],
+      service: 'shop',
+    },
     {
       id: 'fenmoor_elder',
       x: 4,

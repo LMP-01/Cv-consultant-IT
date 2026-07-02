@@ -35,7 +35,31 @@ export const HOLLOWMERE_VILLAGE: MapDef = {
     { speciesId: 125, minLevel: 56, maxLevel: 59, weight: 2 },
     { speciesId: 136, minLevel: 57, maxLevel: 59, weight: 1 },
   ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
   npcs: [
+    {
+      id: 'hollowmere_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmière Morgane',
+      sprite: 'nurse',
+      dialogue: ['Même dans la brume, vos Wyldes méritent un bon soin. Entrez donc.'],
+      service: 'heal',
+    },
+    {
+      id: 'hollowmere_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchand Corbin',
+      sprite: 'merchant',
+      dialogue: ['Lanternes, orbes, potions… tout pour survivre à la brume !'],
+      service: 'shop',
+    },
     {
       id: 'hollowmere_elder',
       x: 4,
