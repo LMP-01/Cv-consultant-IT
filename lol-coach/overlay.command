@@ -17,5 +17,10 @@ fi
 if ! curl -s "http://localhost:${PORT:-3000}/api/health" >/dev/null 2>&1; then
   echo "Démarrage du serveur…"; ( npm start >/dev/null 2>&1 & ); sleep 3
 fi
-echo "Overlay ouvert. Rappels : League en 'Sans bordure' ; Ctrl+Shift+X = clic-traversant, Ctrl+Shift+H = masquer."
+echo "Overlay PLEIN ECRAN transparent (clic-traversant). League en 'Sans bordure'."
+echo "  - Survole un panneau = interactif ; zones vides = clics vers le jeu."
+echo "  - Glisse un panneau par son titre pour le placer ou tu veux (positions memorisees)."
+echo "  - Ctrl+Shift+X = mode arrangement (tout cliquable), Ctrl+Shift+H = masquer,"
+echo "    Fleches gauche/droite = cible du panneau Duel."
+echo "  - Petite fenetre flottante a la place ? relance avec : OVERLAY_FULLSCREEN=0 npm run overlay"
 npm run overlay
