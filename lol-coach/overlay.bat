@@ -18,6 +18,9 @@ REM Demarre le serveur en arriere-plan (fenetre minimisee).
 start "coach-server" /min cmd /c "npm start"
 timeout /t 3 /nobreak >nul
 
-echo Overlay : League en mode Sans bordure. Ctrl+Shift+X = clic-traversant, Ctrl+Shift+H = masquer.
+echo Overlay PLEIN ECRAN transparent (clic-traversant). League en mode Sans bordure.
+echo   - Survole un panneau = interactif ; zones vides = clics vers le jeu.
+echo   - Glisse un panneau par son titre pour le placer ou tu veux (memorise).
+echo   - Ctrl+Shift+X = mode arrangement, Ctrl+Shift+H = masquer, Fleches = cible du Duel.
 call npm run overlay
 pause

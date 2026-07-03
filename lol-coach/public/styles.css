@@ -1449,11 +1449,22 @@ body.overlay .feed-panel { max-height: 100vh; }
 body:not(.overlay) .layout-bar { opacity: .55; }
 body.overlay .layout-bar { -webkit-app-region: no-drag; }
 
-body.free-layout #inGame { position: relative; }
-body.free-layout #inGame .panel { position: fixed; z-index: 20; margin: 0 !important; max-width: 380px; box-shadow: 0 12px 34px rgba(0,0,0,.5); }
-body.free-layout #inGame .panel .panel-title { cursor: move; -webkit-app-region: no-drag; }
-body.free-layout #inGame .panel.dragging { z-index: 40; outline: 1px solid var(--primary-2); opacity: .96; }
-body.free-layout #inGame .panel .panel-title::before { content: "⠿"; margin-right: 6px; color: var(--faint); letter-spacing: -2px; }
+body.free-layout #inGame .panel,
+body.free-layout .feed-panel { position: fixed; z-index: 20; margin: 0 !important; width: 340px; max-width: 380px; max-height: 82vh; overflow: auto; box-shadow: 0 12px 34px rgba(0,0,0,.5); }
+body.free-layout #inGame .panel .panel-title,
+body.free-layout .feed-panel .panel-title { cursor: move; -webkit-app-region: no-drag; }
+body.free-layout #inGame .panel.dragging,
+body.free-layout .feed-panel.dragging { z-index: 40; outline: 1px solid var(--primary-2); opacity: .96; }
+body.free-layout #inGame .panel .panel-title::before,
+body.free-layout .feed-panel .panel-title::before { content: "⠿"; margin-right: 6px; color: var(--faint); letter-spacing: -2px; }
+
+/* Overlay plein écran (Electron) : fond transparent, pas de scroll (widgets fixes). */
+body.ov-fullscreen { height: 100vh; overflow: hidden; }
+body.ov-fullscreen .layout { padding: 0; }
+/* Repli mode fenêtre : on peut faire défiler pour atteindre tous les panneaux. */
+body.overlay:not(.ov-fullscreen) { overflow-y: auto; }
+body.overlay::-webkit-scrollbar { width: 8px; }
+body.overlay::-webkit-scrollbar-thumb { background: rgba(139,92,246,.4); border-radius: 4px; }
 
 /* ── Panneaux réductibles (bouton "réduire" par overlay) ──────────────────── */
 .panel-title { position: relative; }

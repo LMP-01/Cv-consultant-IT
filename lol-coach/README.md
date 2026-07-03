@@ -399,10 +399,12 @@ return
 
 > ⚠️ **Condition indispensable** : mets League en **mode « Sans bordure / Borderless »** (Options → Vidéo → Mode d'affichage). Une fenêtre always-on-top **ne s'affiche PAS au-dessus du plein écran exclusif** — c'est une limite de Windows, pas un bug. En « Sans bordure », l'overlay apparaît correctement.
 
-Le plus simple : **double-clique `overlay.command` (macOS) / `overlay.bat` (Windows)**. Le lanceur installe Electron au 1er lancement, démarre le serveur si besoin, puis ouvre la **fenêtre transparente flottante**.
+Le plus simple : **double-clique `overlay.command` (macOS) / `overlay.bat` (Windows)**. Le lanceur installe Electron au 1er lancement, démarre le serveur si besoin, puis ouvre l'overlay.
+
+Par défaut l'overlay est **plein écran, transparent et clic-traversant** : les **zones vides laissent passer tes clics vers le jeu**, et dès que tu **survoles un panneau** il devient interactif. Chaque panneau est un **widget déplaçable** (glisse-le par son titre) — tu vois donc **tous les panneaux** et tu les places **où tu veux** sur l'écran (positions mémorisées). Pour revenir à une petite fenêtre flottante : `OVERLAY_FULLSCREEN=0 npm run overlay`.
 
 **Contrôles de l'overlay :**
-- `Ctrl+Shift+X` = **clic-traversant** (la souris passe à travers l'overlay).
+- `Ctrl+Shift+X` = **mode arrangement** (tout l'overlay cliquable pour organiser les panneaux sans jouer) ; en mode fenêtre, bascule le **clic-traversant**.
 - `Ctrl+Shift+H` = **masquer / afficher** tout l'overlay.
 - **Flèches gauche / droite** = **cycle la cible** du panneau Duel (proba trade/all-in) même quand League a le focus (raccourci global ; les flèches ne servent pas en jeu). Personnalisable via `OVERLAY_CYCLE_PREV`/`OVERLAY_CYCLE_NEXT` (ex. `Alt+Left`/`Alt+Right`).
 - **Réduire chaque panneau** : bouton **–** en haut à droite de chaque panneau (état mémorisé). Clique-le pour replier/déplier un overlay individuellement.

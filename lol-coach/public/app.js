@@ -634,7 +634,7 @@ function saveCollapsed(set) {
 }
 function initPanelControls() {
   const collapsed = loadCollapsed();
-  const panels = document.querySelectorAll('#inGame .panel, #champSelect.panel, #champSelect .panel');
+  const panels = document.querySelectorAll('#inGame .panel, .feed-panel, #champSelect.panel, #champSelect .panel');
   panels.forEach((panel) => {
     const title = panel.querySelector('.panel-title');
     if (!title || title.querySelector('.panel-collapse')) return;
@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', initPanelControls);
 // ── Disposition libre : panneaux flottants déplaçables (position mémorisée) ──
 function loadLayout() { try { return JSON.parse(localStorage.getItem('coach_layout') || '{}'); } catch { return {}; } }
 function saveLayout(o) { try { localStorage.setItem('coach_layout', JSON.stringify(o)); } catch { /* ignore */ } }
-function panelsForLayout() { return [...document.querySelectorAll('#inGame .panel')]; }
+function panelsForLayout() { return [...document.querySelectorAll('#inGame .panel, .feed-panel')]; }
 
 function applyFreeLayout(on) {
   const panels = panelsForLayout();
@@ -724,7 +724,7 @@ function initFreeLayout() {
   let drag = null;
   document.addEventListener('pointerdown', (ev) => {
     if (!document.body.classList.contains('free-layout')) return;
-    const title = ev.target.closest && ev.target.closest('#inGame .panel .panel-title');
+    const title = ev.target.closest && ev.target.closest('#inGame .panel .panel-title, .feed-panel .panel-title');
     if (!title) return;
     if (ev.target.closest('.panel-collapse')) return; // ne pas gêner le bouton réduire
     const panel = title.closest('.panel');
@@ -751,10 +751,29 @@ function initFreeLayout() {
     drag = null;
   });
 
-  // Restaure l'état sauvegardé.
-  try { if (localStorage.getItem('coach_free_layout') === '1') applyFreeLayout(true); } catch { /* ignore */ }
+  // Restaure l'état sauvegardé ; en OVERLAY, active la disposition libre par
+  // défaut (1re fois) pour que les panneaux soient tout de suite déplaçables.
+  try {
+    const pref = localStorage.getItem('coach_free_layout');
+    if (pref === '1') applyFreeLayout(true);
+    else if (pref === null && document.body.classList.contains('overlay')) applyFreeLayout(true);
+  } catch { /* ignore */ }
 }
 document.addEventListener('DOMContentLoaded', initFreeLayout);
+
+// ── Overlay plein écran (Electron) : clic-traversant géré par survol ─────────
+// Les zones vides laissent passer les clics vers le jeu ; dès que la souris
+// survole un panneau/contrôle, on rend l'overlay interactif.
+function initOverlayPassthrough() {
+  if (!(window.coachOverlay && window.coachOverlay.fullscreen)) return;
+  document.body.classList.add('ov-fullscreen');
+  let interactive = false;
+  const setI = (on) => { if (on !== interactive) { interactive = on; try { window.coachOverlay.setInteractive(on); } catch { /* ignore */ } } };
+  const isUI = (t) => !!(t && t.closest && t.closest('.panel, .layout-bar, .cbt-toast, #layoutBar, .risk-banner'));
+  document.addEventListener('pointermove', (e) => setI(isUI(e.target)), true);
+  document.addEventListener('pointerover', (e) => { if (isUI(e.target)) setI(true); }, true);
+}
+document.addEventListener('DOMContentLoaded', initOverlayPassthrough);
 
 // Pont pour un hôte externe (ex. fenêtre Overwolf) : permet de piloter le coach
 // depuis un parent via postMessage (cycle de cible, etc.).
