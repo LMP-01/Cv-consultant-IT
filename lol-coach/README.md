@@ -409,9 +409,18 @@ Le plus simple : **double-clique `overlay.command` (macOS) / `overlay.bat` (Wind
 - **Disposition libre** : bouton **« Disposition libre »** (bas-gauche) → chaque panneau devient un **widget flottant déplaçable** (glisse-le par son titre), position **mémorisée**. Bouton de **réinitialisation** à côté. Tu composes ainsi ton HUD exactement où tu veux.
 - **Déplacer toute la fenêtre** : glisse un **titre de panneau** (hors disposition libre) ; les bords la **redimensionnent**.
 
-### 🐺 App Overwolf (prototype)
+### 🖥️ Quelle solution d'overlay selon ton OS ?
 
-Une app **Overwolf** est fournie dans **`overwolf/`** (Overwolf est **sanctionné par Riot** et s'affiche **par-dessus le plein écran exclusif**). Elle **réutilise l'UI web locale** (iframe vers `http://localhost:3000/?overlay=1`) : **une seule source de vérité** — toute mise à jour du HUD dans `public/` met à jour Overwolf automatiquement. Voir **`overwolf/README.md`** pour charger l'app (mode développeur, Windows). La version est alignée sur `package.json` via `npm run sync-overwolf-version`.
+| Ton OS | Utilise… |
+|---|---|
+| **macOS** | **l'overlay Electron** : `overlay.command` (League en **Sans bordure**). C'est le chemin Mac, pleinement fonctionnel. |
+| **Windows** | l'overlay Electron (`overlay.bat`) **ou** l'app **Overwolf** (par-dessus le plein écran, sanctionnée Riot). |
+
+> ⚠️ **Overwolf est Windows uniquement** — le logiciel Overwolf **n'existe pas sur macOS**. Sur Mac, ignore le dossier `overwolf/` et utilise `overlay.command`.
+
+### 🐺 App Overwolf (prototype — Windows uniquement)
+
+Une app **Overwolf** est fournie dans **`overwolf/`** (Overwolf est **sanctionné par Riot** et s'affiche **par-dessus le plein écran exclusif** — mais **uniquement sur Windows**). Elle **réutilise l'UI web locale** (iframe vers `http://localhost:3000/?overlay=1`) : **une seule source de vérité** — toute mise à jour du HUD dans `public/` met à jour Overwolf automatiquement. Voir **`overwolf/README.md`** pour charger l'app (mode développeur). La version est alignée sur `package.json` via `npm run sync-overwolf-version`.
 
 Alternatives :
 - **Source navigateur OBS** (sans rien installer) vers `http://localhost:3000/?overlay=1` — pratique pour le stream.
