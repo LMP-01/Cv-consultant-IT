@@ -1,6 +1,6 @@
 {
   "name": "lol-coach",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Coach IA temps réel pour League of Legends : surveille tes parties via les API locales du client Riot, donne des conseils de jeu, et propose picks/builds adaptés à la team adverse. Appli locale HTML + Node.js.",
   "main": "src/server.js",
   "type": "commonjs",

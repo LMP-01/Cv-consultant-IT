@@ -3,7 +3,7 @@
   "type": "WebApp",
   "meta": {
     "name": "LoL Coach IA",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "minimum-overwolf-version": "0.200.0",
     "author": "LoL Coach",
     "icon": "icons/icon256.png",
@@ -33,7 +33,7 @@
         "block_top_window_navigation": false,
         "allow_local_file_access": true,
         "size": {
-          "width": 470,
+          "width": 360,
           "height": 920
         },
         "min_size": {

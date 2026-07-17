@@ -1496,6 +1496,41 @@ body.solid-window .layout { padding: 8px; }
 body.solid-window .panel-title { -webkit-app-region: drag; }
 body.solid-window .panel-title button, body.solid-window .panel-collapse { -webkit-app-region: no-drag; }
 
+/* ── Mode HUD in-game (type Blitz/Porofessor) : fenêtre étroite TRANSPARENTE ──
+   Seuls les widgets essentiels restent — pas de topbar, pas de flux, pas de chat.
+   Utilisé par l'overlay Electron (?hud=1, défaut macOS) et la fenêtre Overwolf. */
+body.hud-mode { background: transparent !important; background-image: none !important;
+  height: 100vh; overflow-y: auto; scrollbar-width: none; font-size: 12.5px; }
+body.hud-mode::-webkit-scrollbar { display: none; }
+body.hud-mode .topbar, body.hud-mode .footer, body.hud-mode .feed-panel,
+body.hud-mode #idleCard, body.hud-mode #dashPanel, body.hud-mode #itemPlanPanel,
+body.hud-mode #rankCard, body.hud-mode #champBg, body.hud-mode #layoutBar { display: none !important; }
+body.hud-mode .layout { display: block; padding: 4px 6px 14px; max-width: 100%; margin: 0; }
+body.hud-mode .context { width: 100%; display: block; }
+body.hud-mode .panel { background: rgba(12, 15, 23, 0.9); border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px; padding: 9px 11px; margin: 0 0 7px; box-shadow: 0 4px 16px -8px rgba(0,0,0,.55);
+  backdrop-filter: blur(8px); }
+body.hud-mode .panel-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--muted); margin: 0 0 7px; }
+body.hud-mode .hud-topbar { display: block; }
+body.hud-mode .top3 { padding: 8px 10px; margin: 0 0 7px; backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, rgba(129,140,248,.14), rgba(168,85,247,.10)), rgba(12,15,23,.92); }
+body.hud-mode .top3-item { background: rgba(8,11,18,.78); }
+body.hud-mode .top3-msg { -webkit-line-clamp: 1; }
+body.hud-mode .risk-banner { margin: 0 0 7px; padding: 9px 12px; backdrop-filter: blur(8px); }
+body.hud-mode .hud-buys { margin: 0 0 7px; background: rgba(12,15,23,.9);
+  border: 1px solid rgba(255,255,255,.09); border-radius: 12px; backdrop-filter: blur(8px); }
+body.hud-mode .sub { font-size: 10.5px; margin: 8px 0 5px; }
+body.hud-mode .timers-hint { display: none; }
+/* Barre de titre du HUD : poignée de déplacement de la fenêtre Electron. */
+.hud-bar { position: sticky; top: 4px; z-index: 60; display: flex; align-items: center; gap: 8px;
+  margin: 4px 6px 7px; padding: 6px 11px; border-radius: 12px; font-size: 11.5px; color: var(--muted);
+  background: rgba(12, 15, 23, 0.94); border: 1px solid rgba(255,255,255,.11); backdrop-filter: blur(8px);
+  -webkit-app-region: drag; cursor: move; user-select: none; }
+.hud-bar b { color: var(--text); font-size: 12px; letter-spacing: .3px; }
+.hud-bar .hud-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex: 0 0 auto; }
+.hud-bar .hud-keys { margin-left: auto; color: var(--faint); font-size: 10px; }
+
 /* Overlay plein écran (Electron) : fond transparent, pas de scroll (widgets fixes). */
 body.ov-fullscreen { height: 100vh; overflow: hidden; }
 body.ov-fullscreen .layout { padding: 0; }

@@ -140,6 +140,10 @@ function applyState(state) {
   if (inGame && state.game) renderInGame(state.game);
   // Top 3 « quoi faire maintenant » — toujours en tête de l'overlay en jeu.
   renderTop3(inGame ? (state.feed || []) : null);
+
+  // Statut de la barre HUD (mode fenêtre compacte in-game).
+  const hs = $('hudStatus');
+  if (hs) hs.textContent = PHASE_LABELS[state.phase] || state.phase || '—';
 }
 
 // Affiche le splash art du champion en fond (Data Dragon CDN).
@@ -760,6 +764,8 @@ function resetLayout() {
   if (document.body.classList.contains('free-layout')) applyFreeLayout(true);
 }
 function initFreeLayout() {
+  // En mode HUD (fenêtre étroite), la colonne simple suffit : pas de disposition libre.
+  if (isHudMode()) return;
   // Barre de contrôle (visible surtout en overlay).
   if (!$('layoutBar')) {
     const bar = document.createElement('div');
@@ -823,6 +829,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('solid-window');
   }
 });
+
+// ── Mode HUD in-game (type Blitz) : widgets essentiels seulement ─────────────
+// Activé par ?hud=1 (fenêtre Electron compacte, défaut macOS ; iframe Overwolf).
+// La page complète (flux + chat + tableau de bord) reste celle du navigateur.
+function isHudMode() {
+  try {
+    if (new URLSearchParams(location.search).has('hud')) return true;
+  } catch { /* ignore */ }
+  return Boolean(window.coachOverlay && window.coachOverlay.style === 'hud');
+}
+function initHud() {
+  if (!isHudMode()) return;
+  document.body.classList.add('hud-mode');
+  const bar = document.createElement('div');
+  bar.className = 'hud-bar';
+  bar.innerHTML = `<span class="hud-dot"></span><b>Coach</b><span id="hudStatus">connexion…</span>` +
+    `<span class="hud-keys" title="Cmd/Ctrl+Shift+X : souris à travers · Cmd/Ctrl+Shift+H : cacher · ← → : cible duel">${/Mac/i.test(navigator.platform) ? '⌘⇧X · ⌘⇧H' : '⌃⇧X · ⌃⇧H'}</span>`;
+  document.body.prepend(bar);
+}
+document.addEventListener('DOMContentLoaded', initHud);
 
 // ── Overlay plein écran (Electron) : clic-traversant géré par survol ─────────
 // Les zones vides laissent passer les clics vers le jeu ; dès que la souris

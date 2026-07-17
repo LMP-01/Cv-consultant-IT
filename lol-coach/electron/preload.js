@@ -5,9 +5,9 @@
 // laissent passer les clics vers le jeu, les panneaux restent interactifs.
 const { contextBridge, ipcRenderer } = require('electron');
 
-const style = process.env.OVERLAY_STYLE_RESOLVED || (process.platform === 'darwin' ? 'solid' : 'transparent');
+const style = process.env.OVERLAY_STYLE_RESOLVED || (process.platform === 'darwin' ? 'hud' : 'transparent');
 contextBridge.exposeInMainWorld('coachOverlay', {
-  style, // "solid" (fenêtre opaque, Mac) | "transparent" (plein écran clic-traversant)
+  style, // "hud" (HUD compact, Mac) | "transparent" (plein écran clic-traversant) | "solid" (fenêtre opaque)
   // true seulement en mode transparent plein écran (clic-traversant géré par survol).
   fullscreen: style === 'transparent',
   // Active/désactive l'interactivité de la souris (survol d'un panneau -> true).

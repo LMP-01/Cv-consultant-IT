@@ -2,7 +2,7 @@
 
 // Fenêtre in-game Overwolf : hôte transparent qui affiche l'UI du coach (iframe
 // vers le serveur local) et gère le déplacement de la fenêtre + les hotkeys.
-const COACH_URL = 'http://localhost:3000/?overlay=1';
+const COACH_URL = 'http://localhost:3000/?overlay=1&hud=1';
 const HEALTH_URL = 'http://localhost:3000/api/health';
 
 let clickThrough = false;
