@@ -1311,6 +1311,34 @@ body.overlay .feed-panel { max-height: 100vh; }
 .risk-flash { animation: riskPulse .5s ease-in-out 3; }
 @keyframes riskPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.015); box-shadow: 0 0 0 3px rgba(224,64,62,.25); } }
 
+/* Top 3 « À faire maintenant » — synthèse du flux, toujours en tête de l'overlay */
+.top3 { border-radius: 14px; padding: 10px 12px 11px; margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(129,140,248,.12), rgba(168,85,247,.10));
+  border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm); }
+.top3.hidden { display: none; }
+.top3-head { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.top3-head .ic { width: 1.05em; height: 1.05em; color: var(--primary-2); }
+.top3-item { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 10px;
+  background: rgba(10,13,21,.45); border-left: 3px solid var(--faint); margin-bottom: 6px; }
+.top3-item:last-child { margin-bottom: 0; }
+.top3-item.high { border-left-color: var(--rose); }
+.top3-item.medium { border-left-color: var(--amber); }
+.top3-item.low { border-left-color: var(--teal); }
+.top3-item.ai { border-left-color: var(--primary-2); }
+.top3-rank { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 12.5px; font-weight: 800;
+  background: var(--grad); color: #fff; box-shadow: 0 2px 6px -2px rgba(0,0,0,.6); }
+.top3-txt { min-width: 0; flex: 1 1 auto; }
+.top3-title { font-size: 13px; font-weight: 700; line-height: 1.3; }
+.top3-msg { font-size: 11.5px; color: var(--muted); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.top3-prio { flex: 0 0 auto; font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; background: rgba(148,163,184,.18); color: var(--muted); }
+.top3-prio.high { background: rgba(251,113,133,.18); color: var(--rose); }
+.top3-prio.medium { background: rgba(245,158,11,.18); color: var(--amber); }
+.top3-prio.ai { background: var(--grad-soft); color: var(--primary-2); }
+
 /* Carte de rang (emblème + LP + climb Master) */
 .rank-card { display: flex; align-items: center; gap: 14px; }
 .rank-empty { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
@@ -1457,6 +1485,16 @@ body.free-layout #inGame .panel.dragging,
 body.free-layout .feed-panel.dragging { z-index: 40; outline: 1px solid var(--primary-2); opacity: .96; }
 body.free-layout #inGame .panel .panel-title::before,
 body.free-layout .feed-panel .panel-title::before { content: "⠿"; margin-right: 6px; color: var(--faint); letter-spacing: -2px; }
+
+/* Fenêtre solide (Electron, défaut macOS) : fond OPAQUE, colonne défilante fiable. */
+body.solid-window.overlay { background: #0a0d15 !important; background-image:
+  radial-gradient(700px 400px at 100% -10%, rgba(139,92,246,.10), transparent 60%) !important; }
+body.solid-window .panel { background: rgba(20, 24, 36, 0.96); }
+body.solid-window { overflow-y: auto; height: 100vh; }
+body.solid-window .layout { padding: 8px; }
+/* En fenêtre solide, un titre de panneau déplace toute la fenêtre Electron. */
+body.solid-window .panel-title { -webkit-app-region: drag; }
+body.solid-window .panel-title button, body.solid-window .panel-collapse { -webkit-app-region: no-drag; }
 
 /* Overlay plein écran (Electron) : fond transparent, pas de scroll (widgets fixes). */
 body.ov-fullscreen { height: 100vh; overflow: hidden; }
