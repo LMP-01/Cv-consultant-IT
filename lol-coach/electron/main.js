@@ -27,16 +27,20 @@ const W = parseInt(process.env.OVERLAY_W, 10) || 460;
 const H = parseInt(process.env.OVERLAY_H, 10) || 920;
 
 // Style de fenêtre :
-//   • "solid"       : fenêtre OPAQUE always-on-top déplaçable (FIABLE sur macOS,
-//                     où les overlays transparents clic-traversants sont
-//                     capricieux). Défaut sur Mac.
+//   • "hud"         : HUD in-game compact type Blitz — fenêtre ÉTROITE au fond
+//                     transparent, always-on-top, posée sur le bord de l'écran
+//                     par-dessus le jeu. Seuls les widgets essentiels (Top 3,
+//                     achats, duel, objectifs, timers). Défaut sur Mac.
 //   • "transparent" : overlay plein écran transparent clic-traversant. Défaut
 //                     sur Windows.
-// Forçable via OVERLAY_STYLE=solid|transparent.
-const STYLE = process.env.OVERLAY_STYLE || (process.platform === 'darwin' ? 'solid' : 'transparent');
+//   • "solid"       : fenêtre opaque classique (2e écran / coin de bureau).
+// Forçable via OVERLAY_STYLE=hud|transparent|solid.
+const STYLE = process.env.OVERLAY_STYLE || (process.platform === 'darwin' ? 'hud' : 'transparent');
 const TRANSPARENT = STYLE === 'transparent';
 // Le renderer lit ce style via le preload (process.env hérité par la fenêtre).
 process.env.OVERLAY_STYLE_RESOLVED = STYLE;
+// En HUD, la page passe en rendu compact (?hud=1) : widgets essentiels seulement.
+const PAGE_URL = STYLE === 'hud' ? URL + (URL.includes('?') ? '&' : '?') + 'hud=1' : URL;
 
 let win = null;
 let clickThrough = false;
@@ -57,6 +61,15 @@ function createWindow() {
   if (TRANSPARENT) {
     const b = screen.getPrimaryDisplay().bounds;
     Object.assign(opts, { transparent: true, hasShadow: false, resizable: false, x: b.x, y: b.y, width: b.width, height: b.height });
+  } else if (STYLE === 'hud') {
+    // HUD compact : colonne étroite transparente collée au bord droit de l'écran.
+    const wa = screen.getPrimaryDisplay().workArea;
+    const w = parseInt(process.env.OVERLAY_W, 10) || 350;
+    const h = parseInt(process.env.OVERLAY_H, 10) || Math.min(950, wa.height - 30);
+    Object.assign(opts, {
+      transparent: true, hasShadow: false, resizable: true,
+      width: w, height: h, x: wa.x + wa.width - w - 10, y: wa.y + 16,
+    });
   } else {
     // Fenêtre opaque, déplaçable, à poser dans un coin ou sur un 2e écran.
     Object.assign(opts, { transparent: false, backgroundColor: '#0a0d15', hasShadow: true, resizable: true, width: W, height: H });
@@ -64,7 +77,12 @@ function createWindow() {
   win = new BrowserWindow(opts);
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.loadURL(URL);
+  win.loadURL(PAGE_URL);
+  // Taille du HUD ajustable : OVERLAY_ZOOM=0.9 (plus petit) / 1.1 (plus grand).
+  const zoom = parseFloat(process.env.OVERLAY_ZOOM || '');
+  if (zoom && zoom > 0.3 && zoom < 3) {
+    win.webContents.on('did-finish-load', () => win.webContents.setZoomFactor(zoom));
+  }
 
   if (TRANSPARENT) {
     // Clic-traversant par défaut ; le survol d'un panneau réactive l'interactivité.
@@ -75,8 +93,8 @@ function createWindow() {
   }
 
   // Ctrl+Shift+X :
-  //  • transparent -> bascule le mode « arrangement » (tout cliquable) ;
-  //  • solide       -> bascule le clic-traversant global (souris passe à travers).
+  //  • transparent  -> bascule le mode « arrangement » (tout cliquable) ;
+  //  • hud / solide -> bascule le clic-traversant global (souris passe à travers).
   globalShortcut.register('CommandOrControl+Shift+X', () => {
     if (!win) return;
     if (TRANSPARENT) {
