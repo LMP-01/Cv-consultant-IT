@@ -39,23 +39,32 @@ function loadLive() {
  * Si des builds live (high-elo) existent pour ce champion/rôle, on prend leurs
  * OBJETS (start/boots/core/situational) ; on garde profil/runes/sorts/note des
  * builds curés (data/builds.json) qui portent ce contexte éditorial.
+ * Sans build curé NI live : build GÉNÉRIQUE de classe (base tous-champions) —
+ * l'app conseille ainsi n'importe quel champion, pas seulement la pool.
  */
 function getBuild(champId, role) {
   const curated = loadCurated()[champId] || null;
   const live = loadLive();
   const liveEntry = role && live && live.builds && live.builds[champId] && live.builds[champId][role];
-  if (!liveEntry) return curated;
+  if (!liveEntry) {
+    if (curated) return curated;
+    const { genericBuild } = require('./championsKb'); // require paresseux (cycle)
+    return genericBuild(champId);
+  }
   const nonEmpty = (a) => Array.isArray(a) && a.length;
+  // Contexte éditorial (profil/runes/sorts/note) : curé sinon générique de classe.
+  const { genericBuild } = require('./championsKb');
+  const editorial = curated || genericBuild(champId) || {};
   return {
-    profile: curated ? curated.profile : null,
-    runes: curated ? curated.runes : null,
-    summoners: curated ? curated.summoners : null,
-    start: liveEntry.start || (curated && curated.start) || null,
-    boots: liveEntry.boots || (curated && curated.boots) || null,
-    core: nonEmpty(liveEntry.core) ? liveEntry.core : curated && curated.core,
-    situational: nonEmpty(liveEntry.situational) ? liveEntry.situational : curated && curated.situational,
-    skillOrder: liveEntry.skillOrder || (curated && curated.skillOrder) || null,
-    note: curated ? curated.note : null,
+    profile: editorial.profile || null,
+    runes: editorial.runes || null,
+    summoners: editorial.summoners || null,
+    start: liveEntry.start || editorial.start || null,
+    boots: liveEntry.boots || editorial.boots || null,
+    core: nonEmpty(liveEntry.core) ? liveEntry.core : editorial.core,
+    situational: nonEmpty(liveEntry.situational) ? liveEntry.situational : editorial.situational,
+    skillOrder: liveEntry.skillOrder || editorial.skillOrder || null,
+    note: editorial.note || null,
     source: liveEntry.source || null,
   };
 }

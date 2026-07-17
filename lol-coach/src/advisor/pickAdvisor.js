@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { dataset, analyzeComp, defensiveSuggestions, classifyDamage } = require('./profile');
 const { getBuild } = require('./builds');
+const { championsForRole, kbEntry } = require('./championsKb');
 
 // IDs Data Dragon des sorts d'invocateur -> nom FR (pour lire ceux de l'équipe adverse).
 const SUMMONER_SPELLS = {
@@ -336,6 +337,26 @@ function analyzeChampSelect(session, ddragon) {
   const rolePool = myRole && ds.rolePicks[myRole] ? ds.rolePicks[myRole] : [];
   for (const champId of rolePool) {
     bump(champId, 0.5, 'pick solide pour ton rôle');
+  }
+
+  // Base tous-champions : TOUS les champions méta de ton rôle deviennent des
+  // candidats (poids minime) — les suggestions couvrent ainsi n'importe quel
+  // rôle/compo, pas seulement la petite liste curée. Bonus si le pick équilibre
+  // les dégâts AD/AP de ton équipe.
+  if (myRole) {
+    const allyCompEarly = myChamps.length ? analyzeComp(myChamps) : null;
+    for (const champId of championsForRole(myRole)) {
+      bump(champId, 0.25, 'adapté à ton rôle (méta)');
+      if (allyCompEarly) {
+        const e = kbEntry(champId);
+        const dmg = e && e.dmg;
+        if (allyCompEarly.profile === 'à dominante AP' && (dmg === 'AD' || dmg === 'MIXED')) {
+          bump(champId, 0.75, 'équilibre les dégâts (ton équipe est AP)');
+        } else if (allyCompEarly.profile === 'à dominante AD' && dmg === 'AP') {
+          bump(champId, 0.75, 'équilibre les dégâts (ton équipe est AD)');
+        }
+      }
+    }
   }
 
   // Proba de win INDICATIVE pour les suggestions génériques (à partir du score).

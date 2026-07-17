@@ -304,6 +304,37 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(typeof api.getProfile === 'function' && typeof api.getRecentMatches === 'function', 'méthodes présentes');
   });
 
+  await test('Base tous-champions : couverture + entrées valides', () => {
+    const { kbEntry, kbSize, championsForRole, kbTraits, kbClass } = require('../src/advisor/championsKb');
+    assert(kbSize() >= 160, `couvre ~tous les champions (${kbSize()})`);
+    const zed = kbEntry('Zed');
+    assert(zed && zed.cls === 'assassin-ad' && zed.dmg === 'AD', 'Zed = assassin AD');
+    assert(kbEntry(238) === zed, 'résolution par key numérique (238 = Zed)');
+    assert(kbEntry("Kha'Zix") && kbEntry("Kha'Zix").id === 'Khazix', 'tolère la ponctuation des noms');
+    for (const role of ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY']) {
+      assert(championsForRole(role).length >= 15, `au moins 15 champions pour ${role}`);
+    }
+    const t = kbTraits('Malphite');
+    assert(t && t.hardCC && t.tanky, 'traits tank/CC de Malphite');
+    assert(kbClass('tank') && Array.isArray(kbClass('tank').core) && kbClass('tank').core.length >= 3, 'classe tank avec build');
+  });
+
+  await test('Base tous-champions : build générique pour un champion hors builds curés', () => {
+    const { genericBuild, playstyleTip } = require('../src/advisor/championsKb');
+    const b = genericBuild('Rengar');
+    assert(b && b.generic === true && b.core.length >= 3, 'build générique de classe pour Rengar');
+    assert(b.runes && b.runes.keystone, 'runes génériques présentes');
+    // getBuild() doit maintenant répondre pour N'IMPORTE quel champion.
+    const viaGetBuild = getBuild('Rengar', 'JUNGLE');
+    assert(viaGetBuild && Array.isArray(viaGetBuild.core) && viaGetBuild.core.length >= 3, 'getBuild fallback générique');
+    const curated = getBuild('Katarina', 'MIDDLE');
+    assert(curated && !curated.generic, 'les builds curés priment sur le générique');
+    assert(typeof playstyleTip('Darius') === 'string' && playstyleTip('Darius').length > 10, 'conseil de jeu pour Darius');
+    // Champion inconnu de la base (nouveau champion) : classé via tags Data Dragon.
+    const synth = genericBuild(null, { id: 'NouveauChamp', name: 'Nouveau', tags: ['Mage'] });
+    assert(synth && synth.core.length >= 3, 'un champion inconnu reçoit un build de classe via ses tags');
+  });
+
   console.log(`\n${pass} assertions OK, ${fail} échec(s).`);
   if (fail) {
     console.log('\nÉCHECS :');

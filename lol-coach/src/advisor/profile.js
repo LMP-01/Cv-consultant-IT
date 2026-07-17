@@ -29,12 +29,15 @@ function dataset() {
 }
 
 // Classe un champion par type de dégâts principal : AD / AP / MIXED / TRUE.
-// S'appuie sur l'override curé, sinon déduit des tags Data Dragon.
+// Ordre : override curé > base tous-champions (dmg) > tags Data Dragon.
 function classifyDamage(champ) {
   if (!champ) return 'AD';
   dataset();
   const ov = NORM_OVERRIDE.get(norm(champ.id));
   if (ov) return ov;
+  const { kbEntry } = require('./championsKb'); // require paresseux (évite un cycle)
+  const kb = kbEntry(champ.id);
+  if (kb && kb.dmg) return kb.dmg;
   const tags = champ.tags || [];
   if (tags.includes('Marksman')) return 'AD';
   if (tags.includes('Mage')) return 'AP';

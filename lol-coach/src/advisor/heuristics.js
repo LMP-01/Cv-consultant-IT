@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { analyzeComp, defensiveSuggestions, classifyDamage, dataset } = require('./profile');
 const { getBuild } = require('./builds');
+const { kbTraits, playstyleTip } = require('./championsKb');
 
 // Suivi du dragon soul à partir des events (type + équipe ayant tué).
 function analyzeDragons(events, scoreboard) {
@@ -357,12 +358,16 @@ function enemyTraits(enemy, ds, ddragon) {
     if (/gourdin|bloodthirster|soif-de-sang|sterak|goredrinker|avidité|death.?s dance|danse de la mort/i.test(info.name || '')) itemSustain = true;
   }
   const itemGold = enemy.itemGold || 0;
+  // Base tous-champions : classe d'archétype → burst/CC/tank même hors listes curées.
+  const kb = kbTraits(enemy.championId || enemy.champion);
   return {
     sustain: SUSTAIN_CHAMPS.has(nid) || itemSustain,
     exhaust: spells.some((s) => /fatigue|exhaust/.test(s)),
     ignite: spells.some((s) => /embrasement|ignite|dot/.test(s)),
-    hardCC: ccSet.has(nid) || tags.includes('Tank'),
-    tank: tags.includes('Tank'),
+    hardCC: ccSet.has(nid) || tags.includes('Tank') || Boolean(kb && kb.hardCC),
+    tank: tags.includes('Tank') || Boolean(kb && kb.tanky && kb.cls === 'tank'),
+    burst: Boolean(kb && kb.burst),
+    cls: kb ? kb.cls : null,
     hasSpike: itemGold >= 3000, // ~1 objet complet et plus
     itemGold,
   };
@@ -431,6 +436,17 @@ function analyzeInGame(data, ddragon) {
       title: 'Bonne partie !',
       message: 'Surveille les invades vers 1:00-1:30, prépare le 1er dragon (5:00) et les Voidgrubs (6:00).',
     });
+    // Plan de jeu de TON champion (base tous-champions) : comment le jouer.
+    const tip = playstyleTip(me && me.championId, meChamp);
+    if (tip) {
+      advice.push({
+        id: 'champ-gameplan',
+        priority: 'info',
+        category: 'Macro',
+        title: `Plan de jeu — ${me.champion}`,
+        message: tip,
+      });
+    }
   }
 
   // 2. Objectifs imminents / disponibles
