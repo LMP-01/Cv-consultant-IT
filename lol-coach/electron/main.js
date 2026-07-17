@@ -23,20 +23,29 @@ const path = require('path');
 const { app, BrowserWindow, globalShortcut, screen, ipcMain } = require('electron');
 
 const URL = process.env.COACH_URL || 'http://localhost:3000/?overlay=1';
-const FULLSCREEN = process.env.OVERLAY_FULLSCREEN !== '0';
-const W = parseInt(process.env.OVERLAY_W, 10) || 480;
-const H = parseInt(process.env.OVERLAY_H, 10) || 900;
+const W = parseInt(process.env.OVERLAY_W, 10) || 460;
+const H = parseInt(process.env.OVERLAY_H, 10) || 920;
+
+// Style de fenêtre :
+//   • "solid"       : fenêtre OPAQUE always-on-top déplaçable (FIABLE sur macOS,
+//                     où les overlays transparents clic-traversants sont
+//                     capricieux). Défaut sur Mac.
+//   • "transparent" : overlay plein écran transparent clic-traversant. Défaut
+//                     sur Windows.
+// Forçable via OVERLAY_STYLE=solid|transparent.
+const STYLE = process.env.OVERLAY_STYLE || (process.platform === 'darwin' ? 'solid' : 'transparent');
+const TRANSPARENT = STYLE === 'transparent';
+// Le renderer lit ce style via le preload (process.env hérité par la fenêtre).
+process.env.OVERLAY_STYLE_RESOLVED = STYLE;
 
 let win = null;
-let clickThrough = false; // mode fenêtre : clic-traversant global
-let locked = false; // mode plein écran : interactivité forcée (mode « arrangement »)
+let clickThrough = false;
+let locked = false; // mode transparent : interactivité forcée (« arrangement »)
 
 function createWindow() {
   const opts = {
-    transparent: true,
     frame: false,
     alwaysOnTop: true,
-    hasShadow: false,
     skipTaskbar: false,
     fullscreenable: false,
     webPreferences: {
@@ -45,18 +54,19 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   };
-  if (FULLSCREEN) {
+  if (TRANSPARENT) {
     const b = screen.getPrimaryDisplay().bounds;
-    Object.assign(opts, { x: b.x, y: b.y, width: b.width, height: b.height, resizable: false });
+    Object.assign(opts, { transparent: true, hasShadow: false, resizable: false, x: b.x, y: b.y, width: b.width, height: b.height });
   } else {
-    Object.assign(opts, { width: W, height: H, resizable: true });
+    // Fenêtre opaque, déplaçable, à poser dans un coin ou sur un 2e écran.
+    Object.assign(opts, { transparent: false, backgroundColor: '#0a0d15', hasShadow: true, resizable: true, width: W, height: H });
   }
   win = new BrowserWindow(opts);
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.loadURL(URL);
 
-  if (FULLSCREEN) {
+  if (TRANSPARENT) {
     // Clic-traversant par défaut ; le survol d'un panneau réactive l'interactivité.
     win.setIgnoreMouseEvents(true, { forward: true });
     ipcMain.on('coach:interactive', (_e, on) => {
@@ -65,12 +75,11 @@ function createWindow() {
   }
 
   // Ctrl+Shift+X :
-  //  • plein écran -> bascule le mode « arrangement » (tout l'overlay cliquable
-  //    pour déplacer/organiser les panneaux sans jouer) ;
-  //  • fenêtre     -> bascule le clic-traversant global.
+  //  • transparent -> bascule le mode « arrangement » (tout cliquable) ;
+  //  • solide       -> bascule le clic-traversant global (souris passe à travers).
   globalShortcut.register('CommandOrControl+Shift+X', () => {
     if (!win) return;
-    if (FULLSCREEN) {
+    if (TRANSPARENT) {
       locked = !locked;
       win.setIgnoreMouseEvents(!locked, { forward: true });
     } else {

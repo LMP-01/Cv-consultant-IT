@@ -138,6 +138,8 @@ function applyState(state) {
 
   if (champSelect && state.pick) renderChampSelect(state.pick);
   if (inGame && state.game) renderInGame(state.game);
+  // Top 3 « quoi faire maintenant » — toujours en tête de l'overlay en jeu.
+  renderTop3(inGame ? (state.feed || []) : null);
 }
 
 // Affiche le splash art du champion en fond (Data Dragon CDN).
@@ -245,6 +247,58 @@ function buildAdviceEl(a) {
       </div>
     </div>`;
   return el;
+}
+
+// ── Top 3 priorités : quoi faire MAINTENANT (toujours visible en jeu) ────────
+// Synthétise le flux en 3 actions prioritaires, en tête de l'overlay, pour ne
+// jamais avoir à scroller pendant un teamfight. Classement par priorité, bonus
+// « danger », léger déclin d'ancienneté (le top reflète l'instant présent).
+const TOP3_WEIGHT = { high: 3, medium: 2, low: 1, info: 0 };
+const TOP3_DANGER_RE = /attention|danger|recule|recul|évite|evite|fu(is|yez)|urgent|mortel|tp|dive|gank|plonge/i;
+let top3Sig = '';
+function renderTop3(feed) {
+  const el = $('top3');
+  if (!el) return;
+  if (!feed || !feed.length) { el.classList.add('hidden'); el.innerHTML = ''; top3Sig = ''; return; }
+  const now = Date.now();
+  const scored = feed.map((a) => {
+    let score = (TOP3_WEIGHT[a.priority] != null ? TOP3_WEIGHT[a.priority] : 0) * 100;
+    const txt = (a.title || '') + ' ' + (a.message || '');
+    if (TOP3_DANGER_RE.test(txt)) score += 60; // move à risque = tout en haut
+    if (a.source === 'ai') score += 20; // les conseils IA priment à priorité égale
+    const ageMin = Math.max(0, (now - (a.at || now)) / 60000);
+    score -= Math.min(90, ageMin * 12); // s'estompe sur ~7 min
+    return { a, score };
+  });
+  // Dédoublonne par titre (garde le meilleur score) pour éviter les répétitions.
+  const byTitle = new Map();
+  for (const s of scored) {
+    const key = noEmoji(s.a.title || '').toLowerCase();
+    if (!byTitle.has(key) || byTitle.get(key).score < s.score) byTitle.set(key, s);
+  }
+  const top = [...byTitle.values()].sort((x, y) => y.score - x.score).slice(0, 3);
+  if (!top.length) { el.classList.add('hidden'); el.innerHTML = ''; top3Sig = ''; return; }
+  // Ne re-rend que si le contenu change (évite le flicker à chaque tick WS).
+  const sig = top.map((s) => noEmoji(s.a.title || '')).join('|');
+  el.classList.remove('hidden');
+  if (sig === top3Sig) return;
+  top3Sig = sig;
+  el.innerHTML =
+    '<div class="top3-head"><span class="ic" data-ic="target"></span> À faire maintenant</div>' +
+    top.map((s, i) => {
+      const a = s.a;
+      const prio = a.source === 'ai' ? 'IA' : (PRIO_LABEL[a.priority] || 'Info');
+      const pcls = a.source === 'ai' ? 'ai' : (a.priority || 'info');
+      return `<div class="top3-item ${pcls}">
+        <span class="top3-rank">${i + 1}</span>
+        <div class="top3-txt">
+          <div class="top3-title">${esc(noEmoji(a.title))}</div>
+          <div class="top3-msg">${esc(noEmoji(a.message))}</div>
+        </div>
+        <span class="top3-prio ${pcls}">${esc(prio)}</span>
+      </div>`;
+    }).join('');
+  if (window.hydrateIcons) window.hydrateIcons(el);
 }
 
 function updateRelTimes() {
@@ -751,15 +805,24 @@ function initFreeLayout() {
     drag = null;
   });
 
-  // Restaure l'état sauvegardé ; en OVERLAY, active la disposition libre par
-  // défaut (1re fois) pour que les panneaux soient tout de suite déplaçables.
+  // Restaure l'état sauvegardé ; en overlay TRANSPARENT plein écran, active la
+  // disposition libre par défaut (1re fois). En fenêtre solide (Mac), on garde
+  // une colonne défilante — plus simple et fiable.
+  const isFullscreen = window.coachOverlay && window.coachOverlay.fullscreen;
   try {
     const pref = localStorage.getItem('coach_free_layout');
     if (pref === '1') applyFreeLayout(true);
-    else if (pref === null && document.body.classList.contains('overlay')) applyFreeLayout(true);
+    else if (pref === null && isFullscreen) applyFreeLayout(true);
   } catch { /* ignore */ }
 }
 document.addEventListener('DOMContentLoaded', initFreeLayout);
+
+// Style de fenêtre Electron : fenêtre OPAQUE (Mac) vs overlay transparent.
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.coachOverlay && window.coachOverlay.style === 'solid') {
+    document.body.classList.add('solid-window');
+  }
+});
 
 // ── Overlay plein écran (Electron) : clic-traversant géré par survol ─────────
 // Les zones vides laissent passer les clics vers le jeu ; dès que la souris
