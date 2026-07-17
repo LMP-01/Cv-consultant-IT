@@ -191,11 +191,13 @@ class DataDragon {
     return it ? it.name : null;
   }
 
-  // URL de l'icône d'un item (par id numérique).
+  // URL de l'icône d'un item (par id numérique) — servie par le serveur LOCAL
+  // (/items/<id>.png, proxy + cache disque) : PNG officiel fiable, sans CDN
+  // côté navigateur. Voir src/data/gameImages.js.
   itemIconUrl(itemId) {
     const it = this.itemById.get(Number(itemId));
-    if (!this.version || !it) return null;
-    return `${CDN}/cdn/${this.version}/img/item/${it.image}`;
+    if (!it) return null;
+    return `/items/${it.id}.png`;
   }
 
   // Résout un nom d'item (FR ou EN) -> { id, name, icon }, ou null si introuvable.
@@ -226,9 +228,10 @@ class DataDragon {
       .filter(Boolean);
   }
 
+  // Portrait carré d'un champion — servi par le serveur LOCAL (/champs/<Id>.png).
   squarePortraitUrl(championIdStr) {
-    if (!this.version || !championIdStr) return null;
-    return `${CDN}/cdn/${this.version}/img/champion/${championIdStr}.png`;
+    if (!championIdStr) return null;
+    return `/champs/${championIdStr}.png`;
   }
 }
 

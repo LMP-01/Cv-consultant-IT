@@ -319,6 +319,26 @@ const { mockChampSelectSession, mockAllGameData } = require('../src/mock/mockDat
     assert(kbClass('tank') && Array.isArray(kbClass('tank').core) && kbClass('tank').core.length >= 3, 'classe tank avec build');
   });
 
+  await test('Icônes PNG locales : cache disque + validation des ids', async () => {
+    const { getItemIcon, getChampionIcon } = require('../src/data/gameImages');
+    assert((await getItemIcon(null, 'abc')) === null, 'id item non numérique refusé');
+    assert((await getChampionIcon(null, '../etc/passwd')) === null, 'id champion invalide refusé');
+    // Amorce le cache : le PNG en cache doit être servi tel quel (sans réseau).
+    const cdir = require('path').join(__dirname, '..', '.cache', 'img');
+    require('fs').mkdirSync(cdir, { recursive: true });
+    const fake = Buffer.from('PNGFAKE-test');
+    const file = require('path').join(cdir, 'item-14.1.1-9999.png');
+    require('fs').writeFileSync(file, fake);
+    const buf = await getItemIcon(null, 9999);
+    assert(buf && buf.equals(fake), 'PNG servi depuis le cache disque');
+    require('fs').unlinkSync(file);
+    // URLs locales : l'UI pointe le serveur, plus le CDN.
+    const dd = new DataDragon({});
+    dd.itemById.set(3157, { id: 3157, name: 'Zhonya', image: '3157.png' });
+    assert(dd.itemIconUrl(3157) === '/items/3157.png', 'itemIconUrl -> route locale');
+    assert(dd.squarePortraitUrl('Ahri') === '/champs/Ahri.png', 'portrait -> route locale');
+  });
+
   await test('Base tous-champions : build générique pour un champion hors builds curés', () => {
     const { genericBuild, playstyleTip } = require('../src/advisor/championsKb');
     const b = genericBuild('Rengar');

@@ -9,6 +9,7 @@ const { CoachLoop } = require('./coachLoop');
 const { buildPoolDex } = require('./advisor/championDex');
 const { RiotApi } = require('./data/riotApi');
 const { getRankEmblem } = require('./data/rankEmblems');
+const { getItemIcon, getChampionIcon } = require('./data/gameImages');
 
 const riot = new RiotApi();
 
@@ -114,6 +115,32 @@ app.get('/ranks/:tier.png', async (req, res) => {
     if (!buf) return res.status(404).end();
     res.set('Content-Type', 'image/png');
     res.set('Cache-Control', 'public, max-age=604800'); // 7 jours
+    return res.send(buf);
+  } catch {
+    return res.status(404).end();
+  }
+});
+
+// Icônes OFFICIELLES du jeu en PNG propre, proxifiées + cache disque local :
+// /items/<id>.png (objets) et /champs/<IdChampion>.png (portraits carrés).
+// L'UI ne dépend plus du CDN — hors-ligne : 404 et repli SVG côté client.
+app.get('/items/:id.png', async (req, res) => {
+  try {
+    const buf = await getItemIcon(loop.ddragon, req.params.id);
+    if (!buf) return res.status(404).end();
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=604800'); // 7 jours
+    return res.send(buf);
+  } catch {
+    return res.status(404).end();
+  }
+});
+app.get('/champs/:id.png', async (req, res) => {
+  try {
+    const buf = await getChampionIcon(loop.ddragon, req.params.id);
+    if (!buf) return res.status(404).end();
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=604800');
     return res.send(buf);
   } catch {
     return res.status(404).end();
