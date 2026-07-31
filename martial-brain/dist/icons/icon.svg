@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waza">
+  <rect width="64" height="64" rx="14" fill="#12161c"/>
+  <!-- A small graph: three linked nodes, which is what the app is. -->
+  <g stroke="#3987e5" stroke-width="2.5" stroke-linecap="round">
+    <line x1="20" y1="24" x2="44" y2="20"/>
+    <line x1="20" y1="24" x2="32" y2="45"/>
+    <line x1="44" y1="20" x2="32" y2="45"/>
+  </g>
+  <circle cx="20" cy="24" r="6.5" fill="#3987e5"/>
+  <rect x="38" y="14" width="12" height="12" rx="2" fill="#d55181"/>
+  <path d="M32 38 L39 47 L25 47 Z" fill="#c98500"/>
+</svg>

@@ -1,7 +1,12 @@
 node_modules
-dist
 dist-ssr
 *.local
+
+# dist/ est VOLONTAIREMENT versionné — voir README, section « Déploiement ».
+# L'hébergeur n'a alors ni installation ni construction à faire : il lance
+# l'entrypoint, qui sert des fichiers déjà prêts. Zéro détection de framework,
+# zéro npm, donc zéro chose à mal configurer.
+# À régénérer avec `npm run build` après toute modification de src/.
 
 # Playwright
 test-results
@@ -25,3 +30,7 @@ screenshots
 *.sw?
 public/sqlite/
 *.tsbuildinfo
+
+# Les source maps restent locales : utiles au débogage, mais ~1,5 Mo de
+# churn dans le dépôt à chaque reconstruction, pour rien en production.
+dist/**/*.map
