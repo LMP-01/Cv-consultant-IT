@@ -20,7 +20,13 @@ const PAIR_WINDOW_MS = 15 * 60_000;
 const PAIR_MAX_ATTEMPTS = 8;
 
 const kv = await Deno.openKv();
-const STATIC_ROOT = Deno.env.get('STATIC_ROOT') ?? 'dist';
+
+/**
+ * Where the built app lives, resolved from THIS module's location rather than
+ * the working directory. On Deno Deploy the CWD is not guaranteed to be the
+ * project root, and a relative "dist" would silently find nothing.
+ */
+const STATIC_ROOT = new URL(Deno.env.get('STATIC_ROOT') ?? '../dist/', import.meta.url);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
