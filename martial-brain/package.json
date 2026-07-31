@@ -1,0 +1,33 @@
+{
+  "name": "waza",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Waza — second cerveau martial : graphe de connaissances pour la construction d'un style de combat personnel",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "worker:dev": "wrangler dev --local --config worker/wrangler.toml",
+    "worker:deploy": "wrangler deploy --config worker/wrangler.toml"
+  },
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.51.0-build1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.0",
+    "vite-plugin-pwa": "^1.0.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.42.0"
+  }
+}
