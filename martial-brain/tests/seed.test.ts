@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getEntityByCode, listEntities } from '../src/db/queries';
-import { isSeeded, seed } from '../src/db/seed';
+import { createEntity, deleteEntity, getEntity, getEntityByCode, listEntities } from '../src/db/queries';
+import { isSeeded, remainingSeedCount, removeSeed, seed } from '../src/db/seed';
 import { allLinks, neighbourIds } from '../src/domain/links';
 import { ENTITY_DEFS } from '../src/domain/schema';
 import { freshDb } from './helpers';
@@ -59,6 +59,40 @@ describe('seed', () => {
     expect(isSeeded(db)).toBe(false);
     seed(db);
     expect(isSeeded(db)).toBe(true);
+    db.close();
+  });
+
+  it('can be removed without touching real work', async () => {
+    const db = await freshDb();
+    seed(db);
+    const before = remainingSeedCount(db);
+    expect(before).toBeGreaterThan(20);
+
+    // A fiche the user wrote, and an edit to one of the examples.
+    const mine = createEntity(db, 'technique', { title: 'Ushiro Geri' });
+    const jab = getEntityByCode(db, 'K001');
+    expect(jab).toBeDefined();
+
+    const removed = removeSeed(db);
+    expect(removed).toBe(before);
+    expect(remainingSeedCount(db)).toBe(0);
+
+    // The example fiches are gone…
+    expect(getEntityByCode(db, 'K001')).toBeUndefined();
+    // …and what the user wrote is untouched.
+    expect(getEntity(db, mine.id)?.title).toBe('Ushiro Geri');
+    db.close();
+  });
+
+  it('does not resurrect examples the user already deleted', async () => {
+    const db = await freshDb();
+    seed(db);
+    const jab = getEntityByCode(db, 'K001');
+    deleteEntity(db, jab!.id);
+
+    const before = remainingSeedCount(db);
+    expect(removeSeed(db)).toBe(before);
+    expect(remainingSeedCount(db)).toBe(0);
     db.close();
   });
 });

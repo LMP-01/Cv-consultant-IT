@@ -7,13 +7,65 @@
  * The point is not the content but the wiring: a new user opens the app on a
  * graph that already demonstrates what linking buys them.
  */
-import { createEntity, type EntityRecord } from './queries';
+import { createEntity, deleteEntity, type EntityRecord } from './queries';
 import { link } from '../domain/links';
+import { getMeta, setMeta } from './migrations';
 import type { EntityKey } from '../domain/schema';
 import type { Db } from './sqlite';
 
+/** Which ids the seed created, so they can be told apart from real work. */
+const SEED_IDS_KEY = 'seed_ids';
+
 export function isSeeded(db: Db): boolean {
   return (db.one<{ n: number }>(`SELECT count(*) AS n FROM entities`)?.n ?? 0) > 0;
+}
+
+function seededIds(db: Db): string[] {
+  try {
+    return JSON.parse(getMeta(db, SEED_IDS_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+/** How many example fiches are still present and untouched. */
+export function remainingSeedCount(db: Db): number {
+  const ids = seededIds(db);
+  if (ids.length === 0) return 0;
+  const holes = ids.map((_, i) => `$i${i}`).join(', ');
+  const bind = Object.fromEntries(ids.map((id, i) => [`$i${i}`, id]));
+  return (
+    db.one<{ n: number }>(
+      `SELECT count(*) AS n FROM entities WHERE deleted = 0 AND id IN (${holes})`,
+      bind,
+    )?.n ?? 0
+  );
+}
+
+/**
+ * Delete the example fiches.
+ *
+ * Worth having for two reasons: starting from a blank graph is a legitimate
+ * preference, and pairing a second device merges ITS example set with yours —
+ * both devices seed independently before they ever meet. Deleting is a normal
+ * tombstoned delete, so it propagates to the other devices too.
+ */
+export function removeSeed(db: Db): number {
+  const ids = seededIds(db);
+  let removed = 0;
+  db.tx(() => {
+    for (const id of ids) {
+      const exists = db.one<{ n: number }>(
+        `SELECT count(*) AS n FROM entities WHERE id = $id AND deleted = 0`,
+        { $id: id },
+      );
+      if (!exists?.n) continue;
+      deleteEntity(db, id);
+      removed += 1;
+    }
+    setMeta(db, SEED_IDS_KEY, '[]');
+  });
+  return removed;
 }
 
 export function seed(db: Db): void {
@@ -317,5 +369,8 @@ export function seed(db: Db): void {
     wire('r-15-10', 'pr-simplicite');
     wire('f-regional', 'pr-simplicite', 'pr-distance');
     wire('l-main-basse', 'f-regional');
+
+    // Remember what the seed created so it can be removed later.
+    setMeta(db, SEED_IDS_KEY, JSON.stringify([...made.values()].map((r) => r.id)));
   });
 }

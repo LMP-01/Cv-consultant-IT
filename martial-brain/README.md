@@ -27,9 +27,10 @@ les exemples du cahier des charges (K001 Jab, K003 Mae Geri, K007 O Soto Gari…
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production dans `dist/` |
 | `npm run preview` | Sert le build de production |
-| `npm test` | Tests unitaires (89) |
+| `npm test` | Tests unitaires (91) |
 | `npm run e2e` | Parcours navigateur (16, desktop + mobile) |
-| `npm run check` | Typage de l'app **et** du Worker |
+| `npm run check` | Typage de l'app |
+| `npm run server` | Serveur local (app + synchro) sur :8787 — nécessite Deno |
 
 **Installer sur téléphone** : ouvrir le site, puis « Ajouter à l'écran d'accueil ».
 Après le premier chargement, tout fonctionne sans réseau.
@@ -135,21 +136,38 @@ au-dessus des résultats.
 ## Synchronisation entre appareils — optionnelle
 
 Sans serveur, l'export `.sqlite3` (Réglages → Sauvegarde) suffit à transporter le
-graphe d'un appareil à l'autre. Avec un Worker Cloudflare, les appareils
-convergent automatiquement.
+graphe d'un appareil à l'autre. Avec un déploiement, les appareils convergent
+**automatiquement** : à l'ouverture, au retour sur l'app, au retour du réseau,
+après chaque enregistrement, et toutes les cinq minutes. Aucun bouton à presser.
 
-### Déploiement (à faire sur ton compte)
+> Limite honnête : une PWA ne peut pas se synchroniser **en arrière-plan**.
+> L'API existe mais n'est pas supportée sur iOS, donc rien ne se passe tant que
+> l'application est fermée. Ce n'est pas une limite de Waza, c'est le navigateur.
+
+### Un seul déploiement pour tout
+
+`server/` sert **l'application et l'API de synchronisation** depuis la même
+origine. Une seule URL gratuite `*.deno.dev`, pas de domaine à acheter, pas de
+second fournisseur, et le champ « adresse du serveur » reste vide côté client.
 
 ```bash
-npx wrangler d1 create waza
-# reporter le database_id dans worker/wrangler.toml
-npx wrangler d1 execute waza --remote --file worker/schema.sql
-npx wrangler secret put SYNC_SECRET --config worker/wrangler.toml
-npm run worker:deploy
+npm run build                      # produit dist/
+deno install -gArf jsr:@deno/deployctl
+deployctl deploy --project=<ton-projet> \
+  --include=dist,server,deno.json --entrypoint=server/main.ts
 ```
 
-Puis, sur chaque appareil : Réglages → Synchronisation → coller l'adresse du
-Worker et la phrase secrète. Elle est échangée une fois contre un jeton signé.
+Puis, dans le tableau de bord Deno Deploy, définis la variable d'environnement
+`SYNC_SECRET` (une phrase que toi seul connais). Sur chaque appareil : Réglages
+→ Synchronisation → coller la phrase. Elle est échangée une fois contre un jeton
+signé ; la phrase elle-même n'est pas conservée.
+
+Pour essayer en local d'abord :
+
+```bash
+npm run build
+SYNC_SECRET="ce-que-tu-veux" npm run server   # http://localhost:8787
+```
 
 ### Comment les conflits sont tranchés
 
@@ -164,30 +182,30 @@ serveur. Pas de CRDT : le graphe a un seul auteur, le conflit réaliste est
   survivent — l'identité est un uuid, pas le code — et le doublon est
   renuméroté de façon déterministe à la fusion.
 - Les relations ont un identifiant **dérivé de leurs extrémités**, donc deux
-  appareils qui créent le même lien produisent la même ligne : il n'y a rien à
-  réconcilier.
+  appareils qui créent le même lien produisent la même ligne : rien à réconcilier.
 - Hors-ligne, les modifications s'empilent et repartent à la reconnexion. Une
   synchronisation interrompue reprend à son curseur.
 
-`tests/sync.test.ts` fait converger deux bases réelles sur chacun de ces cas.
+`tests/sync.test.ts` fait converger deux bases réelles sur chacun de ces cas, et
+le round-trip a été rejoué dans deux navigateurs contre le vrai serveur.
 
-> **Non vérifié de mon côté** : le déploiement Cloudflare (compte et secrets
-> requis). La logique de fusion est testée contre un serveur en mémoire qui
-> implémente les mêmes règles que `worker/index.ts`.
+### Les fiches d'exemple, si tu appaires un second appareil
 
----
+Chaque appareil sème son propre jeu d'exemples avant d'avoir rencontré les
+autres, donc appairer un second appareil fusionne deux jeux. Réglages →
+**Supprimer les fiches d'exemple** les retire d'un coup, sur tous les appareils.
 
 ## Limites assumées
 
 - **Les médias ne synchronisent pas.** Le graphe — texte, relations, historique,
   statistiques — synchronise intégralement. Les photos et vidéos restent locales
   à l'appareil : les vidéos de sparring pèsent lourd et les faire transiter
-  demande R2, des URLs présignées et une gestion de quota. C'est un chantier
-  propre, pas un bout de celui-ci.
+  demande du stockage d'objets, des URLs signées et une gestion de quota.
+  C'est un chantier propre, pas un bout de celui-ci.
 - **L'analyse automatisée de flux vidéo (§5.2) n'est pas implémentée.** Extraction
   de frames, coût, latence : c'est un projet en soi. Les vidéos sont stockées et
   lisibles, pas analysées.
-- **Le stockage passe par IndexedDB**, pas OPFS. Les deux VFS OPFS de SQLite
+- **Le stockage local passe par IndexedDB**, pas OPFS. Les deux VFS OPFS de SQLite
   exigent `FileSystemFileHandle.createSyncAccessHandle()`, qui n'existe **que**
   dans un Worker. Déplacer SQLite dans un Worker rendrait toutes les lectures
   asynchrones — et c'est leur caractère synchrone qui permet à l'interface de
@@ -205,10 +223,10 @@ martial-brain/
     domain/links.ts      Relations bidirectionnelles, identifiants dérivés
     domain/ids.ts        Codes K001/PR003, désambiguïsation E/ER, A/AR…
     db/                  SQLite WASM, migrations, CRUD générique, analytics
-    sync/                Fusion LWW (pure, testable), curseur, transport HTTP
+    sync/                Fusion LWW (pure, testable), curseur, transport, auto-sync
     ai/                  Adaptateurs fournisseurs, routeur, filtre validé
     ui/                  Liste / fiche / formulaire génériques, graphe, écrans
-  worker/                Cloudflare Worker + D1 (sync, relais IA optionnel)
+  server/                Serveur Deno : sert l'app + l'API de synchro (Deno KV)
   tests/                 89 tests unitaires
   e2e/                   16 parcours navigateur
 ```
