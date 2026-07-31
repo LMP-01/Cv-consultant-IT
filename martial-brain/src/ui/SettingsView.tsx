@@ -2,6 +2,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { downloadDatabase, restoreDatabase } from '../db/backup';
 import { graphHealth } from '../db/analytics';
+import { remainingSeedCount, removeSeed } from '../db/seed';
 import { loadSettings, saveSettings, type ThemePref } from '../settings';
 import { useDb } from './DbProvider';
 import { AiPanel } from './settings/AiPanel';
@@ -13,13 +14,14 @@ const BACKEND_LABEL: Record<string, string> = {
 };
 
 export function SettingsView(): ReactNode {
-  const { db, revision } = useDb();
+  const { db, revision, write, flush } = useDb();
   const [settings, setSettings] = useState(loadSettings);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const health = graphHealth(db);
+  const seedLeft = remainingSeedCount(db);
   void revision;
 
   const setTheme = (theme: ThemePref): void => setSettings(saveSettings({ theme }));
@@ -133,6 +135,30 @@ export function SettingsView(): ReactNode {
         <p className="banner warn" style={{ marginTop: 12 }}>
           <span>{error}</span>
         </p>
+      )}
+
+      {seedLeft > 0 && (
+        <>
+          <h2>Fiches d’exemple</h2>
+          <p className="sub" style={{ marginBottom: 10 }}>
+            {seedLeft} fiches d’exemple sont encore présentes. Elles servent à montrer ce
+            qu’un graphe relié permet. Si tu appaires un second appareil, son propre jeu
+            d’exemples fusionnera avec celui-ci — les deux appareils sèment avant de se
+            rencontrer.
+          </p>
+          <button
+            type="button"
+            className="btn"
+            disabled={busy !== null}
+            onClick={() => {
+              if (!confirm(`Supprimer les ${seedLeft} fiches d’exemple encore présentes ?`)) return;
+              write((d) => removeSeed(d));
+              void flush();
+            }}
+          >
+            Supprimer les fiches d’exemple
+          </button>
+        </>
       )}
 
       <SyncPanel />

@@ -1,23 +1,32 @@
-/** Pair this device with a sync Worker and run a sync by hand. */
+/** Pair this device, then get out of the way — syncing is automatic. */
 import { useState, type ReactNode } from 'react';
-import { countDirty, getCursor, sync } from '../../sync/engine';
-import { fetchStatus, httpTransport, pairDevice } from '../../sync/client';
+import { countDirty, getCursor } from '../../sync/engine';
+import { fetchStatus, pairDevice } from '../../sync/client';
 import { loadSettings, saveSettings } from '../../settings';
 import { useDb } from '../DbProvider';
 
+function relative(at: number): string {
+  const seconds = Math.round((Date.now() - at) / 1000);
+  if (seconds < 10) return "à l'instant";
+  if (seconds < 60) return `il y a ${seconds} s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `il y a ${minutes} min`;
+  return `il y a ${Math.round(minutes / 60)} h`;
+}
+
 export function SyncPanel(): ReactNode {
-  const { db, write, revision } = useDb();
+  const { db, revision, syncState, syncNow } = useDb();
   const [settings, setSettings] = useState(loadSettings);
   const [secret, setSecret] = useState('');
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'warn'; text: string } | null>(null);
 
   void revision;
-  const paired = Boolean(settings.syncUrl && settings.syncToken);
+  const paired = Boolean(settings.syncToken);
   const pending = countDirty(db);
 
   const pair = async (): Promise<void> => {
-    setBusy('pair');
+    setBusy(true);
     setMessage(null);
     try {
       const token = await pairDevice(settings.syncUrl, secret);
@@ -26,37 +35,13 @@ export function SyncPanel(): ReactNode {
       const status = await fetchStatus(settings.syncUrl, token);
       setMessage({
         kind: 'ok',
-        text: `Appareil appairé. Le serveur contient ${status.entities} fiches et ${status.links} relations.`,
+        text: `Appareil appairé. Le serveur contient ${status.entities} fiches et ${status.links} relations. La synchronisation est désormais automatique.`,
       });
+      void syncNow();
     } catch (err) {
       setMessage({ kind: 'warn', text: err instanceof Error ? err.message : String(err) });
     } finally {
-      setBusy(null);
-    }
-  };
-
-  const run = async (): Promise<void> => {
-    setBusy('sync');
-    setMessage(null);
-    try {
-      const report = await write((d) =>
-        sync(d, httpTransport(settings.syncUrl, settings.syncToken)),
-      );
-      const bits = [
-        `${report.pulled.inserted} reçues`,
-        `${report.pulled.overwritten} mises à jour`,
-        `${report.pushed} envoyées`,
-      ];
-      if (report.pulled.keptLocal > 0) bits.push(`${report.pulled.keptLocal} gardées en local`);
-      if (report.renamedCodes > 0) bits.push(`${report.renamedCodes} codes renumérotés`);
-      setMessage({ kind: 'ok', text: `Synchronisé — ${bits.join(', ')}.` });
-    } catch (err) {
-      setMessage({
-        kind: 'warn',
-        text: `${err instanceof Error ? err.message : String(err)} — tes modifications restent en attente et repartiront à la prochaine synchronisation.`,
-      });
-    } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -65,26 +50,27 @@ export function SyncPanel(): ReactNode {
       <h2>Synchronisation</h2>
       <p className="sub" style={{ marginBottom: 10 }}>
         Optionnelle. Sans elle, Waza fonctionne entièrement hors-ligne et l’export
-        <code> .sqlite3</code> suffit à transporter ton graphe. Avec elle, tes appareils
-        convergent automatiquement.
+        <code> .sqlite3</code> suffit à transporter ton graphe. Une fois l’appareil appairé,
+        la synchronisation se fait toute seule : à l’ouverture, au retour sur l’app, au
+        retour du réseau, après chaque enregistrement, et toutes les cinq minutes.
       </p>
 
       <div className="card">
         <div className="fields">
           <div>
             <label className="field-label" htmlFor="sync-url">
-              Adresse du Worker
+              Adresse du serveur
             </label>
             <input
               id="sync-url"
               type="url"
               value={settings.syncUrl}
-              placeholder="https://waza-sync.ton-compte.workers.dev"
+              placeholder="laisser vide si l’app est servie par le même déploiement"
               onChange={(e) => setSettings(saveSettings({ syncUrl: e.target.value.trim() }))}
             />
             <div className="field-help">
-              Déploiement : <code>npm run worker:deploy</code>, puis
-              <code> npx wrangler secret put SYNC_SECRET</code>.
+              Vide = même origine que cette page, ce qui est le cas normal : un seul
+              déploiement Deno sert l’application et la synchronisation.
             </div>
           </div>
 
@@ -110,8 +96,19 @@ export function SyncPanel(): ReactNode {
             <div>
               <div className="field-label">État</div>
               <div className="field-value">
-                Appareil appairé · curseur {getCursor(db)} ·{' '}
-                {pending === 0 ? 'rien en attente' : `${pending} modification(s) en attente`}
+                {syncState.phase === 'syncing'
+                  ? 'Synchronisation en cours…'
+                  : syncState.phase === 'error'
+                    ? `Dernière tentative en échec (${syncState.message})`
+                    : syncState.at
+                      ? `À jour, synchronisé ${relative(syncState.at)}`
+                      : 'Appairé, en attente du premier cycle'}
+              </div>
+              <div className="field-help">
+                Curseur {getCursor(db)} ·{' '}
+                {pending === 0
+                  ? 'rien en attente'
+                  : `${pending} modification(s) en attente d’envoi`}
               </div>
             </div>
           )}
@@ -122,25 +119,24 @@ export function SyncPanel(): ReactNode {
             <button
               type="button"
               className="btn primary"
-              disabled={!settings.syncUrl || !secret || busy !== null}
+              disabled={!secret || busy}
               onClick={() => void pair()}
             >
-              {busy === 'pair' ? 'Appairage…' : 'Appairer cet appareil'}
+              {busy ? 'Appairage…' : 'Appairer cet appareil'}
             </button>
           ) : (
             <>
               <button
                 type="button"
-                className="btn primary"
-                disabled={busy !== null}
-                onClick={() => void run()}
+                className="btn"
+                disabled={syncState.phase === 'syncing'}
+                onClick={() => void syncNow()}
               >
-                {busy === 'sync' ? 'Synchronisation…' : 'Synchroniser maintenant'}
+                {syncState.phase === 'syncing' ? 'Synchronisation…' : 'Synchroniser maintenant'}
               </button>
               <button
                 type="button"
                 className="btn"
-                disabled={busy !== null}
                 onClick={() => setSettings(saveSettings({ syncToken: '' }))}
               >
                 Désappairer
@@ -148,6 +144,15 @@ export function SyncPanel(): ReactNode {
             </>
           )}
         </div>
+
+        {syncState.phase === 'error' && (
+          <p className="banner warn" style={{ marginTop: 12 }}>
+            <span>
+              {syncState.message}. Tes modifications restent en attente et repartiront
+              automatiquement au prochain cycle — rien n’est perdu.
+            </span>
+          </p>
+        )}
 
         {message && (
           <p className={`banner${message.kind === 'warn' ? ' warn' : ''}`} style={{ marginTop: 12 }}>

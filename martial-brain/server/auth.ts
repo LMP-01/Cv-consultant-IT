@@ -1,11 +1,13 @@
 /**
  * Device pairing.
  *
- * This is a single-person application, so there is no signup, no user table and
- * no email provider: you set one SYNC_SECRET on your own Worker and paste it
- * once per device. A device then holds an HMAC-signed token rather than the
- * secret itself, so a token leaking from one phone can be aged out without
- * changing the passphrase everywhere.
+ * Single-person application: no signup, no user table, no email provider. You
+ * set one SYNC_SECRET on your own deployment and paste it once per device. The
+ * device then holds an HMAC-signed token rather than the secret itself, so a
+ * token leaking from a lost phone ages out without changing the passphrase
+ * everywhere.
+ *
+ * Plain Web Crypto — nothing here is runtime-specific.
  */
 
 const encoder = new TextEncoder();
@@ -17,13 +19,17 @@ function b64url(bytes: ArrayBuffer | Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function unb64url(text: string): Uint8Array {
+function unb64url(text: string): Uint8Array<ArrayBuffer> {
   const padded = text.replace(/-/g, '+').replace(/_/g, '/');
   const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
-  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  // Allocated rather than Uint8Array.from(): the latter is typed over
+  // ArrayBufferLike, which Web Crypto's BufferSource will not accept.
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
+  return out;
 }
 
-async function hmacKey(secret: string): Promise<CryptoKey> {
+function hmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),
@@ -36,11 +42,10 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
 /**
  * Compare two secrets without leaking their contents through timing.
  *
- * Both sides are HMAC'd under the same key first: that maps inputs of any
- * length onto fixed 32-byte digests, so the byte loop below always runs the
- * same number of iterations and an attacker learns nothing from how long a
- * wrong guess took. Plain `a === b` short-circuits on the first differing
- * character and would leak the secret one character at a time.
+ * Both sides are HMAC'd under the same key first, mapping inputs of any length
+ * onto fixed 32-byte digests, so the loop below always runs the same number of
+ * iterations. Plain `a === b` short-circuits on the first differing character
+ * and would leak the secret one character at a time.
  */
 export async function secretMatches(given: string, expected: string): Promise<boolean> {
   const key = await hmacKey(expected);
@@ -54,10 +59,8 @@ export async function secretMatches(given: string, expected: string): Promise<bo
   return diff === 0;
 }
 
-export interface TokenPayload {
-  /** Issued at, ms. */
+interface TokenPayload {
   iat: number;
-  /** Expires at, ms. */
   exp: number;
 }
 

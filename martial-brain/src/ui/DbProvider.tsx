@@ -12,12 +12,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { migrate } from '../db/migrations';
 import { isSeeded, seed } from '../db/seed';
 import { openDatabase, type Db } from '../db/sqlite';
+import { loadSettings } from '../settings';
+import { AutoSync, type SyncState } from '../sync/auto';
+import { httpTransport } from '../sync/client';
 
 interface DbContextValue {
   db: Db;
@@ -34,6 +38,10 @@ interface DbContextValue {
    * await an async write.
    */
   flush: () => Promise<void>;
+  /** Latest automatic-sync outcome, for the header indicator and settings. */
+  syncState: SyncState;
+  /** Force a sync cycle now (the "Synchroniser" button). */
+  syncNow: () => Promise<void>;
 }
 
 const DbContext = createContext<DbContextValue | null>(null);
@@ -99,23 +107,56 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
     };
   }, [status]);
 
+  const [syncState, setSyncState] = useState<SyncState>({ phase: 'idle' });
+  const autoRef = useRef<AutoSync | null>(null);
+
+  // Automatic sync. Nothing happens unless a device has been paired, so this is
+  // inert for anyone using Waza purely offline.
+  useEffect(() => {
+    if (status.phase !== 'ready') return;
+    const auto = new AutoSync({
+      db: status.db,
+      transport: () => {
+        const { syncUrl, syncToken } = loadSettings();
+        // An empty URL means "same origin": the app and the API ship together.
+        return syncToken ? httpTransport(syncUrl, syncToken) : undefined;
+      },
+      onState: setSyncState,
+      onChanged: () => setRevision((r) => r + 1),
+    });
+    auto.start();
+    autoRef.current = auto;
+    return () => {
+      auto.stop();
+      autoRef.current = null;
+    };
+  }, [status]);
+
   const write = useCallback(
     <T,>(fn: (db: Db) => T): T => {
       if (status.phase !== 'ready') throw new Error('database not ready');
       const out = fn(status.db);
       setRevision((r) => r + 1);
+      autoRef.current?.nudge();
       return out;
     },
     [status],
   );
+
+  const syncNow = useCallback(async (): Promise<void> => {
+    await autoRef.current?.run('manuelle');
+  }, []);
 
   const flush = useCallback(async (): Promise<void> => {
     if (status.phase === 'ready') await status.db.persist();
   }, [status]);
 
   const value = useMemo<DbContextValue | null>(
-    () => (status.phase === 'ready' ? { db: status.db, revision, write, flush } : null),
-    [status, revision, write, flush],
+    () =>
+      status.phase === 'ready'
+        ? { db: status.db, revision, write, flush, syncState, syncNow }
+        : null,
+    [status, revision, write, flush, syncState, syncNow],
   );
 
   if (status.phase === 'loading') {
