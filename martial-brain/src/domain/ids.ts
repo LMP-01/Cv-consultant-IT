@@ -10,8 +10,10 @@ import type { Db } from '../db/sqlite';
 import { ENTITY_DEFS, prefixesOf } from './schema';
 
 export function uuid(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-  // Node <19 / insecure contexts.
+  // randomUUID is unavailable on insecure origins (plain http on a LAN IP),
+  // which is exactly how someone would first open this on their phone.
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+
   const b = new Uint8Array(16);
   crypto.getRandomValues(b);
   b[6] = ((b[6] as number) & 0x0f) | 0x40;

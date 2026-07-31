@@ -13,7 +13,7 @@
  * The build is verified to carry FTS5, math functions and json1; see
  * tests/sqlite.test.ts, which asserts those rather than trusting the vendor.
  */
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import { loadSqliteModule } from '#sqlite-loader';
 
 export type SqlValue = string | number | null | Uint8Array;
 export type Params = Record<string, SqlValue> | SqlValue[];
@@ -37,6 +37,12 @@ export interface Db {
   persist(): Promise<void>;
   /** The database as a .sqlite file image, for the export feature. */
   exportBytes(): Uint8Array;
+  /**
+   * Replace the stored database with an image, for the import feature.
+   * The caller must reload the page afterwards: every open handle, cached
+   * query and React tree still refers to the old database.
+   */
+  importImage(bytes: Uint8Array): Promise<void>;
   close(): void;
 }
 
@@ -50,25 +56,36 @@ type Sqlite3 = any;
 let modulePromise: Promise<Sqlite3> | null = null;
 
 function loadSqlite(): Promise<Sqlite3> {
-  modulePromise ??= sqlite3InitModule({
-    print: () => {},
-    printErr: (msg: string) => {
-      // The OPFS probe failing is expected on browsers without it; don't shout.
-      if (!/OPFS/i.test(String(msg))) console.warn('[sqlite]', msg);
-    },
-  });
+  modulePromise ??= loadSqliteModule().then((init: (opts: unknown) => Promise<Sqlite3>) =>
+    init({
+      print: () => {},
+      printErr: (msg: string) => {
+        // The OPFS probe failing is expected on browsers without it; don't shout.
+        if (!/OPFS/i.test(String(msg))) console.warn('[sqlite]', msg);
+      },
+    }),
+  );
   return modulePromise;
 }
 
 class SqliteDb implements Db {
   #raw: any;
   #sqlite3: Sqlite3;
+  #pool: any;
+  #filename: string;
   #timer: ReturnType<typeof setTimeout> | null = null;
   #pending: Promise<void> | null = null;
 
-  constructor(sqlite3: Sqlite3, raw: any, readonly backend: Backend) {
+  constructor(
+    sqlite3: Sqlite3,
+    raw: any,
+    readonly backend: Backend,
+    opts: { pool?: any; filename?: string } = {},
+  ) {
     this.#sqlite3 = sqlite3;
     this.#raw = raw;
+    this.#pool = opts.pool;
+    this.#filename = opts.filename ?? 'waza.sqlite3';
   }
 
   all<T = Row>(sql: string, params?: Params): T[] {
@@ -136,9 +153,38 @@ class SqliteDb implements Db {
     return this.#pending;
   }
 
+  async importImage(bytes: Uint8Array): Promise<void> {
+    assertSqliteImage(bytes);
+
+    if (this.backend === 'opfs-sahpool' && this.#pool) {
+      // Write straight into the VFS; the next boot opens the new file.
+      this.#raw.close();
+      await this.#pool.importDb(`/${this.#filename}`, bytes);
+      return;
+    }
+
+    // In-memory backend: park the image where the next boot looks for it.
+    const { idbSet } = await import('./idb');
+    await idbSet(IDB_STORE, IDB_KEY, bytes);
+  }
+
   close(): void {
     if (this.#timer) clearTimeout(this.#timer);
     this.#raw.close();
+  }
+}
+
+/**
+ * Reject anything that is not a SQLite file before it replaces someone's
+ * knowledge base. The header is the first 16 bytes of every SQLite image.
+ */
+export function assertSqliteImage(bytes: Uint8Array): void {
+  const header = 'SQLite format 3\0';
+  if (bytes.byteLength < header.length) {
+    throw new Error('Fichier trop petit pour être une base Waza.');
+  }
+  if (new TextDecoder().decode(bytes.slice(0, header.length)) !== header) {
+    throw new Error('Ce fichier n’est pas une base SQLite (.sqlite3).');
   }
 }
 
@@ -151,7 +197,7 @@ export async function openDatabase(filename = 'waza.sqlite3'): Promise<Db> {
     try {
       const pool = await sqlite3.installOpfsSAHPoolVfs({ name: 'waza-opfs' });
       const db = new pool.OpfsSAHPoolDb(`/${filename}`);
-      return new SqliteDb(sqlite3, db, 'opfs-sahpool');
+      return new SqliteDb(sqlite3, db, 'opfs-sahpool', { pool, filename });
     } catch {
       // Safari < 17, Firefox private windows, locked pool… fall through.
     }
