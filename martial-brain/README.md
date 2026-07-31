@@ -151,16 +151,30 @@ origine. Une seule URL gratuite `*.deno.dev`, pas de domaine à acheter, pas de
 second fournisseur, et le champ « adresse du serveur » reste vide côté client.
 
 ```bash
-npm run build                      # produit dist/
+# 1. l'outil de déploiement, une seule fois
 deno install -gArf jsr:@deno/deployctl
-deployctl deploy --project=<ton-projet> \
-  --include=dist,server,deno.json --entrypoint=server/main.ts
+
+# 2. construire, puis déployer — la 1re fois, une page de connexion Deno s'ouvre
+npm install && npm run build
+deployctl deploy --project=waza --include=dist,server,deno.json \
+  --entrypoint=server/main.ts
 ```
 
-Puis, dans le tableau de bord Deno Deploy, définis la variable d'environnement
-`SYNC_SECRET` (une phrase que toi seul connais). Sur chaque appareil : Réglages
-→ Synchronisation → coller la phrase. Elle est échangée une fois contre un jeton
-signé ; la phrase elle-même n'est pas conservée.
+`deployctl` affiche l'URL exacte à la fin. C'est ce lien que tu ouvres, et
+depuis lequel tu fais « Ajouter à l'écran d'accueil » sur ton téléphone.
+
+Il reste **une** chose à régler dans le tableau de bord Deno Deploy :
+*Settings → Environment Variables → `SYNC_SECRET`* = une phrase que toi seul
+connais. Sans elle l'application se charge et fonctionne, mais l'appairage
+répond « SYNC_SECRET n'est pas configuré ».
+
+Sur chaque appareil ensuite : Réglages → Synchronisation → coller la phrase.
+Elle est échangée une fois contre un jeton signé ; la phrase elle-même n'est pas
+conservée.
+
+> Si l'appairage renvoie une erreur 500, c'est Deno KV qui n'est pas actif sur le
+> projet. L'application reste entièrement utilisable — seule la synchronisation
+> est concernée, et l'export `.sqlite3` la remplace en attendant.
 
 Pour essayer en local d'abord :
 
