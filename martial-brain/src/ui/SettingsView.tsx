@@ -4,11 +4,12 @@ import { downloadDatabase, restoreDatabase } from '../db/backup';
 import { graphHealth } from '../db/analytics';
 import { loadSettings, saveSettings, type ThemePref } from '../settings';
 import { useDb } from './DbProvider';
+import { AiPanel } from './settings/AiPanel';
+import { SyncPanel } from './settings/SyncPanel';
 
 const BACKEND_LABEL: Record<string, string> = {
-  'opfs-sahpool': 'OPFS (fichier réel, persistant)',
-  indexeddb: 'IndexedDB (image sérialisée)',
-  memory: 'Mémoire (non persistant)',
+  indexeddb: 'IndexedDB — écrit après chaque enregistrement',
+  memory: 'Mémoire — non persistant',
 };
 
 export function SettingsView(): ReactNode {
@@ -133,6 +134,9 @@ export function SettingsView(): ReactNode {
           <span>{error}</span>
         </p>
       )}
+
+      <SyncPanel />
+      <AiPanel />
     </div>
   );
 }

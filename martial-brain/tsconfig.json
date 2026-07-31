@@ -28,5 +28,8 @@
       "#sqlite-loader": ["./src/db/sqliteLoader.ts"]
     }
   },
-  "include": ["src", "worker", "tests"]
+  // The Worker is checked separately (worker/tsconfig.json): it runs on the
+  // Workers runtime, whose globals and Crypto typings conflict with the DOM +
+  // Node set the app and its tests need.
+  "include": ["src", "tests", "scripts", "vite.config.ts"]
 }

@@ -115,6 +115,32 @@ describe('search', () => {
     expect(toMatchExpression('   ')).toBeUndefined();
   });
 
+  it('matches a whole sentence with OR, dropping filler words', () => {
+    // AND is right for the search box, but a natural-language question shares
+    // no fiche's full wording — AND would return nothing at all.
+    expect(toMatchExpression('les contres sur mae geri', 'or')).toBe(
+      '"les" OR "contres" OR "sur" OR "mae" OR "geri"',
+    );
+    // Words under three characters would match half the base under OR. Longer
+    // filler ("les", "sur") is harmless: no fiche contains it, so it adds no
+    // results — bm25 still ranks the real matches first.
+    expect(toMatchExpression('un à la de mae', 'or')).toBe('"mae"');
+    expect(toMatchExpression('à la', 'or')).toBeUndefined();
+  });
+
+  it('finds fiches from a full question when matching with OR', async () => {
+    const db = await freshDb();
+    createEntity(db, 'technique', { title: 'Mae Geri', data: { discipline: 'Kyokushin' } });
+    createEntity(db, 'technique', { title: 'Jab' });
+
+    const question = 'quels sont les contres à longue distance sur un mae geri ?';
+    expect(searchEntities(db, question), 'AND finds nothing, as expected').toHaveLength(0);
+    expect(searchEntities(db, question, { match: 'or' }).map((r) => r.title)).toContain(
+      'Mae Geri',
+    );
+    db.close();
+  });
+
   it('finds fiches by descriptor fields, not just the title', async () => {
     const db = await freshDb();
     createEntity(db, 'technique', {

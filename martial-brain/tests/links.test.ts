@@ -114,6 +114,42 @@ describe('neighbourhood (what a fiche shows)', () => {
     db.close();
   });
 
+  it('composes inside an outer transaction', async () => {
+    // Saving a fiche wraps createEntity + setLinksOfType in one transaction,
+    // and setLinksOfType opens its own. SQLite rejects a nested BEGIN outright,
+    // so tx() has to be re-entrant — this is the shape that caught it.
+    const db = await freshDb();
+    const target = createEntity(db, 'situation', { title: 'Clinch' });
+
+    const saved = db.tx(() => {
+      const t = createEntity(db, 'technique', { title: 'Genou' });
+      setLinksOfType(db, t.id, [target.id], []);
+      return t;
+    });
+
+    expect(neighbourIds(db, saved.id)).toEqual([target.id]);
+    db.close();
+  });
+
+  it('rolls the whole nested operation back when an inner step throws', async () => {
+    const db = await freshDb();
+    const before = db.all(`SELECT id FROM entities`).length;
+
+    expect(() =>
+      db.tx(() => {
+        const t = createEntity(db, 'technique', { title: 'Sera annulée' });
+        db.tx(() => {
+          link(db, t.id, t.id); // no-op
+          throw new Error('échec au milieu');
+        });
+      }),
+    ).toThrow('échec au milieu');
+
+    // The outer transaction owns the rollback; nothing survives.
+    expect(db.all(`SELECT id FROM entities`).length).toBe(before);
+    db.close();
+  });
+
   it('reconciles a whole relation group in one edit', async () => {
     const db = await freshDb();
     const t = createEntity(db, 'technique', { title: 'Jab' });

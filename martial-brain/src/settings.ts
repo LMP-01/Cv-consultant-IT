@@ -6,16 +6,18 @@
  * travel to your other devices when the knowledge base syncs.
  */
 
+import type { ProviderId } from './ai/providers';
+
 const KEY = 'waza.settings';
 
 export type ThemePref = 'system' | 'light' | 'dark';
 
 export interface Settings {
   theme: ThemePref;
-  /** Provider id → API key. Never leaves this device except to the proxy. */
+  /** Provider id → API key. Stays on this device; sent only to that provider. */
   aiKeys: Record<string, string>;
   /** Provider ids in fallback order. */
-  aiOrder: string[];
+  aiOrder: ProviderId[];
   /** Chosen model per provider id. */
   aiModels: Record<string, string>;
   /** Model used for cheap, structured work (natural-language → filter). */

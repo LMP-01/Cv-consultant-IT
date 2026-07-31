@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function EntityFormView({ type, id }: Props): ReactNode {
-  const { db, write } = useDb();
+  const { db, write, flush } = useDb();
   const def = entityDef(type);
 
   const existing = useMemo(() => (id ? getEntity(db, id) : undefined), [db, id]);
@@ -53,7 +53,7 @@ export function EntityFormView({ type, id }: Props): ReactNode {
     });
   };
 
-  const submit = (): void => {
+  const submit = async (): Promise<void> => {
     if (!title.trim()) {
       setError(`${def.titleLabel} est obligatoire.`);
       return;
@@ -78,6 +78,9 @@ export function EntityFormView({ type, id }: Props): ReactNode {
       }),
     );
 
+    // Durable before we leave the screen: "Enregistrer" has to mean saved,
+    // even if the next thing that happens is a reload.
+    await flush();
     navigate({ name: 'detail', id: saved.id });
   };
 
@@ -146,7 +149,7 @@ export function EntityFormView({ type, id }: Props): ReactNode {
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-        <button type="button" className="btn primary" onClick={submit}>
+        <button type="button" className="btn primary" onClick={() => void submit()}>
           Enregistrer
         </button>
         <button
