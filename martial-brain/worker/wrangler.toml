@@ -1,0 +1,20 @@
+name = "waza-sync"
+main = "index.ts"
+compatibility_date = "2025-09-01"
+
+# D1 holds the meeting point for rows. Create it once with:
+#   npx wrangler d1 create waza
+# then paste the returned database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "waza"
+database_id = "REMPLACER_PAR_TON_DATABASE_ID"
+
+[vars]
+# Minutes a paired device's token stays valid. Re-pairing is a paste of the
+# secret, so a short-ish life costs little.
+TOKEN_TTL_MINUTES = "43200"
+
+# Secrets — set with `npx wrangler secret put NAME`, never in this file:
+#   SYNC_SECRET   the pairing passphrase you type on each device
+#   AI_KEY_SALT   optional; only used if you let the Worker store provider keys

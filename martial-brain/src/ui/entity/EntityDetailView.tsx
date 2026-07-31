@@ -18,12 +18,13 @@ import { entityDef, section, type EntityKey } from '../../domain/schema';
 import { useDb } from '../DbProvider';
 import { Code, Dot, EntityChip, useTheme } from '../common';
 import { href, navigate } from '../router';
+import { AiAssist } from './AiAssist';
 
 const isEmpty = (v: unknown): boolean =>
   v == null || v === '' || (Array.isArray(v) && v.length === 0);
 
 export function EntityDetailView({ id }: { id: string }): ReactNode {
-  const { db, write, revision } = useDb();
+  const { db, write, flush, revision } = useDb();
   const theme = useTheme();
 
   const record = useMemo(() => getEntity(db, id), [db, id, revision]);
@@ -50,9 +51,10 @@ export function EntityDetailView({ id }: { id: string }): ReactNode {
     ...(neighbours.get('fight' as EntityKey) ?? []),
   ].sort((a, b) => String(b.data.date ?? '').localeCompare(String(a.data.date ?? '')));
 
-  const remove = (): void => {
+  const remove = async (): Promise<void> => {
     if (!confirm(`Supprimer ${record.code} — ${record.title} ?`)) return;
     write((d) => deleteEntity(d, record.id));
+    await flush();
     navigate({ name: 'list', type: record.type });
   };
 
@@ -76,7 +78,7 @@ export function EntityDetailView({ id }: { id: string }): ReactNode {
           <a className="btn" href={href({ name: 'edit', id: record.id })}>
             Modifier
           </a>
-          <button type="button" className="btn danger" onClick={remove}>
+          <button type="button" className="btn danger" onClick={() => void remove()}>
             Supprimer
           </button>
         </div>
@@ -175,6 +177,8 @@ export function EntityDetailView({ id }: { id: string }): ReactNode {
           </div>
         </>
       )}
+
+      <AiAssist record={record} />
     </div>
   );
 }

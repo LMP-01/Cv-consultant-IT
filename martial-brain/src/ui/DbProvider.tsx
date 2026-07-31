@@ -24,6 +24,16 @@ interface DbContextValue {
   revision: number;
   /** Run a mutation, then re-render everything that reads the database. */
   write: <T>(fn: (db: Db) => T) => T;
+  /**
+   * Resolve once everything written so far is durable.
+   *
+   * The mutation itself is synchronous, but writing the image to IndexedDB is
+   * not — so anything that navigates away right after saving must await this,
+   * or a reload a few milliseconds later would find the previous state. There
+   * is no synchronous storage API to make this go away, and `pagehide` cannot
+   * await an async write.
+   */
+  flush: () => Promise<void>;
 }
 
 const DbContext = createContext<DbContextValue | null>(null);
@@ -99,9 +109,13 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
     [status],
   );
 
+  const flush = useCallback(async (): Promise<void> => {
+    if (status.phase === 'ready') await status.db.persist();
+  }, [status]);
+
   const value = useMemo<DbContextValue | null>(
-    () => (status.phase === 'ready' ? { db: status.db, revision, write } : null),
-    [status, revision, write],
+    () => (status.phase === 'ready' ? { db: status.db, revision, write, flush } : null),
+    [status, revision, write, flush],
   );
 
   if (status.phase === 'loading') {

@@ -245,6 +245,8 @@ export interface SearchFilters {
   /** Restrict to records linked to this entity. */
   linkedTo?: string;
   limit?: number;
+  /** See toMatchExpression. 'or' is for matching a whole sentence. */
+  match?: 'and' | 'or';
 }
 
 /**
@@ -253,13 +255,28 @@ export interface SearchFilters {
  * FTS5 treats bare punctuation and operators as syntax; a user typing
  * "mae geri (droite)" must not produce a syntax error. Every token is quoted,
  * and a trailing prefix-match is added so search feels live while typing.
+ *
+ * Two modes, because the two callers want opposite things:
+ *   · 'and' (default) — the search box, where each word you add narrows.
+ *   · 'or'  — matching a whole natural-language sentence against the base.
+ *     "les contres à longue distance sur mae geri" has no fiche containing
+ *     every word, so AND returns nothing; OR surfaces the fiches worth
+ *     looking at and bm25 puts the best first. Words under three characters
+ *     are dropped: with OR they would match half the base.
  */
-export function toMatchExpression(query: string): string | undefined {
-  const tokens = query
+export function toMatchExpression(
+  query: string,
+  mode: 'and' | 'or' = 'and',
+): string | undefined {
+  const all = query
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
     .filter((t) => t.length > 0);
+
+  const tokens = mode === 'or' ? all.filter((t) => t.length >= 3) : all;
   if (tokens.length === 0) return undefined;
+
+  if (mode === 'or') return tokens.map((t) => `"${t}"`).join(' OR ');
   return tokens.map((t, i) => (i === tokens.length - 1 ? `"${t}"*` : `"${t}"`)).join(' AND ');
 }
 
@@ -273,7 +290,7 @@ export function searchEntities(
   let from = 'FROM entities e';
   let order = 'e.code ASC';
 
-  const match = toMatchExpression(query);
+  const match = toMatchExpression(query, filters.match ?? 'and');
   if (match) {
     from += ' JOIN entities_fts f ON f.rowid = e.rowid';
     where.push('entities_fts MATCH $match');

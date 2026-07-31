@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { allTags, getEntityByCode, searchEntities } from '../db/queries';
 import { parseCode } from '../domain/ids';
 import { defsInSection, entityDef, SECTIONS, type EntityKey } from '../domain/schema';
+import { AskPanel } from './AskPanel';
 import { useDb } from './DbProvider';
 import { Dot, Empty, EntityRow, useTheme } from './common';
 import { navigate, replace } from './router';
@@ -84,6 +85,8 @@ export function SearchView({ initialQuery }: { initialQuery: string }): ReactNod
           </span>
         </div>
       )}
+
+      <AskPanel />
 
       <h2>Modules</h2>
       <div style={{ display: 'grid', gap: 8 }}>

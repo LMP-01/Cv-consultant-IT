@@ -13,11 +13,28 @@
  */
 import { getEntities, type EntityRecord } from '../db/queries';
 import type { Db } from '../db/sqlite';
-import { uuid } from './ids';
 
 /** Sort a pair so the same two ids always produce the same row. */
 export function canonical(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
+}
+
+/**
+ * An edge's id is derived from its endpoints, not generated.
+ *
+ * This is what makes sync trivial for links. If two devices, both offline,
+ * decide that K001 relates to A001, a random uuid on each would produce two
+ * rows for one relation and a unique-index violation the moment they meet.
+ * A derived id means both devices independently compute the SAME id, so the
+ * merge is an ordinary last-write-wins on one row and convergence is free.
+ *
+ * Concatenation rather than a hash: a hash collision would silently fuse two
+ * unrelated relations, and there is no size pressure that would justify the
+ * risk in a personal database.
+ */
+export function linkId(a: string, b: string, kind = 'rel'): string {
+  const [from, to] = canonical(a, b);
+  return `${from}~${to}~${kind}`;
 }
 
 export interface LinkRow {
@@ -43,7 +60,7 @@ export function link(db: Db, a: string, b: string, kind = 'rel'): void {
      VALUES ($id, $from, $to, $kind, $ts, $ts, 0, 1)
      ON CONFLICT(from_id, to_id, kind)
      DO UPDATE SET deleted = 0, dirty = 1, updated_at = $ts`,
-    { $id: uuid(), $from: from, $to: to, $kind: kind, $ts: ts },
+    { $id: linkId(a, b, kind), $from: from, $to: to, $kind: kind, $ts: ts },
   );
 }
 

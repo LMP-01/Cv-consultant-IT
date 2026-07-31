@@ -63,6 +63,47 @@ describe('sqlite build', () => {
     db.close();
   });
 
+  it('marks a transaction as needing to be persisted', async () => {
+    // This is the regression that mattered most: the persist scheduler skips
+    // while a transaction is open, and the depth counter used to be cleared in
+    // a `finally` — i.e. AFTER the commit tried to schedule. Every
+    // transactional write was silently non-durable, which is every write the
+    // app makes through a form.
+    const db = await freshDb();
+    await db.persist();
+    expect(db.hasUnsavedChanges).toBe(false);
+
+    db.tx(() => {
+      db.run(
+        `INSERT INTO entities (id, type, code, title, data, search_text, created_at, updated_at)
+         VALUES ('1','technique','K001','Jab','{}','',1,1)`,
+      );
+    });
+    expect(db.hasUnsavedChanges, 'a committed transaction must be pending a write').toBe(true);
+
+    await db.persist();
+    expect(db.hasUnsavedChanges).toBe(false);
+    db.close();
+  });
+
+  it('does not schedule a write from inside an open transaction', async () => {
+    const db = await freshDb();
+    await db.persist();
+
+    db.tx(() => {
+      db.run(
+        `INSERT INTO entities (id, type, code, title, data, search_text, created_at, updated_at)
+         VALUES ('1','technique','K001','Jab','{}','',1,1)`,
+      );
+      // Serialising a half-applied transaction would store a state that never
+      // existed; the flag stays clear until the commit.
+      expect(db.hasUnsavedChanges).toBe(false);
+    });
+
+    expect(db.hasUnsavedChanges).toBe(true);
+    db.close();
+  });
+
   it('round-trips through an exported image', async () => {
     const db = await freshDb();
     db.run(
