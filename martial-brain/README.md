@@ -193,9 +193,18 @@ Sur chaque appareil ensuite : Réglages → Synchronisation → coller la phrase
 Elle est échangée une fois contre un jeton signé ; la phrase elle-même n'est pas
 conservée.
 
-> Si l'appairage renvoie une erreur 500, c'est Deno KV qui n'est pas actif sur le
-> projet. L'application reste entièrement utilisable — seule la synchronisation
-> est concernée, et l'export `.sqlite3` la remplace en attendant.
+**Deno KV doit être activé sur l'application** (onglet *Bases de données* de la
+console) : c'est là que le serveur range les fiches à synchroniser. S'il ne l'est
+pas, l'application se charge et fonctionne normalement, et seules les routes
+`/api/sync` répondent 503 avec un message explicite — l'export `.sqlite3`
+remplace la synchronisation en attendant.
+
+> Le serveur ne suppose jamais que KV existe. Quand KV n'est pas activé,
+> `Deno.openKv` n'est pas simplement inutilisable : **la fonction n'existe pas**,
+> et l'appeler lève une `TypeError`. L'ouvrir au chargement du module faisait
+> donc échouer l'entrypoint entier — donc le déploiement — pour une
+> fonctionnalité pourtant optionnelle. Elle est désormais ouverte à la demande,
+> derrière un test d'existence.
 
 Pour essayer en local d'abord :
 
