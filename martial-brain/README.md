@@ -150,22 +150,43 @@ après chaque enregistrement, et toutes les cinq minutes. Aucun bouton à presse
 origine. Une seule URL gratuite `*.deno.dev`, pas de domaine à acheter, pas de
 second fournisseur, et le champ « adresse du serveur » reste vide côté client.
 
-```bash
-# 1. l'outil de déploiement, une seule fois
-deno install -gArf jsr:@deno/deployctl
+#### Depuis la console Deno Deploy (aucun outil local requis)
 
-# 2. construire, puis déployer — la 1re fois, une page de connexion Deno s'ouvre
+*Applications → New app → deploy from a GitHub repository*, puis :
+
+| Réglage | Valeur |
+|---|---|
+| Repository | `LMP-01/Cv-consultant-IT` |
+| Branche | celle qui porte l'application |
+| Framework / préréglage | **Aucun** — surtout pas Next.js |
+| Install command | `npm install` |
+| Build command | `npm run build` |
+| Entrypoint | `martial-brain/server/main.ts` |
+
+> Le préréglage est le réglage piégeux. Deno détecte parfois « Next.js » tout
+> seul et échoue alors sur `Le projet Next.js ne contient pas de fichier
+> package.json` — ce projet n'a rien de Next.js.
+
+Le `package.json` à la racine du dépôt existe uniquement pour ça : il délègue la
+construction vers `martial-brain/`, si bien que Deno trouve ce qu'il cherche là
+où il regarde par défaut, sans avoir à régler un répertoire racine.
+
+Seul `martial-brain/dist/` est servi — la racine du dépôt (dont les PDF de CV)
+n'est jamais exposée : toute URL inconnue renvoie la coquille de l'application.
+
+#### Ou en ligne de commande
+
+```bash
+deno install -gArf jsr:@deno/deployctl        # une seule fois
 npm install && npm run build
 deployctl deploy --project=waza --include=dist,server,deno.json \
   --entrypoint=server/main.ts
 ```
 
-`deployctl` affiche l'URL exacte à la fin. C'est ce lien que tu ouvres, et
-depuis lequel tu fais « Ajouter à l'écran d'accueil » sur ton téléphone.
+#### Dans les deux cas
 
-Il reste **une** chose à régler dans le tableau de bord Deno Deploy :
-*Settings → Environment Variables → `SYNC_SECRET`* = une phrase que toi seul
-connais. Sans elle l'application se charge et fonctionne, mais l'appairage
+*Paramètres → Variables d'environnement → `SYNC_SECRET`* = une phrase que toi
+seul connais. Sans elle l'application se charge et fonctionne, mais l'appairage
 répond « SYNC_SECRET n'est pas configuré ».
 
 Sur chaque appareil ensuite : Réglages → Synchronisation → coller la phrase.
