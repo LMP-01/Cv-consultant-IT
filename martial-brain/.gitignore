@@ -1,0 +1,25 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Playwright
+test-results
+playwright-report
+blob-report
+screenshots
+
+# Wrangler / D1 local state
+.wrangler
+.dev.vars
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
