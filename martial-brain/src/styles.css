@@ -210,7 +210,16 @@ textarea {
   padding: 0 12px;
   background: var(--card);
   border-bottom: 1px solid var(--line);
-  z-index: 30;
+  /*
+   * Au-dessus du panneau LUIS (44), et pas seulement au-dessus du contenu.
+   *
+   * La barre supérieure crée un contexte d'empilement : ses fenêtres —
+   * notifications, profil — sont peintes au niveau de la barre, quel que soit
+   * leur propre z-index. En dessous de 1280 px, LUIS devient un panneau fixe à
+   * 44 ; avec une barre à 30, il passait par-dessus les menus déroulants, qui
+   * s'ouvraient derrière lui sans qu'on puisse les cliquer.
+   */
+  z-index: 46;
 }
 
 .brand {
@@ -1557,7 +1566,298 @@ textarea {
   font-size: 13px;
 }
 
+/* ── LUIS AI ───────────────────────────────────────────────────────────────
+ * Le panneau prend la colonne libre à droite du contenu. Cet espace existait
+ * déjà, vide : `.inner` borne le texte à 1100 px parce qu'au-delà d'une
+ * centaine de caractères par ligne la lecture décroche. Autant y mettre
+ * l'analyste plutôt que d'élargir un texte devenu illisible.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --luis-w: 372px;
+}
+
+/* La coquille gagne une colonne quand le panneau est ouvert. L'attribut est
+   posé sur <html> par le panneau lui-même : c'est la seule information dont
+   la grille a besoin, et elle survit à un rendu React raté. */
+:root[data-luis='open'] .shell {
+  grid-template-columns: var(--sidebar-w) 1fr var(--luis-w);
+  grid-template-areas:
+    'topbar topbar topbar'
+    'sidebar body luis';
+}
+
+.luis {
+  grid-area: luis;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 0;
+  background: var(--card);
+  border-left: 1px solid var(--line);
+  animation: luis-in var(--t-slow) var(--ease);
+}
+
+@keyframes luis-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+.luis-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.luis-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  flex: none;
+}
+.luis-head .chip.sm {
+  padding: 3px 7px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+.luis-head .chip.sm .t {
+  max-width: 96px;
+}
+.luis-head .icon-btn {
+  margin-left: auto;
+  flex: none;
+}
+
+/* Le rattachement à la fiche ouverte est affiché : sans cela, on ne sait pas
+   si « pourquoi ça ne passe plus ? » parle de la fiche ou du carnet entier. */
+.luis-focus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: var(--accent-wash);
+}
+
+.luis-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 0;
+}
+
+.luis-msg {
+  font-size: 13px;
+  line-height: 1.55;
+}
+.luis-msg.user .luis-text {
+  background: var(--accent-wash);
+  border-radius: var(--r-2) var(--r-2) 2px var(--r-2);
+  padding: 8px 11px;
+  margin-left: 22px;
+}
+.luis-msg.assistant .luis-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.luis-msg.bad .luis-text {
+  color: var(--bad);
+}
+
+.luis-src {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+.luis-src .code {
+  border: none;
+  font-size: 10px;
+  padding: 1px 5px;
+}
+
+.luis-meta {
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.luis-intro {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  display: grid;
+  gap: 10px;
+}
+.luis-intro p {
+  margin: 0;
+}
+.luis-hints {
+  display: grid;
+  gap: 4px;
+}
+.luis-hints .tag {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.4;
+  padding: 5px 9px;
+  border-radius: var(--r-1);
+}
+
+.luis-compose {
+  display: flex;
+  gap: 7px;
+  align-items: flex-end;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+.luis-compose textarea {
+  min-height: 40px;
+  max-height: 140px;
+  font-size: 13px;
+  resize: none;
+}
+.luis-compose .btn {
+  flex: none;
+  height: 34px;
+  padding: 0 12px;
+}
+
+/* Le bouton flottant. Déplaçable parce qu'un bouton fixe masque toujours
+   quelque chose, et que ce quelque chose dépend de l'écran. */
+.luis-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-2);
+  cursor: grab;
+  touch-action: none;
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.luis-fab:hover {
+  transform: scale(1.06);
+  box-shadow: var(--shadow-3);
+}
+.luis-fab:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+}
+
+/* ── Choix du corpus ───────────────────────────────────────────────────── */
+
+.cmdk.corpus {
+  width: min(680px, calc(100vw - 28px));
+}
+.corpus-head {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.corpus-head .icon-btn {
+  margin-left: auto;
+}
+.corpus-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: none;
+  color: inherit;
+  border-radius: var(--r-1);
+  text-align: left;
+  font-size: 13px;
+}
+.corpus-row:hover {
+  background: var(--card-hover);
+}
+.corpus-row.on {
+  background: var(--accent-wash);
+}
+.corpus-row > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+.corpus-row .grow {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  color: inherit;
+}
+.corpus-row b {
+  font-weight: 500;
+}
+.corpus-row .sub {
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.corpus-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.corpus-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  flex-wrap: wrap;
+}
+.corpus-foot .btn {
+  cursor: pointer;
+}
+
 /* ── Adaptatif : desktop prioritaire, puis tablette, puis mobile ───────── */
+
+/* Le dock ne peut pas rester une colonne quand la fiche a déjà empilé la
+   sienne : à trois colonnes plus un dock, il ne reste rien pour le texte.
+   En dessous de 1280 px, LUIS redevient un panneau posé au-dessus. */
+@media (max-width: 1280px) {
+  :root[data-luis='open'] .shell {
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-areas:
+      'topbar topbar'
+      'sidebar body';
+  }
+  .luis {
+    position: fixed;
+    top: var(--topbar-h);
+    right: 0;
+    bottom: 0;
+    width: min(100vw, var(--luis-w));
+    z-index: 44;
+    box-shadow: var(--shadow-3);
+    border-left: 1px solid var(--line-strong);
+  }
+}
 
 @media (max-width: 1180px) {
   .split {
@@ -1613,6 +1913,12 @@ textarea {
   .brand small,
   .sync-badge .t {
     display: none;
+  }
+  /* Sur téléphone le panneau prend tout l'écran : une colonne de 372 px sur
+     390 px de large laisserait une bande de contenu inutilisable derrière. */
+  .luis {
+    top: var(--topbar-h);
+    width: 100vw;
   }
   .search-trigger .placeholder,
   .search-trigger .kbd {

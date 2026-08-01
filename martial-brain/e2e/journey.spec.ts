@@ -165,13 +165,14 @@ test.describe('sans clé IA', () => {
     await freshApp(page);
 
     await page.goto('/#/search');
-    await expect(page.locator('.banner')).toContainText('clé IA');
+    // La bannière de l'écran, pas celle de LUIS — il en affiche une aussi.
+    await expect(page.locator('.pane .banner').first()).toContainText('clé IA');
     // The ordinary search still works right underneath it.
     await page.locator('input[type="search"]').first().fill('mae');
     await expect(page.locator('.rows')).toContainText('Mae Geri');
 
     await page.goto('/#/analytics');
     await expect(page.getByRole('heading', { name: 'Lecture statistique' })).toBeVisible();
-    await expect(page.locator('.banner')).toContainText('calculés en SQL');
+    await expect(page.locator('.pane .banner').first()).toContainText('calculés en SQL');
   });
 });

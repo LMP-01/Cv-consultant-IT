@@ -17,7 +17,7 @@
  */
 import type { Db } from './sqlite';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 interface Migration {
   version: number;
@@ -110,6 +110,65 @@ const MIGRATIONS: Migration[] = [
         DELETE FROM entities_fts WHERE rowid = old.rowid;
         INSERT INTO entities_fts(rowid, code, title, body)
         VALUES (new.rowid, new.code, new.title, new.search_text);
+      END;
+    `,
+  },
+
+  {
+    version: 2,
+    /*
+     * Le corpus du RAG.
+     *
+     * Il vit dans la même base que le graphe, à côté et non dedans : un passage
+     * de pack de connaissances n'est pas une fiche. Il n'a pas d'identifiant
+     * K003, il ne se relie à rien, il ne se synchronise pas entre appareils —
+     * un pack se réinstalle en une seconde depuis le dépôt, le transporter
+     * serait du poids mort dans la synchronisation.
+     *
+     * `rag_chunks` porte un `embedding` NULLABLE, et c'est le point important :
+     * Groq ne vectorise pas, une clé peut manquer, une indexation peut échouer
+     * à mi-parcours. La recherche doit rester utilisable dans tous ces cas —
+     * d'où BM25 en socle et les vecteurs en complément, jamais l'inverse.
+     */
+    sql: `
+      CREATE TABLE IF NOT EXISTS rag_docs (
+        id         TEXT PRIMARY KEY,
+        source     TEXT NOT NULL,          -- 'pack' | 'import'
+        slug       TEXT NOT NULL UNIQUE,
+        title      TEXT NOT NULL,
+        discipline TEXT NOT NULL DEFAULT '',
+        chunks     INTEGER NOT NULL DEFAULT 0,
+        embedded   INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS rag_chunks (
+        id        TEXT PRIMARY KEY,
+        doc_id    TEXT NOT NULL REFERENCES rag_docs(id) ON DELETE CASCADE,
+        ord       INTEGER NOT NULL,
+        heading   TEXT NOT NULL DEFAULT '',
+        text      TEXT NOT NULL,
+        embedding BLOB
+      );
+      CREATE INDEX IF NOT EXISTS rag_chunks_doc ON rag_chunks(doc_id);
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS rag_fts USING fts5(
+        heading,
+        text,
+        tokenize = "unicode61 remove_diacritics 2"
+      );
+
+      CREATE TRIGGER IF NOT EXISTS rag_fts_ai AFTER INSERT ON rag_chunks BEGIN
+        INSERT INTO rag_fts(rowid, heading, text) VALUES (new.rowid, new.heading, new.text);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS rag_fts_ad AFTER DELETE ON rag_chunks BEGIN
+        DELETE FROM rag_fts WHERE rowid = old.rowid;
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS rag_fts_au AFTER UPDATE ON rag_chunks BEGIN
+        DELETE FROM rag_fts WHERE rowid = old.rowid;
+        INSERT INTO rag_fts(rowid, heading, text) VALUES (new.rowid, new.heading, new.text);
       END;
     `,
   },

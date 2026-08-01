@@ -18,6 +18,8 @@ import {
 } from 'react';
 import { migrate } from '../db/migrations';
 import { isSeeded, seed } from '../db/seed';
+import { loadPack, packDef } from '../rag/packs';
+import { getDoc, installDoc } from '../rag/store';
 import { openDatabase, type Db } from '../db/sqlite';
 import { loadSettings } from '../settings';
 import { AutoSync, type SyncState } from '../sync/auto';
@@ -78,6 +80,7 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
         const db = await openDatabase();
         migrate(db);
         if (!isSeeded(db)) seed(db);
+        await installBaselinePack(db);
         await db.persist();
         opened = db;
         if (!cancelled) setStatus({ phase: 'ready', db });
@@ -177,4 +180,37 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
   }
 
   return <DbContext.Provider value={value}>{children}</DbContext.Provider>;
+}
+
+
+/**
+ * Installe le pack « fondamentaux » au premier démarrage.
+ *
+ * C'est le seul pack installé d'office, et pour une raison précise : il ne
+ * contient aucun règlement, il contient la méthode d'analyse. Il est donc
+ * pertinent quelle que soit la discipline, et sans lui LUIS AI démarre sans
+ * rien d'autre que les fiches de l'utilisateur — c'est-à-dire, au premier
+ * lancement, presque rien.
+ *
+ * Les quinze packs de style, eux, s'installent à la demande : personne ne
+ * pratique quinze disciplines, et les télécharger tous coûterait plus que ce
+ * que pèse l'application.
+ *
+ * L'échec est volontairement silencieux. Un pack qui ne se charge pas — réseau
+ * coupé au premier lancement, cache vide — ne doit pas empêcher l'application
+ * de s'ouvrir : elle fonctionne entièrement sans corpus.
+ */
+async function installBaselinePack(db: Db): Promise<void> {
+  const def = packDef('fondamentaux');
+  if (!def || getDoc(db, def.slug)) return;
+  try {
+    const markdown = await loadPack(def.slug);
+    installDoc(
+      db,
+      { source: 'pack', slug: def.slug, title: def.title, discipline: def.discipline },
+      markdown,
+    );
+  } catch {
+    /* le corpus est facultatif ; l'application s'ouvre sans lui */
+  }
 }

@@ -17,6 +17,7 @@ import { useDb } from './DbProvider';
 import { Dot, useTheme } from './common';
 import { Icon, Mark, moduleIcon } from './icons';
 import { FONT_SCALES, getPrefs, resolvedTheme, setPrefs, subscribePrefs } from './prefs';
+import { LuisPanel } from './luis/LuisPanel';
 import { href, navigate, type Route } from './router';
 import { useTabs } from './tabs';
 
@@ -91,6 +92,8 @@ export function AppShell({ route, children }: { route: Route; children: ReactNod
         <Breadcrumb route={route} />
         {children}
       </div>
+
+      <LuisPanel route={route} />
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
     </div>

@@ -166,6 +166,99 @@ export async function fetchModels(
 }
 
 /**
+ * Les modèles d'embedding, quand le fournisseur en propose.
+ *
+ * Groq n'a aucun point d'entrée d'embedding : il génère, il ne vectorise pas.
+ * C'est pour cette raison que le RAG doit fonctionner SANS vecteurs — voir
+ * `rag/retrieve.ts`. Les vecteurs améliorent le rappel, ils ne le portent pas.
+ */
+export const EMBEDDING_MODELS: Partial<Record<ProviderId, { model: string; dims: number }>> = {
+  // 3072 dimensions par défaut, réductibles à 1536 ou 768. On demande 768 :
+  // c'est quatre fois moins d'octets à stocker dans SQLite pour une perte de
+  // rappel marginale sur des corpus de quelques centaines de passages.
+  gemini: { model: 'gemini-embedding-001', dims: 768 },
+  mistral: { model: 'mistral-embed', dims: 1024 },
+};
+
+export function canEmbed(provider: ProviderId): boolean {
+  return provider in EMBEDDING_MODELS;
+}
+
+/**
+ * Vectorise un lot de passages.
+ *
+ * Le lot est la seule façon raisonnable de procéder : un pack de connaissances
+ * fait quelques dizaines de passages, et une requête par passage épuiserait la
+ * limite par minute du palier gratuit avant la fin de l'indexation.
+ */
+export async function embed(
+  provider: ProviderId,
+  apiKey: string,
+  texts: readonly string[],
+  fetcher: Fetcher = directFetch,
+): Promise<Float32Array[]> {
+  const spec = EMBEDDING_MODELS[provider];
+  if (!spec) throw new ProviderError(provider, 0, 'ce fournisseur ne vectorise pas');
+  if (texts.length === 0) return [];
+
+  if (provider === 'gemini') {
+    const res = await fetcher(
+      `${GEMINI_BASE}/models/${spec.model}:batchEmbedContents?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: texts.map((text) => ({
+            model: `models/${spec.model}`,
+            content: { parts: [{ text }] },
+            outputDimensionality: spec.dims,
+            taskType: 'RETRIEVAL_DOCUMENT',
+          })),
+        }),
+      },
+    );
+    if (!res.ok) await readError(res, provider);
+    const body = (await res.json()) as { embeddings?: { values?: number[] }[] };
+    return (body.embeddings ?? []).map((e) => normalise(e.values ?? []));
+  }
+
+  const base = OPENAI_BASES[provider];
+  if (!base) throw new ProviderError(provider, 0, 'fournisseur non pris en charge');
+
+  const res = await fetcher(`${base}/embeddings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: spec.model, input: texts }),
+  });
+  if (!res.ok) await readError(res, provider);
+  const body = (await res.json()) as { data?: { index?: number; embedding?: number[] }[] };
+
+  // L'ordre du tableau renvoyé n'est pas garanti ; `index` l'est.
+  const out = new Array<Float32Array>(texts.length).fill(new Float32Array(0));
+  for (const [i, item] of (body.data ?? []).entries()) {
+    out[item.index ?? i] = normalise(item.embedding ?? []);
+  }
+  return out;
+}
+
+/**
+ * Vecteurs ramenés à la norme 1.
+ *
+ * Le produit scalaire de deux vecteurs unitaires EST leur cosinus. Normaliser
+ * une fois à l'indexation évite de recalculer deux normes à chaque comparaison,
+ * au moment précis où l'on compare la requête à des centaines de passages.
+ * Gemini le demande explicitement pour les dimensions autres que 3072.
+ */
+function normalise(values: readonly number[]): Float32Array {
+  const vector = Float32Array.from(values);
+  let sum = 0;
+  for (const v of vector) sum += v * v;
+  const norm = Math.sqrt(sum);
+  if (norm > 0) for (let i = 0; i < vector.length; i += 1) vector[i] = (vector[i] as number) / norm;
+  return vector;
+}
+
+/**
  * Pick a starting model from what the key actually grants.
  * Prefers the small/fast members of the family — this app's LLM work is short
  * structured output and summaries, not deep reasoning.
