@@ -23,7 +23,7 @@ export default defineConfig({
         // The SQLite runtime and the fonts must both be cached, or an offline
         // launch either cannot open its own database or repaints in a fallback
         // face — and offline launches are the entire point of installing it.
-        globPatterns: ['**/*.{js,css,html,svg,png,wasm,mjs,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,wasm,mjs,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
