@@ -37,6 +37,17 @@ interface Message extends Turn {
   error?: boolean;
 }
 
+type MascotMood = 'idle' | 'thinking' | 'writing';
+
+/**
+ * Le temps qu'une question passe « en réflexion » avant d'afficher « en train
+ * d'écrire ». Il n'y a pas de vraie frontière entre les deux — la réponse
+ * arrive d'un bloc, jamais en flux — donc c'est un rythme choisi, pas un
+ * signal réel du fournisseur : assez court pour que l'écriture s'affiche
+ * même sur une réponse rapide, assez long pour laisser voir la respiration.
+ */
+const THINK_MS = 1600;
+
 /** La fiche à laquelle la question se rapporte, s'il y en a une. */
 function focusOf(route: Route): string | undefined {
   return route.name === 'detail' || route.name === 'edit' ? route.id : undefined;
@@ -95,7 +106,9 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
     }
   });
 
-  const drag = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ dx: number; dy: number; w: number; h: number; moved: boolean } | null>(
+    null,
+  );
 
   // Le déplacement écoute la fenêtre, pas le bouton : un doigt qui glisse vite
   // sort du bouton, et l'écouteur local perdrait l'événement en cours de route.
@@ -106,8 +119,12 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
       const d = drag.current;
       if (!d) return;
       d.moved = true;
-      const x = Math.min(Math.max(8, e.clientX - d.dx), window.innerWidth - 60);
-      const y = Math.min(Math.max(8, e.clientY - d.dy), window.innerHeight - 60);
+      // La taille réelle du bouton est mesurée au moment du geste plutôt que
+      // supposée fixe : sur grand écran la mascotte debout est bien plus
+      // grande que le disque mobile, et une constante aurait laissé l'une
+      // des deux tailles déborder de l'écran.
+      const x = Math.min(Math.max(8, e.clientX - d.dx), window.innerWidth - d.w - 8);
+      const y = Math.min(Math.max(8, e.clientY - d.dy), window.innerHeight - d.h - 8);
       setPos({ x, y });
     };
 
@@ -143,7 +160,13 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
       style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
       onPointerDown={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        drag.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
+        drag.current = {
+          dx: e.clientX - rect.left,
+          dy: e.clientY - rect.top,
+          w: rect.width,
+          h: rect.height,
+          moved: false,
+        };
         // Forcer un rendu pour que l'effet ci-dessus s'abonne au glissement.
         setPos((p) => p ?? { x: rect.left, y: rect.top });
       }}
@@ -151,8 +174,39 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
       // lui seul sait si le geste était un clic ou un déplacement.
       onClick={(e) => e.preventDefault()}
     >
+      {/* Visible seulement sur grand écran (voir styles.css) : sur mobile le
+          disque d'accent porte déjà le sens à lui seul. */}
+      <span className="luis-fab-tag" aria-hidden="true">
+        IA
+      </span>
       <img src="/mascot/luis.webp" alt="" className="luis-fab-avatar" draggable={false} />
     </button>
+  );
+}
+
+/**
+ * La mascotte, en scène. Trois humeurs sur une seule image : au repos elle
+ * respire à peine, en réflexion elle respire fort assise en tailleur — la
+ * pose ne change pas, elle est déjà en tailleur — et en écriture elle frappe
+ * du sabre d'un air sérieux, une bulle « … » à ses côtés pour ne laisser
+ * aucun doute sur ce qu'elle fait.
+ */
+function MascotStage({ mood, size = 'lg' }: { mood: MascotMood; size?: 'lg' | 'md' }): ReactNode {
+  return (
+    <div className={`mascot-stage${size === 'md' ? ' md' : ''}`} data-mood={mood}>
+      <div className="mascot-figure">
+        <img src="/mascot/luis.webp" alt="" className="mascot-img" />
+        {mood === 'writing' && (
+          <div className="mascot-bubble" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+        )}
+      </div>
+      {mood === 'thinking' && <p className="mascot-caption">Je réfléchis…</p>}
+      {mood === 'writing' && <p className="mascot-caption">LUIS écrit…</p>}
+    </div>
   );
 }
 
@@ -168,6 +222,7 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   const [showModels, setShowModels] = useState(false);
   const [prefer, setPrefer] = useState<{ provider: ProviderId; model: string } | null>(null);
   const [slugs, setSlugs] = useState<string[]>([]);
+  const [mood, setMood] = useState<MascotMood>('idle');
   const listRef = useRef<HTMLDivElement>(null);
 
   const docs = listDocs(db);
@@ -180,6 +235,19 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
+
+  // Réflexion puis écriture : la réponse arrive d'un bloc, sans étape
+  // intermédiaire observable, donc la seconde humeur est un rythme choisi et
+  // non un vrai signal du fournisseur (voir THINK_MS).
+  useEffect(() => {
+    if (!busy) {
+      setMood('idle');
+      return;
+    }
+    setMood('thinking');
+    const t = window.setTimeout(() => setMood('writing'), THINK_MS);
+    return () => window.clearTimeout(t);
+  }, [busy]);
 
   // Un pack désinstallé ne doit pas rester sélectionné : la question serait
   // filtrée sur un corpus vide et ne trouverait plus rien, sans rien dire.
@@ -378,7 +446,7 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
 
         {busy && (
           <div className="luis-msg assistant">
-            <div className="luis-meta">LUIS cherche dans ta base…</div>
+            <MascotStage mood={mood} size="md" />
           </div>
         )}
       </div>
@@ -426,6 +494,7 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
 function Intro({ configured, docs }: { configured: boolean; docs: number }): ReactNode {
   return (
     <div className="luis-intro">
+      <MascotStage mood="idle" />
       <p>
         <b>LUIS AI</b> lit <i>ta</i> base avant de répondre : tes fiches, leurs relations, et le
         pack de connaissances choisi. Il cite ses sources et ne calcule aucun chiffre lui-même.
