@@ -87,6 +87,61 @@ describe('provider wire formats', () => {
     }
   });
 
+  it('sends an inline image or video to Gemini ahead of the text', async () => {
+    const fetcher = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as Record<string, any>;
+      expect(body.contents[0].parts).toEqual([
+        { inlineData: { mimeType: 'image/jpeg', data: 'aW1n' } },
+        { inlineData: { mimeType: 'video/mp4', data: 'dmlk' } },
+        { text: 'que vois-tu ?' },
+      ]);
+      return json({ candidates: [{ content: { parts: [{ text: 'une garde basse' }] } }] });
+    });
+
+    const text = await generate(
+      'gemini',
+      'k',
+      'gemini-x',
+      {
+        system: 's',
+        prompt: 'que vois-tu ?',
+        attachments: [
+          { mimeType: 'image/jpeg', data: 'aW1n' },
+          { mimeType: 'video/mp4', data: 'dmlk' },
+        ],
+      },
+      fetcher,
+    );
+    expect(text).toBe('une garde basse');
+  });
+
+  it('sends an image as image_url to Groq/Mistral, and drops video entirely', async () => {
+    const fetcher = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as Record<string, any>;
+      expect(body.messages[1].content).toEqual([
+        { type: 'text', text: 'que vois-tu ?' },
+        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,aW1n' } },
+      ]);
+      return json({ choices: [{ message: { content: 'une garde basse' } }] });
+    });
+
+    const text = await generate(
+      'groq',
+      'k',
+      'llama-x',
+      {
+        system: 's',
+        prompt: 'que vois-tu ?',
+        attachments: [
+          { mimeType: 'image/jpeg', data: 'aW1n' },
+          { mimeType: 'video/mp4', data: 'dmlk' },
+        ],
+      },
+      fetcher,
+    );
+    expect(text).toBe('une garde basse');
+  });
+
   it('lists only the models a key can actually generate with', async () => {
     const gemini = await fetchModels('gemini', 'k', async () =>
       json({

@@ -5,7 +5,7 @@
  * user picked. No account, no server-side key store, nothing to leak — and the
  * AI features work with no infrastructure deployed at all.
  */
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   fetchModels,
   PROVIDERS,
@@ -20,6 +20,9 @@ export function AiPanel(): ReactNode {
   const [models, setModels] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // La dernière valeur de clé déjà vérifiée par fournisseur, pour ne pas
+  // relister les modèles à chaque perte de focus si rien n'a changé.
+  const checkedKey = useRef<Partial<Record<ProviderId, string>>>({});
 
   const configured = PROVIDERS.filter((p) => settings.aiKeys[p.id] && settings.aiModels[p.id]);
 
@@ -30,6 +33,7 @@ export function AiPanel(): ReactNode {
     setErrors((prev) => ({ ...prev, [id]: '' }));
     try {
       const available = await fetchModels(id, key);
+      checkedKey.current[id] = key;
       setModels((prev) => ({ ...prev, [id]: available }));
 
       // La liste est conservée : c'est elle qui donne au routeur de quoi se
@@ -137,7 +141,18 @@ export function AiPanel(): ReactNode {
                       saveSettings({ aiKeys: { ...settings.aiKeys, [id]: e.target.value.trim() } }),
                     )
                   }
+                  onBlur={() => {
+                    // Sans modèle choisi, ce fournisseur est invisible du
+                    // routeur (voir usableProviders) : une clé collée puis
+                    // jamais vérifiée restait configurée en apparence mais
+                    // n'était jamais essayée, et LUIS s'épuisait sur le seul
+                    // fournisseur resté actif sans que rien ne l'explique.
+                    if (key && key !== checkedKey.current[id]) void check(id);
+                  }}
                 />
+                {key && !settings.aiModels[id] && busy !== id && (
+                  <div className="field-help">Se vérifie automatiquement en quittant le champ.</div>
+                )}
               </div>
 
               {available.length > 0 && (
