@@ -151,7 +151,7 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
       // lui seul sait si le geste était un clic ou un déplacement.
       onClick={(e) => e.preventDefault()}
     >
-      AI
+      <img src="/mascot/luis.webp" alt="" className="luis-fab-avatar" draggable={false} />
     </button>
   );
 }
@@ -247,7 +247,7 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
     <aside className="luis" aria-label="LUIS AI">
       <header className="luis-head">
         <span className="luis-title">
-          <Icon name="luis" size={16} />
+          <img src="/mascot/luis.webp" alt="" className="luis-avatar" />
           LUIS&nbsp;AI
         </span>
 
