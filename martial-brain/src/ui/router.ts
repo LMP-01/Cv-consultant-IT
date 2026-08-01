@@ -1,7 +1,7 @@
 /**
  * Hash routing, hand-rolled.
  *
- * A router library would be ~15 kB to resolve nine routes with no nesting, no
+ * A router library would be ~15 kB to resolve eleven routes with no nesting, no
  * loaders and no code-splitting. Hash routes also mean the PWA works when
  * opened from a file:// URL or a static host with no rewrite rules.
  */
@@ -13,10 +13,18 @@ export type Route =
   | { name: 'list'; type: EntityKey }
   | { name: 'detail'; id: string }
   | { name: 'edit'; id: string }
-  | { name: 'create'; type: EntityKey }
+  /**
+   * `preset` pré-remplit un champ à la création. Il n'existe que pour les
+   * commandes du type « Importer une vidéo » : la palette veut ouvrir le
+   * formulaire Ressource déjà réglé sur Vidéo, sans quoi la commande n'est
+   * qu'un raccourci vers un formulaire vide.
+   */
+  | { name: 'create'; type: EntityKey; preset?: { field: string; value: string } }
   | { name: 'graph'; focus?: string }
   | { name: 'search'; q?: string }
   | { name: 'analytics' }
+  | { name: 'timeline'; year?: number }
+  | { name: 'calendar'; month?: string }
   | { name: 'settings' };
 
 export function href(route: Route): string {
@@ -30,13 +38,19 @@ export function href(route: Route): string {
     case 'edit':
       return `#/e/${route.id}/edit`;
     case 'create':
-      return `#/new/${route.type}`;
+      return route.preset
+        ? `#/new/${route.type}?${encodeURIComponent(route.preset.field)}=${encodeURIComponent(route.preset.value)}`
+        : `#/new/${route.type}`;
     case 'graph':
       return route.focus ? `#/graph/${route.focus}` : '#/graph';
     case 'search':
       return route.q ? `#/search?q=${encodeURIComponent(route.q)}` : '#/search';
     case 'analytics':
       return '#/analytics';
+    case 'timeline':
+      return route.year ? `#/timeline/${route.year}` : '#/timeline';
+    case 'calendar':
+      return route.month ? `#/calendar/${route.month}` : '#/calendar';
     case 'settings':
       return '#/settings';
   }
@@ -55,8 +69,13 @@ export function parseHash(raw: string): Route {
     case 'e':
       if (!a) return { name: 'dashboard' };
       return b === 'edit' ? { name: 'edit', id: a } : { name: 'detail', id: a };
-    case 'new':
-      return a && isEntityKey(a) ? { name: 'create', type: a } : { name: 'dashboard' };
+    case 'new': {
+      if (!a || !isEntityKey(a)) return { name: 'dashboard' };
+      const first = [...new URLSearchParams(query).entries()][0];
+      return first
+        ? { name: 'create', type: a, preset: { field: first[0], value: first[1] } }
+        : { name: 'create', type: a };
+    }
     case 'graph':
       return a ? { name: 'graph', focus: a } : { name: 'graph' };
     case 'search': {
@@ -65,6 +84,12 @@ export function parseHash(raw: string): Route {
     }
     case 'analytics':
       return { name: 'analytics' };
+    case 'timeline': {
+      const year = Number(a);
+      return Number.isInteger(year) && year > 1900 ? { name: 'timeline', year } : { name: 'timeline' };
+    }
+    case 'calendar':
+      return a && /^\d{4}-\d{2}$/.test(a) ? { name: 'calendar', month: a } : { name: 'calendar' };
     case 'settings':
       return { name: 'settings' };
     default:
@@ -91,8 +116,9 @@ export function useRoute(): Route {
   }, []);
 
   useEffect(() => {
-    // Every route change is a new screen; start it at the top.
-    document.querySelector('.main')?.scrollTo({ top: 0 });
+    // Every route change is a new screen; start it at the top. Both scrollers
+    // are reset: the main pane and, on a fiche, the relations column.
+    for (const el of document.querySelectorAll('.pane, .aside')) el.scrollTo({ top: 0 });
   }, [route]);
 
   return route;

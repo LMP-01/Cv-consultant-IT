@@ -111,7 +111,7 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
   const autoRef = useRef<AutoSync | null>(null);
 
   // Automatic sync. Nothing happens unless a device has been paired, so this is
-  // inert for anyone using Waza purely offline.
+  // inert for anyone using Combat OS purely offline.
   useEffect(() => {
     if (status.phase !== 'ready') return;
     const auto = new AutoSync({
@@ -169,7 +169,7 @@ export function DbProvider({ children }: { children: ReactNode }): ReactNode {
         <h1>Impossible d’ouvrir la base</h1>
         <p className="sub">{status.error.message}</p>
         <p className="sub">
-          Waza a besoin d’IndexedDB ou d’OPFS. En navigation privée sur certains
+          Combat OS a besoin d’IndexedDB ou d’OPFS. En navigation privée sur certains
           navigateurs, les deux sont bloqués.
         </p>
       </div>

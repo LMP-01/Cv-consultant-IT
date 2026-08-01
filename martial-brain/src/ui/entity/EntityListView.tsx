@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { distinctFieldValues, searchEntities } from '../../db/queries';
 import { entityDef, type EntityKey } from '../../domain/schema';
 import { useDb } from '../DbProvider';
-import { Dot, Empty, EntityRow, useTheme } from '../common';
+import { Dot, Empty, EntityRow, Screen, useTheme } from '../common';
 import { href } from '../router';
 import { section } from '../../domain/schema';
 
@@ -37,7 +37,7 @@ export function EntityListView({ type }: { type: EntityKey }): ReactNode {
     });
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -98,6 +98,6 @@ export function EntityListView({ type }: { type: EntityKey }): ReactNode {
           ))}
         </div>
       )}
-    </div>
+    </Screen>
   );
 }

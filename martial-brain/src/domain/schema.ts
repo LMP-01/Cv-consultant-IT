@@ -1,5 +1,5 @@
 /**
- * The 15 module descriptors — the heart of the application.
+ * The 16 module descriptors — the heart of the application.
  *
  * Every module of §4 of the cahier des charges is described here as data, and
  * the generic UI (EntityList / EntityDetail / EntityForm) renders itself from
@@ -28,7 +28,8 @@ export type EntityKey =
   | 'resource'
   | 'objective'
   | 'exercise'
-  | 'error';
+  | 'error'
+  | 'decision';
 
 export type SectionKey = 'arsenal' | 'strategy' | 'journal' | 'progress' | 'resources';
 
@@ -78,8 +79,8 @@ export interface EntityDef {
 /* ────────────────────────────────────────────────────────────────────────────
  * Sections — also the categorical palette.
  *
- * Colour is assigned per SECTION (5 groups), never per type (15): a categorical
- * palette cannot carry 15 identities, and a knowledge graph is an "all-pairs"
+ * Colour is assigned per SECTION (5 groups), never per type (16): a categorical
+ * palette cannot carry 16 identities, and a knowledge graph is an "all-pairs"
  * form where any two nodes can end up adjacent. The four chromatic slots below
  * were selected by running the palette validator over every 5-, 4- and 3-hue
  * combination of the reference ramps under `--pairs all` in BOTH modes. No
@@ -111,7 +112,7 @@ export interface SectionDef {
 }
 
 export const SECTIONS: readonly SectionDef[] = [
-  { key: 'arsenal', label: 'Bibliothèque de combat', light: '#2a78d6', dark: '#3987e5', shape: 'circle' },
+  { key: 'arsenal', label: 'Bibliothèque de combat', light: '#2a78d6', dark: '#4f8cff', shape: 'circle' },
   { key: 'strategy', label: 'Stratégie', light: '#008300', dark: '#008300', shape: 'diamond' },
   { key: 'journal', label: 'Journal', light: '#e87ba4', dark: '#d55181', shape: 'square' },
   { key: 'progress', label: 'Progression', light: '#eda100', dark: '#c98500', shape: 'triangle' },
@@ -203,6 +204,9 @@ export const HORIZONS = ['Court terme', 'Moyen terme', 'Long terme'] as const;
 
 export const OBJECTIVE_STATUS = ['À faire', 'En cours', 'Atteint', 'Abandonné'] as const;
 
+/** Une décision se relit : elle tient, elle est à revoir, ou elle est annulée. */
+export const DECISION_STATUS = ['Appliquée', 'À revoir', 'Confirmée', 'Annulée'] as const;
+
 export const VALIDATIONS = [
   'Non testée',
   'En cours de test',
@@ -252,7 +256,7 @@ const BOUT_FIELDS: readonly FieldDef[] = [
   { name: 'lecons', label: 'Leçons', type: 'longtext' },
 ];
 
-/* ── The 15 modules ───────────────────────────────────────────────────────── */
+/* ── The 16 modules ───────────────────────────────────────────────────────── */
 
 export const ENTITY_DEFS: readonly EntityDef[] = [
   /* §4.2 */
@@ -496,7 +500,54 @@ export const ENTITY_DEFS: readonly EntityDef[] = [
       { name: 'conclusion', label: 'Conclusion', type: 'longtext' },
       TAGS,
     ],
-    relations: ['sparring', 'fight', 'technique', 'combo', 'counter', 'principle'],
+    relations: ['sparring', 'fight', 'technique', 'combo', 'counter', 'principle', 'decision'],
+  },
+
+  /*
+   * Décisions — ajouté par le cahier des charges UI/UX, qui les fait figurer
+   * dans la barre latérale juste après les hypothèses.
+   *
+   * Ce n'est pas un doublon de l'hypothèse : une hypothèse est une question
+   * ouverte, une décision est l'acte qui la referme. « H004 confirmée → je
+   * range le crochet gauche en garde fermée. » Sans ce module, la conclusion
+   * d'une hypothèse n'existe nulle part comme objet reliable, alors que c'est
+   * précisément ce qu'on veut retrouver deux ans plus tard : ce qui a été
+   * décidé, pourquoi, et si c'était juste.
+   *
+   * D'où le champ « Revue » : une décision se relit. Elle vit dans le journal
+   * parce qu'elle est datée et qu'on ne la modifie pas rétroactivement — on
+   * en prend une nouvelle.
+   */
+  {
+    key: 'decision',
+    prefix: 'D',
+    label: 'Décision',
+    plural: 'Décisions',
+    section: 'journal',
+    titleLabel: 'Décision',
+    titlePlaceholder: 'Abandonner le low kick arrière en garde fermée',
+    spec: 'DA · barre latérale',
+    fields: [
+      { name: 'date', label: 'Date', type: 'date', inList: true },
+      { name: 'contexte', label: 'Contexte', type: 'longtext' },
+      { name: 'pourquoi', label: 'Motif', type: 'longtext' },
+      { name: 'alternatives', label: 'Alternatives écartées', type: 'longtext' },
+      { name: 'attendu', label: 'Effet attendu', type: 'longtext' },
+      { name: 'statut', label: 'Statut', type: 'select', options: DECISION_STATUS, inList: true },
+      { name: 'revue', label: 'Revue', type: 'longtext', help: 'Relue plus tard : est-ce que c’était juste ?' },
+      TAGS,
+    ],
+    relations: [
+      'hypothesis',
+      'principle',
+      'technique',
+      'combo',
+      'counter',
+      'tactic',
+      'objective',
+      'sparring',
+      'fight',
+    ],
   },
 
   /* §4.15 */

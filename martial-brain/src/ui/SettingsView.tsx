@@ -3,8 +3,11 @@ import { useRef, useState, type ReactNode } from 'react';
 import { downloadDatabase, restoreDatabase } from '../db/backup';
 import { graphHealth } from '../db/analytics';
 import { remainingSeedCount, removeSeed } from '../db/seed';
-import { loadSettings, saveSettings, type ThemePref } from '../settings';
+import { usePrefs } from './AppShell';
 import { useDb } from './DbProvider';
+import { Screen } from './common';
+import { Icon } from './icons';
+import { FONT_SCALES, setPrefs } from './prefs';
 import { AiPanel } from './settings/AiPanel';
 import { SyncPanel } from './settings/SyncPanel';
 
@@ -15,7 +18,6 @@ const BACKEND_LABEL: Record<string, string> = {
 
 export function SettingsView(): ReactNode {
   const { db, revision, write, flush } = useDb();
-  const [settings, setSettings] = useState(loadSettings);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -23,8 +25,6 @@ export function SettingsView(): ReactNode {
   const health = graphHealth(db);
   const seedLeft = remainingSeedCount(db);
   void revision;
-
-  const setTheme = (theme: ThemePref): void => setSettings(saveSettings({ theme }));
 
   const onImport = async (file: File): Promise<void> => {
     if (
@@ -46,7 +46,7 @@ export function SettingsView(): ReactNode {
   };
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">Réglages</p>
@@ -54,19 +54,8 @@ export function SettingsView(): ReactNode {
         </div>
       </div>
 
-      <h2>Apparence</h2>
-      <div className="chips">
-        {(['system', 'light', 'dark'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`chip${settings.theme === t ? ' on' : ''}`}
-            onClick={() => setTheme(t)}
-          >
-            {t === 'system' ? 'Système' : t === 'light' ? 'Clair' : 'Sombre'}
-          </button>
-        ))}
-      </div>
+      <h2>Affichage et accessibilité</h2>
+      <AppearancePanel />
 
       <h2>Stockage</h2>
       <div className="card">
@@ -163,6 +152,82 @@ export function SettingsView(): ReactNode {
 
       <SyncPanel />
       <AiPanel />
+    </Screen>
+  );
+}
+
+/**
+ * Les réglages d'affichage, à l'endroit où on les cherche.
+ *
+ * Ils sont aussi dans le menu de profil et dans la palette de commandes — ce
+ * n'est pas une redite mais trois portes sur le même état, qui est unique
+ * (`ui/prefs.ts`). Un réglage d'accessibilité qu'il faut trouver est un
+ * réglage qui ne sera pas trouvé.
+ */
+function AppearancePanel(): ReactNode {
+  const prefs = usePrefs();
+
+  return (
+    <div className="card">
+      <div className="pop-row">
+        <span>Thème</span>
+        <div className="seg">
+          {(['system', 'light', 'dark'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={prefs.theme === t ? 'on' : ''}
+              onClick={() => setPrefs({ theme: t })}
+            >
+              {t === 'system' ? 'Système' : t === 'light' ? 'Clair' : 'Sombre'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="pop-row">
+        <span>Taille du texte</span>
+        <div className="seg">
+          {FONT_SCALES.map((scale) => (
+            <button
+              key={scale}
+              type="button"
+              className={prefs.fontScale === scale ? 'on' : ''}
+              aria-label={`Texte à ${Math.round(scale * 100)} %`}
+              onClick={() => setPrefs({ fontScale: scale })}
+            >
+              {Math.round(scale * 100)} %
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="pop-row">
+        <span>Contraste élevé</span>
+        <div className="seg">
+          <button
+            type="button"
+            className={prefs.contrast === 'normal' ? 'on' : ''}
+            onClick={() => setPrefs({ contrast: 'normal' })}
+          >
+            Normal
+          </button>
+          <button
+            type="button"
+            className={prefs.contrast === 'high' ? 'on' : ''}
+            onClick={() => setPrefs({ contrast: 'high' })}
+          >
+            Élevé
+          </button>
+        </div>
+      </div>
+
+      <p className="sub" style={{ marginTop: 8 }}>
+        <Icon name="info" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+        Le contraste élevé s’ajoute au thème choisi au lieu de le remplacer :
+        « sombre + contraste élevé » reste possible. Ces réglages restent sur cet
+        appareil et ne sont pas synchronisés.
+      </p>
     </div>
   );
 }

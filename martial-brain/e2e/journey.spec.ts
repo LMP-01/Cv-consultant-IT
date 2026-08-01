@@ -62,17 +62,14 @@ test.describe('graphe de connaissances', () => {
     await createFiche(page, 'combo', 'Test — Jab puis crochet', ['K001']);
 
     // The combination shows the technique…
-    const relations = page.locator('.card').filter({ has: page.locator('.rel-group') });
-    await expect(relations.first()).toContainText('K001');
+    await expect(page.locator('.aside')).toContainText('K001');
 
     // …and, crucially, the technique now shows the combination, although the
     // link was only ever created from the combination's side.
     await page.goto('/#/t/technique');
     await page.locator('.row', { hasText: 'Jab' }).first().click();
     await expect(page.locator('h1')).toContainText('Jab');
-    await expect(
-      page.locator('.card').filter({ has: page.locator('.rel-group') }).first(),
-    ).toContainText('Test — Jab puis crochet');
+    await expect(page.locator('.aside')).toContainText('Test — Jab puis crochet');
   });
 
   test('un sparring alimente l’historique des fiches qu’il mentionne', async ({ page }) => {
@@ -92,7 +89,7 @@ test.describe('graphe de connaissances', () => {
     await freshApp(page);
 
     await page.goto('/#/graph');
-    const caption = page.locator('.main .sub').last();
+    const caption = page.locator('.pane .sub').last();
     await expect(caption).toContainText('fiches');
 
     const text = (await caption.textContent()) ?? '';
@@ -103,7 +100,7 @@ test.describe('graphe de connaissances', () => {
     // Focus mode: open a fiche and jump to its neighbourhood.
     await page.goto('/#/t/technique');
     await page.locator('.row', { hasText: 'Mae Geri' }).first().click();
-    await page.getByRole('link', { name: 'Voir dans le graphe' }).click();
+    await page.locator('.page-head').getByRole('link', { name: 'Graphe' }).click();
     await expect(page.getByRole('heading', { name: 'Voisinage' })).toBeVisible();
     await expect(page.locator('.chip', { hasText: '2 sauts' })).toBeVisible();
   });

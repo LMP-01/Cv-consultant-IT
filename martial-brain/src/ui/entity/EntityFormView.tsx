@@ -9,6 +9,7 @@ import {
 import { neighboursByType, setLinksOfType } from '../../domain/links';
 import { entityDef, type EntityKey } from '../../domain/schema';
 import { useDb } from '../DbProvider';
+import { Screen } from '../common';
 import { navigate } from '../router';
 import { FieldInput } from './FieldInput';
 import { RelationPicker } from './RelationPicker';
@@ -16,9 +17,17 @@ import { RelationPicker } from './RelationPicker';
 interface Props {
   type: EntityKey;
   id?: string;
+  /**
+   * Champ pré-rempli à la création, posé par la palette de commandes.
+   *
+   * « Importer une vidéo » doit ouvrir le formulaire Ressource déjà réglé sur
+   * Vidéo — sinon la commande n'est qu'un raccourci vers un formulaire vide,
+   * et l'utilisateur refait à la main ce qu'il vient de demander.
+   */
+  preset?: { field: string; value: string };
 }
 
-export function EntityFormView({ type, id }: Props): ReactNode {
+export function EntityFormView({ type, id, preset }: Props): ReactNode {
   const { db, write, flush } = useDb();
   const def = entityDef(type);
 
@@ -29,7 +38,9 @@ export function EntityFormView({ type, id }: Props): ReactNode {
   }, [db, id]);
 
   const [title, setTitle] = useState(existing?.title ?? '');
-  const [data, setData] = useState<Record<string, unknown>>(existing?.data ?? {});
+  const [data, setData] = useState<Record<string, unknown>>(
+    existing?.data ?? (preset ? { [preset.field]: preset.value } : {}),
+  );
   const [links, setLinks] = useState<Map<EntityKey, EntityRecord[]>>(
     () => new Map(initialLinks),
   );
@@ -85,7 +96,7 @@ export function EntityFormView({ type, id }: Props): ReactNode {
   };
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">
@@ -162,6 +173,6 @@ export function EntityFormView({ type, id }: Props): ReactNode {
           Annuler
         </button>
       </div>
-    </div>
+    </Screen>
   );
 }

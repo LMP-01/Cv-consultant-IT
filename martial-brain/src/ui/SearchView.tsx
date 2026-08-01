@@ -11,7 +11,7 @@ import { parseCode } from '../domain/ids';
 import { defsInSection, entityDef, SECTIONS, type EntityKey } from '../domain/schema';
 import { AskPanel } from './AskPanel';
 import { useDb } from './DbProvider';
-import { Dot, Empty, EntityRow, useTheme } from './common';
+import { Dot, Empty, EntityRow, Screen, useTheme } from './common';
 import { navigate, replace } from './router';
 
 export function SearchView({ initialQuery }: { initialQuery: string }): ReactNode {
@@ -52,7 +52,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }): ReactNod
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">Recherche · §5.1</p>
@@ -148,7 +148,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }): ReactNod
           {countByType(results)}
         </p>
       )}
-    </div>
+    </Screen>
   );
 }
 

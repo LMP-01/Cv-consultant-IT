@@ -239,7 +239,7 @@ class SqliteDb implements Db {
 export function assertSqliteImage(bytes: Uint8Array): void {
   const header = 'SQLite format 3\0';
   if (bytes.byteLength < header.length) {
-    throw new Error('Fichier trop petit pour être une base Waza.');
+    throw new Error('Fichier trop petit pour être une base Combat OS.');
   }
   if (new TextDecoder().decode(bytes.slice(0, header.length)) !== header) {
     throw new Error('Ce fichier n’est pas une base SQLite (.sqlite3).');

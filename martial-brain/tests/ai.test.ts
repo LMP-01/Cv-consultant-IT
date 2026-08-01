@@ -29,7 +29,6 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
   new Response(JSON.stringify(body), { status, headers });
 
 const settings = (patch: Partial<Settings> = {}): Settings => ({
-  theme: 'system',
   aiKeys: { gemini: 'k-gemini', groq: 'k-groq', mistral: 'k-mistral' },
   aiOrder: ['gemini', 'groq', 'mistral'],
   aiModels: { gemini: 'gemini-x', groq: 'llama-x', mistral: 'mistral-x' },

@@ -20,15 +20,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
       workbox: {
-        // The SQLite runtime must be cached or the app cannot open its own
-        // database offline — which is the entire point of installing it.
-        globPatterns: ['**/*.{js,css,html,svg,png,wasm,mjs}'],
+        // The SQLite runtime and the fonts must both be cached, or an offline
+        // launch either cannot open its own database or repaints in a fallback
+        // face — and offline launches are the entire point of installing it.
+        globPatterns: ['**/*.{js,css,html,svg,png,wasm,mjs,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
       manifest: {
-        name: 'Waza · Second cerveau martial',
-        short_name: 'Waza',
+        name: 'Combat OS · Second cerveau martial',
+        short_name: 'Combat OS',
         description:
           'Graphe de connaissances martiales : techniques, combinaisons, contres, sparrings et principes, tous reliés.',
         lang: 'fr',
@@ -36,8 +37,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#12161c',
-        theme_color: '#12161c',
+        background_color: '#0f1115',
+        theme_color: '#0f1115',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

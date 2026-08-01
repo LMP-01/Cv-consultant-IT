@@ -1,4 +1,16 @@
-/** §4.1 — what the graph knows about you, without asking you anything. */
+/**
+ * Tableau de bord — ce que le graphe sait de toi, sans rien te demander.
+ *
+ * La disposition est celle du cahier des charges : objectifs, dernières
+ * activités et statistiques côte à côte en haut, puis les graphiques, puis les
+ * techniques récentes, puis les dernières hypothèses. C'est un ordre de
+ * lecture, pas une grille arbitraire : d'abord où tu vas, puis d'où tu viens,
+ * puis ce que tu cherches encore.
+ *
+ * Rien n'est saisi ici. Chaque chiffre est dérivé des fiches et de leurs
+ * relations — un tableau de bord qu'il faudrait tenir à jour à la main serait
+ * exactement le carnet d'entraînement que ce système refuse d'être.
+ */
 import { useMemo, type ReactNode } from 'react';
 import {
   forgottenTechniques,
@@ -7,13 +19,14 @@ import {
   minutesByDiscipline,
   objectiveProgress,
   recentBouts,
-  recentlyEdited,
   trainingTotals,
 } from '../db/analytics';
+import { listEntities } from '../db/queries';
 import { entityDef, section } from '../domain/schema';
 import { useDb } from './DbProvider';
-import { BarList, formatMinutes, StatTile } from './charts';
-import { Dot, useTheme, sectionHue } from './common';
+import { BarList, formatMinutes } from './charts';
+import { Code, Dot, Screen, Status, useTheme, sectionHue } from './common';
+import { Icon, moduleIcon } from './icons';
 import { href } from './router';
 
 export function DashboardView(): ReactNode {
@@ -29,7 +42,8 @@ export function DashboardView(): ReactNode {
       forgotten: forgottenTechniques(db, 6),
       objectives: objectiveProgress(db).slice(0, 5),
       bouts: recentBouts(db, 5),
-      edited: recentlyEdited(db, 6),
+      techniques: listEntities(db, 'technique', { orderBy: 'updated', limit: 6 }),
+      hypotheses: listEntities(db, 'hypothesis', { orderBy: 'updated', limit: 4 }),
     }),
     [db, revision],
   );
@@ -38,7 +52,7 @@ export function DashboardView(): ReactNode {
   const progressHue = sectionHue(section('progress'), theme);
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">Tableau de bord</p>
@@ -46,49 +60,156 @@ export function DashboardView(): ReactNode {
         </div>
       </div>
 
-      <div className="grid">
-        <StatTile label="Fiches" value={data.health.entities} hint={`${data.health.links} relations`} />
-        <StatTile
-          label="Temps enregistré"
-          value={formatMinutes(data.totals.minutes)}
-          hint={`${data.totals.bouts} séance${data.totals.bouts > 1 ? 's' : ''}`}
-        />
-        <StatTile
-          label="Hypothèses ouvertes"
-          value={data.health.hypothesesOpen}
-          hint="en attente de vérification"
-        />
-        <StatTile
-          label="Fiches isolées"
-          value={data.health.orphans}
-          hint={data.health.orphans === 0 ? 'tout est relié' : 'à relier au graphe'}
-        />
+      {/* Objectifs · Dernières activités · Statistiques */}
+      <div className="grid three">
+        <div className="card">
+          <h4>
+            <Icon name="objective" size={12} /> Objectifs
+          </h4>
+          {data.objectives.length === 0 ? (
+            <p className="sub">
+              Aucun objectif.{' '}
+              <a href={href({ name: 'create', type: 'objective' })} style={{ color: 'var(--accent)' }}>
+                En définir un
+              </a>
+              .
+            </p>
+          ) : (
+            <BarList
+              hue={progressHue}
+              max={100}
+              data={data.objectives.map((o) => ({
+                label: o.title,
+                value: o.progress,
+                display: `${o.progress} %`,
+                href: href({ name: 'detail', id: o.id }),
+              }))}
+            />
+          )}
+        </div>
+
+        <div className="card">
+          <h4>
+            <Icon name="sparring" size={12} /> Dernières activités
+          </h4>
+          {data.bouts.length === 0 ? (
+            <p className="sub">Aucun sparring ni combat enregistré.</p>
+          ) : (
+            <div className="mini">
+              {data.bouts.map((b) => (
+                <a key={b.id} className="mini-row" href={href({ name: 'detail', id: b.id })}>
+                  <Dot section={section(entityDef(b.type).section)} theme={theme} />
+                  <span className="t">{b.title}</span>
+                  <span className="tag">{b.date ?? '—'}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card">
+          <h4>
+            <Icon name="analytics" size={12} /> Statistiques
+          </h4>
+          <dl className="props">
+            <div>
+              <dt>Fiches</dt>
+              <dd className="big">{data.health.entities}</dd>
+            </div>
+            <div>
+              <dt>Relations</dt>
+              <dd className="big">{data.health.links}</dd>
+            </div>
+            <div>
+              <dt>Temps enregistré</dt>
+              <dd className="big">{formatMinutes(data.totals.minutes)}</dd>
+            </div>
+            <div>
+              <dt>Fiches isolées</dt>
+              <dd>
+                {data.health.orphans === 0 ? (
+                  <Status level="good">tout est relié</Status>
+                ) : (
+                  <Status level="warn">
+                    {data.health.orphans} à relier
+                  </Status>
+                )}
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
 
       {data.health.orphans > 0 && (
-        <p className="banner warn" style={{ marginTop: 16 }}>
+        <p className="banner warn" style={{ marginTop: 14 }}>
+          <Icon name="warn" size={15} />
           <span>
             {data.health.orphans} fiche{data.health.orphans > 1 ? 's' : ''} ne sont reliées à rien.
             Une fiche isolée est une note de carnet — c’est précisément ce que ce système n’est pas
-            censé être (§1).
+            censé être (§1).{' '}
+            <a href={href({ name: 'graph' })} style={{ color: 'var(--accent)' }}>
+              Voir le graphe
+            </a>
           </span>
         </p>
       )}
 
-      <h2>Armes principales</h2>
-      <p className="sub" style={{ marginBottom: 10 }}>
-        Techniques que tes sparrings et combats mentionnent le plus.
-      </p>
-      <BarList
-        hue={arsenalHue}
-        data={data.weapons.map((w) => ({
-          label: `${w.code} · ${w.title}`,
-          value: w.uses,
-          display: `${w.uses}×`,
-          href: href({ name: 'detail', id: w.id }),
-        }))}
-        empty="Relie des techniques à tes sparrings pour voir tes armes ressortir."
-      />
+      {/* Graphiques principaux */}
+      <div className="grid two">
+        <div className="card">
+          <h4>Armes principales</h4>
+          <p className="sub" style={{ margin: '0 0 10px' }}>
+            Techniques que tes sparrings et combats mentionnent le plus.
+          </p>
+          <BarList
+            hue={arsenalHue}
+            data={data.weapons.map((w) => ({
+              label: `${w.code} · ${w.title}`,
+              value: w.uses,
+              display: `${w.uses}×`,
+              href: href({ name: 'detail', id: w.id }),
+            }))}
+            empty="Relie des techniques à tes sparrings pour voir tes armes ressortir."
+          />
+        </div>
+
+        <div className="card">
+          <h4>Temps par discipline</h4>
+          <p className="sub" style={{ margin: '0 0 10px' }}>
+            {data.totals.bouts} séance{data.totals.bouts > 1 ? 's' : ''} enregistrée
+            {data.totals.bouts > 1 ? 's' : ''}.
+          </p>
+          <BarList
+            hue={arsenalHue}
+            data={data.minutes.map((m) => ({
+              label: m.label,
+              value: m.minutes,
+              display: formatMinutes(m.minutes),
+            }))}
+            empty="Renseigne la durée de tes séances pour voir la répartition."
+          />
+        </div>
+      </div>
+
+      {/* Techniques récentes */}
+      <h2>Techniques récentes</h2>
+      {data.techniques.length === 0 ? (
+        <div className="empty">Aucune technique fichée.</div>
+      ) : (
+        <div className="rows">
+          {data.techniques.map((t) => (
+            <a key={t.id} className="row" href={href({ name: 'detail', id: t.id })}>
+              <Icon name={moduleIcon('technique')} size={14} style={{ color: arsenalHue, flex: 'none' }} />
+              <Code record={t} />
+              <span className="title">{t.title}</span>
+              <span className="meta">
+                {t.data.famille ? <span className="tag">{String(t.data.famille)}</span> : null}
+                {t.data.distance ? <span className="tag">{String(t.data.distance)}</span> : null}
+              </span>
+            </a>
+          ))}
+        </div>
+      )}
 
       {data.forgotten.length > 0 && (
         <>
@@ -108,63 +229,39 @@ export function DashboardView(): ReactNode {
         </>
       )}
 
-      <h2>Temps par discipline</h2>
-      <BarList
-        hue={arsenalHue}
-        data={data.minutes.map((m) => ({
-          label: m.label,
-          value: m.minutes,
-          display: formatMinutes(m.minutes),
-        }))}
-        empty="Renseigne la durée de tes séances pour voir la répartition."
-      />
-
-      <h2>Objectifs</h2>
-      {data.objectives.length === 0 ? (
-        <div className="empty">Aucun objectif défini.</div>
-      ) : (
-        <BarList
-          hue={progressHue}
-          max={100}
-          data={data.objectives.map((o) => ({
-            label: o.title,
-            value: o.progress,
-            display: `${o.progress} %`,
-            href: href({ name: 'detail', id: o.id }),
-          }))}
-        />
-      )}
-
-      <h2>Dernières séances</h2>
-      {data.bouts.length === 0 ? (
-        <div className="empty">Aucun sparring ni combat enregistré.</div>
+      {/* Dernières hypothèses */}
+      <h2>Dernières hypothèses</h2>
+      {data.hypotheses.length === 0 ? (
+        <div className="empty">
+          Aucune hypothèse.{' '}
+          <a href={href({ name: 'create', type: 'hypothesis' })} style={{ color: 'var(--accent)' }}>
+            En formuler une
+          </a>{' '}
+          — c’est ce qui transforme une intuition en connaissance.
+        </div>
       ) : (
         <div className="rows">
-          {data.bouts.map((b) => (
-            <a key={b.id} className="row" href={href({ name: 'detail', id: b.id })}>
-              <Dot section={section(entityDef(b.type).section)} theme={theme} />
-              <span className="title">{b.title}</span>
-              <span className="meta">
-                {b.discipline && <span className="tag">{b.discipline}</span>}
-                {b.result && <span className="tag">{b.result}</span>}
-                <span className="tag">{b.date ?? '—'}</span>
-              </span>
-            </a>
-          ))}
+          {data.hypotheses.map((h) => {
+            const validation = String(h.data.validation ?? 'Non testée');
+            const level =
+              validation === 'Validée'
+                ? 'good'
+                : validation === 'Invalidée'
+                  ? 'bad'
+                  : ('warn' as const);
+            return (
+              <a key={h.id} className="row" href={href({ name: 'detail', id: h.id })}>
+                <Code record={h} />
+                <span className="title">{h.title}</span>
+                <span className="meta">
+                  <Status level={level}>{validation}</Status>
+                  <span className="tag">{String(h.data.date ?? '—')}</span>
+                </span>
+              </a>
+            );
+          })}
         </div>
       )}
-
-      <h2>Modifié récemment</h2>
-      <div className="chips">
-        {data.edited.map((e) => (
-          <a key={e.id} className="chip" href={href({ name: 'detail', id: e.id })}>
-            <Dot section={section(entityDef(e.type).section)} theme={theme} />
-            <span className="t">
-              {e.code} · {e.title}
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
+    </Screen>
   );
 }

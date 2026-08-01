@@ -14,7 +14,7 @@ import {
 import { section } from '../domain/schema';
 import { useDb } from './DbProvider';
 import { BarList, formatMinutes, StatTile } from './charts';
-import { sectionHue, useTheme } from './common';
+import { Screen, sectionHue, useTheme } from './common';
 import { href } from './router';
 
 export function AnalyticsView(): ReactNode {
@@ -47,7 +47,7 @@ export function AnalyticsView(): ReactNode {
   const officialBouts = d.record.reduce((sum, r) => sum + r.count, 0);
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">Analytics · §5.3</p>
@@ -194,7 +194,7 @@ export function AnalyticsView(): ReactNode {
         data={d.families.map((x) => ({ label: x.label, value: x.count }))}
         empty="Renseigne la famille de tes techniques."
       />
-    </div>
+    </Screen>
   );
 }
 
