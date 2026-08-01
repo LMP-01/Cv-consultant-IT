@@ -29,7 +29,7 @@
 import { graphHealth, mainWeapons, successRates, trainingTotals } from '../db/analytics';
 import { getEntity } from '../db/queries';
 import type { Db } from '../db/sqlite';
-import { canEmbed, embed, type Fetcher, type ProviderId } from '../ai/providers';
+import { canEmbed, embed, type Attachment, type Fetcher, type ProviderId } from '../ai/providers';
 import { route, usableProviders, type RouteResult } from '../ai/router';
 import type { Settings } from '../settings';
 import { buildContext, retrieve, type Hit } from './retrieve';
@@ -47,6 +47,8 @@ export interface AskInput {
   slugs?: readonly string[];
   /** La fiche ouverte quand la question est posée. */
   focusId?: string;
+  /** Images ou vidéos jointes — voir ai/providers.ts pour ce que chaque fournisseur en fait. */
+  attachments?: readonly Attachment[];
   prefer?: { provider: ProviderId; model: string };
   fetcher?: Fetcher;
 }
@@ -205,6 +207,7 @@ export async function ask(db: Db, settings: Settings, input: AskInput): Promise<
     prompt,
     temperature: 0.3,
     maxTokens: 1400,
+    ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     ...(input.prefer ? { prefer: input.prefer } : {}),
     ...(input.fetcher ? { fetcher: input.fetcher } : {}),
   });

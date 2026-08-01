@@ -14,9 +14,9 @@
  * Le panneau connaît la fiche ouverte. Poser une question depuis K003 sans
  * avoir à écrire « à propos de K003 » est la moitié de l'intérêt.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { getEntity } from '../../db/queries';
-import { providerDef, type ProviderId } from '../../ai/providers';
+import { providerDef, type Attachment, type ProviderId } from '../../ai/providers';
 import { modelChain, usableProviders } from '../../ai/router';
 import { ask, type Turn } from '../../rag/luis';
 import { listDocs } from '../../rag/store';
@@ -36,6 +36,64 @@ interface Message extends Turn {
   sources?: { label: string; route?: Route }[];
   meta?: string;
   error?: boolean;
+  /** Rejoué dans l'historique du fil — l'URL d'objet vit pour la session. */
+  attachments?: { kind: 'image' | 'video'; previewUrl: string }[];
+}
+
+/** Une image ou vidéo en cours de composition, avant l'envoi. */
+interface PendingAttachment {
+  id: string;
+  mimeType: string;
+  /** Base64 sans le préfixe `data:...;base64,` — ce que les fournisseurs attendent. */
+  data: string;
+  kind: 'image' | 'video';
+  previewUrl: string;
+  name: string;
+}
+
+// 10 Mo par fichier, 15 Mo cumulés : Gemini plafonne la requête entière autour
+// de 20 Mo une fois encodée en base64 (+33 % environ), et c'est le seul
+// fournisseur qui accepte la vidéo — la marge est prise sur son plafond à lui.
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const MAX_ATTACHMENTS_TOTAL_BYTES = 15 * 1024 * 1024;
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('lecture du fichier impossible'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * La dictée vocale du navigateur, sans les types DOM qui n'existent pas dans
+ * la lib standard — l'API reste non standardisée malgré son âge. Seule la
+ * forme réellement utilisée est déclarée, pas la surface complète.
+ */
+interface SpeechRecognitionResultEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+interface SpeechRecognitionLike extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+function getSpeechRecognition(): (new () => SpeechRecognitionLike) | undefined {
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
 }
 
 type MascotMood = 'idle' | 'thinking' | 'writing';
@@ -224,7 +282,15 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   const [prefer, setPrefer] = useState<{ provider: ProviderId; model: string } | null>(null);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [mood, setMood] = useState<MascotMood>('idle');
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  const [attachError, setAttachError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const docs = listDocs(db);
   void revision;
@@ -232,6 +298,8 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   const focusId = focusOf(route);
   const focus = focusId ? getEntity(db, focusId) : undefined;
   const providers = usableProviders(settings);
+  const effectiveProvider = prefer?.provider ?? providers[0];
+  const hasVideo = attachments.some((a) => a.kind === 'video');
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -256,22 +324,154 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
     setSlugs((prev) => prev.filter((s) => docs.some((d) => d.slug === s)));
   }, [docs.length]);
 
+  // La reconnaissance vocale tourne côté navigateur ; l'arrêter en quittant
+  // évite un micro qui reste ouvert derrière un panneau fermé.
+  useEffect(() => () => recognitionRef.current?.stop(), []);
+
+  const addFiles = async (files: FileList | File[]): Promise<void> => {
+    setAttachError('');
+    let runningTotal = attachments.reduce((sum, a) => sum + a.data.length * 0.75, 0);
+
+    for (const file of Array.from(files)) {
+      const kind: 'image' | 'video' | null = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+          ? 'video'
+          : null;
+      if (!kind) {
+        setAttachError(`${file.name} : seules les images et les vidéos sont acceptées.`);
+        continue;
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setAttachError(`${file.name} dépasse 10 Mo — trop lourd pour être envoyé.`);
+        continue;
+      }
+      if (runningTotal + file.size > MAX_ATTACHMENTS_TOTAL_BYTES) {
+        setAttachError('15 Mo de pièces jointes au total, pas plus — retire-en une avant d’ajouter celle-ci.');
+        continue;
+      }
+      try {
+        const dataUrl = await readAsDataUrl(file);
+        const comma = dataUrl.indexOf(',');
+        const data = comma >= 0 ? dataUrl.slice(comma + 1) : '';
+        runningTotal += file.size;
+        setAttachments((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            mimeType: file.type,
+            data,
+            kind,
+            previewUrl: URL.createObjectURL(file),
+            name: file.name,
+          },
+        ]);
+      } catch {
+        setAttachError(`${file.name} n’a pas pu être lu.`);
+      }
+    }
+  };
+
+  const removeAttachment = (id: string): void => {
+    setAttachments((prev) => {
+      const found = prev.find((a) => a.id === id);
+      if (found) URL.revokeObjectURL(found.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
+  };
+
+  // Compteur plutôt qu'un simple booléen : `dragenter`/`dragleave` se
+  // déclenchent à chaque survol d'un enfant, et un booléen ferait clignoter
+  // la zone de dépôt à chaque frontière traversée à l'intérieur du panneau.
+  const onDragEnter = (e: DragEvent<HTMLElement>): void => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+  const onDragOver = (e: DragEvent<HTMLElement>): void => {
+    if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+  };
+  const onDragLeave = (e: DragEvent<HTMLElement>): void => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragActive(false);
+  };
+  const onDrop = (e: DragEvent<HTMLElement>): void => {
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragActive(false);
+    if (e.dataTransfer.files.length) void addFiles(e.dataTransfer.files);
+  };
+
+  const toggleListening = (): void => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const Ctor = getSpeechRecognition();
+    if (!Ctor) {
+      setVoiceError("La dictée vocale n'est pas prise en charge par ce navigateur.");
+      return;
+    }
+    setVoiceError('');
+    const recognition = new Ctor();
+    recognition.lang = 'fr-FR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = Array.from(
+        { length: event.results.length },
+        (_, i) => event.results[i]?.[0]?.transcript ?? '',
+      )
+        .join(' ')
+        .trim();
+      if (transcript) setDraft((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+    recognition.onerror = (event) => {
+      setVoiceError(
+        event.error === 'not-allowed' || event.error === 'permission-denied'
+          ? 'Micro refusé — autorise-le dans les réglages du navigateur.'
+          : 'La dictée vocale a échoué.',
+      );
+      setListening(false);
+    };
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  };
+
   const send = async (): Promise<void> => {
     const question = draft.trim();
-    if (!question || busy) return;
+    if ((!question && attachments.length === 0) || busy) return;
 
-    const mine: Message = { id: `u${Date.now()}`, role: 'user', text: question };
+    const sent = attachments;
+    const mine: Message = {
+      id: `u${Date.now()}`,
+      role: 'user',
+      text:
+        question ||
+        (sent.length > 1 ? 'Pièces jointes' : sent[0]?.kind === 'video' ? 'Vidéo jointe' : 'Image jointe'),
+      ...(sent.length ? { attachments: sent.map((a) => ({ kind: a.kind, previewUrl: a.previewUrl })) } : {}),
+    };
     setMessages((prev) => [...prev, mine]);
     setDraft('');
+    setAttachments([]);
+    setAttachError('');
     setBusy(true);
 
     try {
       const result = await ask(db, settings, {
-        question,
+        question: question || 'Décris et analyse ce qui est joint.',
         history: messages.map((m) => ({ role: m.role, text: m.text })),
         ...(slugs.length ? { slugs } : {}),
         ...(focusId ? { focusId } : {}),
         ...(prefer ? { prefer } : {}),
+        ...(sent.length
+          ? { attachments: sent.map((a): Attachment => ({ mimeType: a.mimeType, data: a.data })) }
+          : {}),
       });
 
       const sources = result.hits.map((hit) =>
@@ -313,7 +513,14 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   };
 
   return (
-    <aside className="luis" aria-label="LUIS AI">
+    <aside
+      className="luis"
+      aria-label="LUIS AI"
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       <header className="luis-head">
         <span className="luis-title">
           <img src="/mascot/luis.webp" alt="" className="luis-avatar" />
@@ -324,6 +531,13 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
           <Icon name="close" size={15} />
         </button>
       </header>
+
+      {dragActive && (
+        <div className="luis-dropzone" aria-hidden="true">
+          <Icon name="attach" size={22} />
+          <span>Dépose une image ou une vidéo</span>
+        </div>
+      )}
 
       {focus && (
         <div className="luis-focus">
@@ -337,6 +551,17 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
 
         {messages.map((m) => (
           <div key={m.id} className={`luis-msg ${m.role}${m.error ? ' bad' : ''}`}>
+            {m.attachments && m.attachments.length > 0 && (
+              <div className="luis-msg-attachments">
+                {m.attachments.map((a, i) =>
+                  a.kind === 'image' ? (
+                    <img key={i} src={a.previewUrl} alt="" />
+                  ) : (
+                    <video key={i} src={a.previewUrl} controls muted />
+                  ),
+                )}
+              </div>
+            )}
             <div className="luis-text">{m.text}</div>
             {m.sources && m.sources.length > 0 && (
               <div className="luis-src">
@@ -488,23 +713,93 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
           void send();
         }}
       >
-        <textarea
-          value={draft}
-          rows={2}
-          placeholder={focus ? `Question sur ${focus.code}…` : 'Pose ta question…'}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            // Entrée envoie, Maj+Entrée passe à la ligne. C'est la convention
-            // de toutes les messageries, et la casser surprendrait.
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-        />
-        <button type="submit" className="btn primary" disabled={busy || !draft.trim()}>
-          <Icon name="arrow" size={14} />
-        </button>
+        {(attachments.length > 0 || attachError) && (
+          <div className="luis-attachments">
+            {attachments.map((a) => (
+              <div key={a.id} className="luis-attachment" title={a.name}>
+                {a.kind === 'image' ? (
+                  <img src={a.previewUrl} alt="" />
+                ) : (
+                  <video src={a.previewUrl} muted />
+                )}
+                <button
+                  type="button"
+                  className="luis-attachment-remove"
+                  aria-label={`Retirer ${a.name}`}
+                  onClick={() => removeAttachment(a.id)}
+                >
+                  <Icon name="close" size={11} />
+                </button>
+              </div>
+            ))}
+            {attachError && <p className="luis-attach-note bad">{attachError}</p>}
+          </div>
+        )}
+
+        {hasVideo && effectiveProvider !== 'gemini' && (
+          <p className="luis-attach-note">
+            La vidéo n’est comprise que par Gemini — choisis-le comme modèle pour qu’elle soit
+            vraiment analysée.
+          </p>
+        )}
+        {voiceError && <p className="luis-attach-note bad">{voiceError}</p>}
+
+        <div className="luis-compose-row">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/mp4,video/quicktime,video/webm"
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files?.length) void addFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <button
+            type="button"
+            className="icon-btn"
+            title="Joindre une image ou une vidéo"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Icon name="attach" size={16} />
+          </button>
+
+          <textarea
+            value={draft}
+            rows={2}
+            placeholder={focus ? `Question sur ${focus.code}…` : 'Pose ta question…'}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Entrée envoie, Maj+Entrée passe à la ligne. C'est la convention
+              // de toutes les messageries, et la casser surprendrait.
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+          />
+
+          {Boolean(getSpeechRecognition()) && (
+            <button
+              type="button"
+              className={`icon-btn${listening ? ' listening' : ''}`}
+              title={listening ? 'Arrêter la dictée' : 'Dicter en français'}
+              aria-pressed={listening}
+              onClick={toggleListening}
+            >
+              <Icon name="mic" size={16} />
+            </button>
+          )}
+
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={busy || (!draft.trim() && attachments.length === 0)}
+          >
+            <Icon name="arrow" size={14} />
+          </button>
+        </div>
       </form>
 
       {showCorpus && (

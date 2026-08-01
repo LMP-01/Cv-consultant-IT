@@ -126,6 +126,18 @@ const ICONS = {
   /* LUIS AI — un œil dans un viseur : observer, puis orienter. */
   luis: [c(12, 12, 3), c(12, 12, 8), p('M12 1v3'), p('M12 20v3'), p('M1 12h3'), p('M20 12h3')],
 
+  /* Pièce jointe et dictée — panneau LUIS AI */
+  attach: [
+    p(
+      'M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.19 9.19a1.5 1.5 0 0 1-2.12-2.12l8.06-8.06',
+    ),
+  ],
+  mic: [
+    p('M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z'),
+    p('M19 10v2a7 7 0 0 1-14 0v-2'),
+    p('M12 19v3'),
+  ],
+
   /* Statuts — toujours accompagnés d'un mot */
   ok: [c(12, 12, 10), p('m9 12 2 2 4-4')],
   warn: [c(12, 12, 10), p('M12 8v4'), p('M12 16h.01')],

@@ -55,9 +55,28 @@ export function providerDef(id: ProviderId): ProviderDef {
   return found;
 }
 
+/**
+ * Une image ou un extrait vidéo joint à la question, encodé une fois par
+ * l'appelant. `data` est du base64 sans le préfixe `data:...;base64,` — les
+ * deux formats d'appel (Gemini `inlineData`, OpenAI `image_url`) le
+ * reconstruisent chacun à sa façon plutôt que de le porter déjà construit.
+ */
+export interface Attachment {
+  mimeType: string;
+  data: string;
+}
+
 export interface GenerateRequest {
   system: string;
   prompt: string;
+  /**
+   * Gemini accepte l'image et la vidéo en ligne ; le format compatible OpenAI
+   * (Groq, Mistral) n'accepte que l'image, et seulement sur les modèles qui la
+   * supportent — un modèle qui ne la supporte pas répond par une erreur
+   * normale du fournisseur, que le routeur traite comme n'importe quel échec
+   * de modèle plutôt que de deviner à l'avance qui sait voir.
+   */
+  attachments?: readonly Attachment[];
   /** Ask for JSON back. The caller still validates — see ai/schema.ts. */
   json?: boolean;
   /** JSON Schema, when the provider can enforce one (Gemini). */
@@ -326,6 +345,15 @@ async function generateGemini(
     if (req.schema) generationConfig.responseSchema = req.schema;
   }
 
+  // L'image ou la vidéo précède le texte : Gemini lit l'invite dans l'ordre
+  // des parts, et la question porte en général sur ce qui vient d'être joint.
+  const parts = [
+    ...(req.attachments ?? []).map((a) => ({
+      inlineData: { mimeType: a.mimeType, data: a.data },
+    })),
+    { text: req.prompt },
+  ];
+
   const res = await fetcher(
     `${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
@@ -333,7 +361,7 @@ async function generateGemini(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: req.system }] },
-        contents: [{ role: 'user', parts: [{ text: req.prompt }] }],
+        contents: [{ role: 'user', parts }],
         generationConfig,
       }),
     },
@@ -363,11 +391,26 @@ async function generateOpenAiCompatible(
   const base = OPENAI_BASES[provider];
   if (!base) throw new ProviderError(provider, 0, 'fournisseur non pris en charge');
 
+  // Le format compatible OpenAI ne sait pas joindre de vidéo : seule l'image
+  // passe, en `image_url` avec les octets encodés dans l'URL elle-même plutôt
+  // que téléversés à part. Un modèle qui ne voit pas répondra par une erreur
+  // du fournisseur, gérée comme n'importe quel échec de modèle par le routeur.
+  const images = (req.attachments ?? []).filter((a) => a.mimeType.startsWith('image/'));
+  const userContent = images.length
+    ? [
+        { type: 'text', text: req.prompt },
+        ...images.map((a) => ({
+          type: 'image_url',
+          image_url: { url: `data:${a.mimeType};base64,${a.data}` },
+        })),
+      ]
+    : req.prompt;
+
   const body: Record<string, unknown> = {
     model,
     messages: [
       { role: 'system', content: req.system },
-      { role: 'user', content: req.prompt },
+      { role: 'user', content: userContent },
     ],
     temperature: req.temperature ?? 0.3,
     max_tokens: req.maxTokens ?? 2048,

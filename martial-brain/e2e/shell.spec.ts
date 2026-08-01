@@ -244,4 +244,42 @@ test.describe('LUIS AI', () => {
     await freshApp(page);
     await expect(page.locator('.luis-intro .banner')).toContainText('Aucune clé IA');
   });
+
+  test('une image jointe s’aperçoit, se retire, et se rejoue dans le fil une fois envoyée', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await freshApp(page);
+
+    // Un fichier minuscule suffit : c'est le chemin de code qui est vérifié,
+    // pas le rendu d'une vraie photo.
+    const buffer = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFUlEQVR42mNk+M9QDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    await page.setInputFiles('input[type="file"]', {
+      name: 'photo.png',
+      mimeType: 'image/png',
+      buffer,
+    });
+    await expect(page.locator('.luis-attachment')).toHaveCount(1);
+
+    // Une pièce jointe suffit à activer l'envoi, même sans texte.
+    await expect(page.locator('.luis-compose button[type="submit"]')).toBeEnabled();
+
+    await page.locator('.luis-attachment-remove').click();
+    await expect(page.locator('.luis-attachment')).toHaveCount(0);
+    await expect(page.locator('.luis-compose button[type="submit"]')).toBeDisabled();
+
+    // Rejoindre le fichier puis envoyer : le texte par défaut et la vignette
+    // apparaissent dans l'historique, sans qu'aucune question soit tapée.
+    await page.setInputFiles('input[type="file"]', {
+      name: 'photo.png',
+      mimeType: 'image/png',
+      buffer,
+    });
+    await page.locator('.luis-compose button[type="submit"]').click();
+    await expect(page.locator('.luis-msg.user .luis-text')).toHaveText('Image jointe');
+    await expect(page.locator('.luis-msg.user .luis-msg-attachments img')).toHaveCount(1);
+  });
 });
