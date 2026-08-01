@@ -31,6 +31,15 @@ export interface Settings {
   aiModels: Record<string, string>;
   /** Model used for cheap, structured work (natural-language → filter). */
   aiFastModel: Record<string, string>;
+  /**
+   * Les modèles que CETTE clé a listés, par fournisseur.
+   *
+   * Sert au repli : quand le modèle choisi épuise son quota, le routeur essaie
+   * les autres modèles du même fournisseur avant de changer de clé. Sans cette
+   * liste il n'aurait rien à essayer — et changer de fournisseur pour un quota
+   * de modèle épuisé, c'est abandonner une clé encore valable.
+   */
+  aiModelList: Record<string, string[]>;
   syncUrl: string;
   syncToken: string;
 }
@@ -40,6 +49,7 @@ const DEFAULTS: Settings = {
   aiOrder: ['gemini', 'groq', 'mistral'],
   aiModels: {},
   aiFastModel: {},
+  aiModelList: {},
   syncUrl: '',
   syncToken: '',
 };

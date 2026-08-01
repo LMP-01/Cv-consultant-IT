@@ -33,6 +33,7 @@ const settings = (patch: Partial<Settings> = {}): Settings => ({
   aiOrder: ['gemini', 'groq', 'mistral'],
   aiModels: { gemini: 'gemini-x', groq: 'llama-x', mistral: 'mistral-x' },
   aiFastModel: {},
+  aiModelList: {},
   syncUrl: '',
   syncToken: '',
   ...patch,
@@ -146,7 +147,86 @@ describe('fallback chain', () => {
     expect(result.provider).toBe('groq');
     expect(result.text).toBe('réponse de secours');
     // The skip is reported, not swallowed.
-    expect(result.fallbacks).toEqual([{ provider: 'gemini', reason: 'quota atteint' }]);
+    // Le modèle est nommé : « quota atteint » sans dire lequel n'aide pas à
+    // comprendre pourquoi la réponse vient d'ailleurs.
+    expect(result.fallbacks).toEqual([{ provider: 'gemini', reason: 'gemini-x — quota atteint' }]);
+  });
+
+  it('essaie les autres modèles de la MÊME clé avant de changer de fournisseur', async () => {
+    // Un quota, chez ces fournisseurs, est attaché à un modèle et pas à la clé.
+    // Changer de clé sur un quota de modèle, c'est gaspiller un fournisseur
+    // encore utilisable — et sur trois clés gratuites, ça se paie.
+    const calls: string[] = [];
+    const fetcher = vi.fn(async (url: string) => {
+      const model = /models\/([^:]+):/.exec(url)?.[1] ?? 'inconnu';
+      calls.push(model);
+      if (model === 'gemini-x') return json({ error: { message: 'quota' } }, 429);
+      return json({ candidates: [{ content: { parts: [{ text: 'réponse' }] } }] });
+    });
+
+    const result = await route(
+      settings({
+        aiOrder: ['gemini', 'groq'],
+        aiModelList: { gemini: ['gemini-x', 'gemini-lite', 'gemini-embed-001'] },
+      }),
+      { system: 's', prompt: 'p', retries: 0, fetcher },
+    );
+
+    expect(result.provider).toBe('gemini');
+    expect(result.model).toBe('gemini-lite');
+    // Le modèle d'embedding est écarté : il ne répond pas à une question, et
+    // l'essayer ne produirait qu'une deuxième erreur, plus lente.
+    expect(calls).not.toContain('gemini-embed-001');
+  });
+
+  it('abandonne tout le fournisseur quand la clé est refusée', async () => {
+    // Un 401 condamne tous les modèles de la clé : les essayer un par un
+    // n'obtiendrait que le même refus, trois fois plus lentement.
+    const calls: string[] = [];
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.includes('generativelanguage')) {
+        calls.push(/models\/([^:]+):/.exec(url)?.[1] ?? '');
+        return json({ error: { message: 'clé invalide' } }, 401);
+      }
+      return json({ choices: [{ message: { content: 'réponse de secours' } }] });
+    });
+
+    const result = await route(
+      settings({
+        aiOrder: ['gemini', 'groq'],
+        aiModelList: { gemini: ['gemini-x', 'gemini-lite', 'gemini-pro'] },
+      }),
+      { system: 's', prompt: 'p', retries: 0, fetcher },
+    );
+
+    expect(result.provider).toBe('groq');
+    expect(calls).toEqual(['gemini-x']);
+  });
+
+  it('commence par le modèle imposé sans perdre le repli', async () => {
+    const calls: string[] = [];
+    const fetcher = vi.fn(async (url: string) => {
+      const model = /models\/([^:]+):/.exec(url)?.[1] ?? 'openai-style';
+      calls.push(model);
+      if (model === 'gemini-pro') return json({ error: { message: 'quota' } }, 429);
+      return json({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] });
+    });
+
+    const result = await route(
+      settings({ aiOrder: ['gemini'], aiModelList: { gemini: ['gemini-x'] } }),
+      {
+        system: 's',
+        prompt: 'p',
+        retries: 0,
+        prefer: { provider: 'gemini', model: 'gemini-pro' },
+        fetcher,
+      },
+    );
+
+    // Imposer un modèle dit par quoi COMMENCER, pas « échoue si celui-là est
+    // épuisé ».
+    expect(calls[0]).toBe('gemini-pro');
+    expect(result.model).toBe('gemini-x');
   });
 
   it('respects the order the user chose', async () => {

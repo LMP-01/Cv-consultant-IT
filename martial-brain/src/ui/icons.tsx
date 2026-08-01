@@ -123,6 +123,9 @@ const ICONS = {
   text: [p('M4 7V4h16v3'), p('M9 20h6'), p('M12 4v16')],
   contrast: [c(12, 12, 10), p('M12 18a6 6 0 0 0 0-12z')],
 
+  /* LUIS AI — un œil dans un viseur : observer, puis orienter. */
+  luis: [c(12, 12, 3), c(12, 12, 8), p('M12 1v3'), p('M12 20v3'), p('M1 12h3'), p('M20 12h3')],
+
   /* Statuts — toujours accompagnés d'un mot */
   ok: [c(12, 12, 10), p('m9 12 2 2 4-4')],
   warn: [c(12, 12, 10), p('M12 8v4'), p('M12 16h.01')],

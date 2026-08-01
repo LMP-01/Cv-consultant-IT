@@ -141,6 +141,73 @@ faux. L'interface affiche le filtre réellement appliqué.
 
 ---
 
+## LUIS AI — l'analyste
+
+Un panneau permanent, à droite du contenu sur ordinateur, derrière un bouton
+flottant déplaçable sur mobile. `Ctrl`/`⌘` + `J`.
+
+**Ce qu'il fait.** Il *récupère avant de répondre* : le pack de connaissances
+choisi, tes fiches, et les voisins de graphe des fiches trouvées. Il cite ses
+sources par identifiant — `[K003]`, `[pack:kyokushin]` — et chaque citation est
+cliquable.
+
+**Ce qu'il ne fait pas.** Il ne calcule rien. Les chiffres sont mesurés en SQL
+et injectés tout faits dans son contexte. Il n'invente aucun identifiant. Il ne
+donne aucun avis médical.
+
+### Le RAG
+
+Trois pistes menées de front, fusionnées par **rang réciproque** (RRF) :
+
+1. **BM25 sur les packs** — la connaissance du domaine. Ne dépend d'aucune clé.
+2. **BM25 sur tes fiches** — ce que tu as écrit.
+3. **Vecteurs**, quand les passages ont été vectorisés — le rappel sémantique.
+
+Puis une **expansion à un saut dans le graphe** : les voisins des fiches
+retenues entrent dans le contexte. C'est ce qui fait que « pourquoi mon Mae Geri
+passe moins ? » ramène l'erreur technique `ER001` que personne n'a nommée.
+
+Le RRF est le bon choix ici précisément parce qu'il **ignore les scores** : un
+bm25 négatif et un cosinus dans [0, 1] ne sont pas comparables, et les
+normaliser demanderait un étalonnage que rien ne viendrait valider. Les rangs,
+eux, le sont toujours.
+
+> **Les vecteurs sont un complément, jamais le socle.** Groq ne vectorise pas,
+> une clé peut manquer, une indexation peut s'arrêter à mi-chemin. La recherche
+> plein texte fonctionne dans tous ces cas ; c'est elle qui porte le système.
+> La vectorisation est une action explicite, jamais automatique : elle consomme
+> le quota gratuit de l'utilisateur.
+
+### Les packs de connaissances
+
+Seize documents markdown versionnés dans le dépôt. **Fondamentaux** — la méthode
+d'analyse, indépendante du style — est installé au premier démarrage. Les quinze
+packs de discipline s'installent à la demande, et se chargent seulement à ce
+moment-là.
+
+Sélectionner un pack **focalise** l'analyse sur son règlement. Ne rien
+sélectionner, c'est le mode **mixte** : tout le corpus installé. On peut aussi
+importer son propre `.md`.
+
+| | Contenu |
+|---|---|
+| Fondamentaux | Chaîne cinétique, distance, tempo, boucle OODA, cadre de débriefing, ce qui se mesure et ce qui ne se mesure pas |
+| Kyokushin · Kudo · Karaté WKF | Ce que chaque règlement récompense, et le style qu'il fabrique |
+| Boxe · Kickboxing · Muay Thaï · Savate · Taekwondo | Grammaire des séquences, économie du round, armes de fond |
+| MMA · Sanda | Les transitions entre domaines, où se perdent les combats |
+| BJJ · Judo · Lutte · Sambo | Hiérarchie des positions, kumi-kata, angles et niveaux |
+| Krav Maga | Hors compétition : ce qu'une analyse peut affirmer, et ce qu'elle ne peut pas |
+
+### Le choix du modèle
+
+Un bouton dans le panneau. Le modèle choisi est celui par lequel on **commence** :
+s'il n'a plus de quota, LUIS passe au **modèle suivant de la même clé**, puis
+seulement à la clé suivante. Un quota, chez ces fournisseurs, est attaché à un
+modèle et pas à la clé — changer de clé dans ce cas gaspillerait un fournisseur
+encore utilisable. La réponse dit toujours qui a répondu.
+
+---
+
 ## Intelligence artificielle — optionnelle, BYOK
 
 Sans clé, **tout fonctionne** : fiches, relations, graphe, recherche plein texte,
@@ -313,15 +380,17 @@ martial-brain/
     domain/ids.ts        Codes K001/PR003, désambiguïsation E/ER, A/AR…
     db/                  SQLite WASM, migrations, CRUD générique, analytics
     sync/                Fusion LWW (pure, testable), curseur, transport, auto-sync
-    ai/                  Adaptateurs fournisseurs, routeur, filtre validé
+    ai/                  Adaptateurs fournisseurs, routeur, embeddings, filtre validé
+    rag/                 Découpage, corpus, récupération hybride, agent LUIS
+    rag/packs/           Les 16 packs de connaissances (markdown)
     ui/                  Coquille, palette de commandes, écrans génériques, graphe
     ui/icons.tsx         Tracés au style Lucide, recopiés plutôt qu'importés
     ui/prefs.ts          Thème, contraste, taille du texte
     ui/tabs.ts           Onglets — identifiés par leur URL, donc sans état dupliqué
   public/fonts/          Inter + JetBrains Mono, sous-ensemble latin
   server/                Serveur Deno : sert l'app + l'API de synchro (Deno KV)
-  tests/                 99 tests unitaires
-  e2e/                   32 parcours navigateur (bureau + mobile)
+  tests/                 115 tests unitaires
+  e2e/                   40 parcours navigateur (bureau + mobile)
 ```
 
 **Le moteur générique.** Les 16 modules partagent la même forme : des champs, des

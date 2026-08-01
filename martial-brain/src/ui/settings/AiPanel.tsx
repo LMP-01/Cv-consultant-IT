@@ -30,15 +30,18 @@ export function AiPanel(): ReactNode {
     try {
       const available = await fetchModels(id, key);
       setModels((prev) => ({ ...prev, [id]: available }));
+
+      // La liste est conservée : c'est elle qui donne au routeur de quoi se
+      // replier sur un autre modèle de la même clé quand un quota est atteint.
+      const patch: Parameters<typeof saveSettings>[0] = {
+        aiModelList: { ...settings.aiModelList, [id]: available },
+      };
       if (!settings.aiModels[id]) {
         const pick = suggestModel(id, available);
-        setSettings(
-          saveSettings({
-            aiModels: { ...settings.aiModels, [id]: pick },
-            aiFastModel: { ...settings.aiFastModel, [id]: pick },
-          }),
-        );
+        patch.aiModels = { ...settings.aiModels, [id]: pick };
+        patch.aiFastModel = { ...settings.aiFastModel, [id]: pick };
       }
+      setSettings(saveSettings(patch));
     } catch (err) {
       setErrors((prev) => ({
         ...prev,

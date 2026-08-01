@@ -164,3 +164,84 @@ test.describe('timeline et calendrier', () => {
     await expect(page.locator('.rows')).toContainText('Championnat régional');
   });
 });
+
+test.describe('LUIS AI', () => {
+  test('occupe la place libre sur grand écran et connaît la fiche ouverte', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await freshApp(page);
+
+    // Le dock est ouvert d'office là où la place existe — c'est tout l'objet :
+    // cet espace était vide.
+    await expect(page.locator('.luis')).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-luis', 'open');
+
+    // Le pack de méthode est installé au premier démarrage, sinon LUIS
+    // démarrerait sans rien d'autre que des fiches vides.
+    await page.locator('.luis-head .chip', { hasText: 'Mixte' }).click();
+    await expect(page.locator('.corpus-row', { hasText: 'Fondamentaux' })).toContainText('passage');
+    await page.locator('.corpus-head .icon-btn').click();
+
+    // Sur une fiche, la question porte sur la fiche sans qu'on ait à le dire.
+    await page.goto('/#/t/technique');
+    await page.locator('.row', { hasText: 'Mae Geri' }).first().click();
+    await expect(page.locator('.luis-focus')).toContainText('K003');
+    await expect(page.locator('.luis-compose textarea')).toHaveAttribute(
+      'placeholder',
+      /K003/,
+    );
+  });
+
+  test('se ferme, se rouvre au clavier, et laisse un bouton déplaçable', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await freshApp(page);
+
+    await page.locator('.luis-head').getByRole('button', { name: 'Fermer LUIS AI' }).click();
+    await expect(page.locator('.luis')).toHaveCount(0);
+    await expect(page.locator('.luis-fab')).toBeVisible();
+
+    await page.keyboard.press('Control+j');
+    await expect(page.locator('.luis')).toBeVisible();
+    await page.keyboard.press('Control+j');
+    await expect(page.locator('.luis')).toHaveCount(0);
+
+    // Le bouton se déplace, et la position tient au rechargement : un bouton
+    // fixe masque toujours quelque chose, et ce quelque chose dépend de l'écran.
+    const fab = page.locator('.luis-fab');
+    const before = await fab.boundingBox();
+    await page.mouse.move(before!.x + 20, before!.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(400, 300, { steps: 8 });
+    await page.mouse.up();
+
+    const after = await fab.boundingBox();
+    expect(Math.abs(after!.x - before!.x)).toBeGreaterThan(50);
+    // Un déplacement n'ouvre pas le panneau — sinon on ne pourrait jamais
+    // déplacer sans ouvrir.
+    await expect(page.locator('.luis')).toHaveCount(0);
+
+    await page.reload();
+    await page.waitForSelector('.shell');
+    const restored = await page.locator('.luis-fab').boundingBox();
+    expect(Math.abs(restored!.x - after!.x)).toBeLessThan(4);
+  });
+
+  test('sur mobile, un bouton flottant plutôt qu’une colonne', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await freshApp(page);
+
+    // Pas de colonne à prendre sur 390 px : le panneau ne s'ouvre pas seul.
+    await expect(page.locator('.luis')).toHaveCount(0);
+    await page.locator('.luis-fab').click();
+    await expect(page.locator('.luis')).toBeVisible();
+
+    // Et il prend tout l'écran, plutôt que de laisser une bande inutilisable.
+    const box = await page.locator('.luis').boundingBox();
+    expect(box!.width).toBeGreaterThan(380);
+  });
+
+  test('sans clé, LUIS le dit au lieu d’échouer en silence', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await freshApp(page);
+    await expect(page.locator('.luis-intro .banner')).toContainText('Aucune clé IA');
+  });
+});
