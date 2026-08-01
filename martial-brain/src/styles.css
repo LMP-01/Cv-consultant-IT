@@ -842,6 +842,48 @@ h2 {
   line-height: 1.2;
 }
 
+/* Objectifs du tableau de bord : le titre au complet, jamais tronqué au
+   caractère près comme une ligne de classement. */
+.obj-list {
+  display: grid;
+  gap: 12px;
+}
+.obj-row {
+  display: block;
+  padding: 5px 6px;
+  margin: 0 -6px;
+  border-radius: var(--r-1);
+  transition: background var(--t-fast) var(--ease);
+}
+.obj-row:hover {
+  background: var(--card-hover);
+}
+.obj-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.obj-title {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+  /* Pas de troncature CSS ici : `-webkit-line-clamp` coupe au pixel près,
+     pas au mot — testé, ça donne « pendant l… » au milieu de « les ». La
+     coupure éventuelle est donc faite en JS, à une vraie frontière de mot,
+     avant que le texte n'arrive ici. Ce qui reste n'a plus qu'à s'enrouler
+     normalement. */
+  overflow-wrap: break-word;
+}
+.obj-pct {
+  flex: none;
+  padding-top: 1px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
 .stat .k {
   font-size: 10.5px;
   font-weight: 600;
@@ -1752,6 +1794,10 @@ textarea {
   box-shadow: var(--shadow-2);
   cursor: grab;
   touch-action: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
 }
 .luis-fab:hover {

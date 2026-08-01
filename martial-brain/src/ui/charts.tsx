@@ -67,7 +67,13 @@ export function BarList({
   const ceiling = max ?? Math.max(...data.map((d) => d.value), 1);
 
   return (
-    <div style={{ display: 'grid', gap: 7 }}>
+    // `minWidth: 0` casse un piège classique de Grid/Flexbox : sans lui, une
+    // ligne flex dont les enfants ne rétrécissent pas (le libellé et la valeur
+    // sont `flex: none`) impose sa largeur de contenu à la colonne de grille
+    // qui l'accueille, laquelle grandit alors au-delà de l'espace disponible
+    // plutôt que de s'y tenir — un débordement de quelques pixels, invisible
+    // en largeur confortable, net dans une carte étroite.
+    <div style={{ display: 'grid', gap: 7, minWidth: 0 }}>
       {data.map((d) => {
         const pct = ceiling > 0 ? (d.value / ceiling) * 100 : 0;
         const row = (
@@ -126,7 +132,7 @@ export function BarList({
           <a
             key={d.label}
             href={d.href}
-            style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}
             title={`${d.label} — ${d.display ?? d.value}`}
           >
             {row}
@@ -134,7 +140,7 @@ export function BarList({
         ) : (
           <div
             key={d.label}
-            style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}
             title={`${d.label} — ${d.display ?? d.value}`}
           >
             {row}
