@@ -1782,7 +1782,9 @@ textarea {
 }
 
 /* Le bouton flottant. Déplaçable parce qu'un bouton fixe masque toujours
-   quelque chose, et que ce quelque chose dépend de l'écran. */
+   quelque chose, et que ce quelque chose dépend de l'écran. Colonne plutôt
+   que grille : sur grand écran une étiquette vient s'empiler au-dessus de
+   l'image, ce qu'une seule case centrée ne permettrait pas. */
 .luis-fab {
   position: fixed;
   right: 18px;
@@ -1792,21 +1794,27 @@ textarea {
   height: 46px;
   border-radius: 50%;
   border: none;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   background: var(--accent);
   color: var(--accent-ink);
   box-shadow: var(--shadow-2);
   cursor: grab;
   touch-action: none;
   overflow: hidden;
-  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease), width var(--t) var(--ease), height var(--t) var(--ease);
 }
 .luis-fab-avatar {
   width: 38px;
   height: 38px;
   object-fit: contain;
   pointer-events: none;
+}
+.luis-fab-tag {
+  display: none;
 }
 .luis-fab:hover {
   transform: scale(1.06);
@@ -1815,6 +1823,174 @@ textarea {
 .luis-fab:active {
   cursor: grabbing;
   transform: scale(0.96);
+}
+
+/* Au-delà de 860 px la mascotte tient debout pour elle-même : plus de disque
+   d'accent à sa taille, l'étiquette « IA » suffit à dire ce que c'est. */
+@media (min-width: 861px) {
+  .luis-fab {
+    width: auto;
+    height: auto;
+    border-radius: var(--r-2);
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
+  }
+  .luis-fab-avatar {
+    width: auto;
+    height: 112px;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+  }
+  .luis-fab-tag {
+    display: inline-flex;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    box-shadow: var(--shadow-1);
+  }
+  .luis-fab:hover {
+    transform: scale(1.04);
+    box-shadow: none;
+  }
+  .luis-fab:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ── La mascotte, en scène : idle, réfléchit, écrit ───────────────────────
+   Une seule image plate, jamais de sprite séparé par membre — les trois
+   humeurs sont donc simulées par transform plutôt que par un changement de
+   pose : la respiration étire/comprime légèrement le buste, l'écriture fait
+   pivoter la figure depuis la hanche qui tient le sabre pour évoquer un
+   coup plutôt qu'un balancement du corps entier. */
+.mascot-stage {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 4px 0 6px;
+}
+.mascot-figure {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.mascot-img {
+  display: block;
+  height: 132px;
+  width: auto;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+}
+.mascot-stage.md .mascot-img {
+  height: 88px;
+}
+.mascot-caption {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+.mascot-stage[data-mood='idle'] .mascot-img {
+  animation: mascot-breathe-soft 4s ease-in-out infinite;
+}
+.mascot-stage[data-mood='thinking'] .mascot-img {
+  animation: mascot-breathe-deep 2.6s ease-in-out infinite;
+}
+.mascot-stage[data-mood='thinking'] .mascot-caption {
+  animation: mascot-caption-pulse 2.6s ease-in-out infinite;
+}
+.mascot-stage[data-mood='writing'] .mascot-img {
+  animation: mascot-strike 0.85s ease-in-out infinite;
+  transform-origin: 42% 80%;
+}
+
+@keyframes mascot-breathe-soft {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scaleY(1.015) scaleX(0.996);
+  }
+}
+@keyframes mascot-breathe-deep {
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+  50% {
+    transform: scaleY(1.055) scaleX(0.965) translateY(-3px);
+  }
+}
+@keyframes mascot-caption-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes mascot-strike {
+  0%,
+  100% {
+    transform: rotate(0deg) translateX(0);
+  }
+  22% {
+    transform: rotate(-8deg) translateX(-2px);
+  }
+  48% {
+    transform: rotate(10deg) translateX(2px);
+  }
+  74% {
+    transform: rotate(-3deg) translateX(0);
+  }
+}
+
+/* Bulle de « en train d'écrire », façon messagerie : trois points qui
+   rebondissent en cascade plutôt qu'un texte, parce que l'animation seule
+   porte déjà le sens. */
+.mascot-bubble {
+  position: absolute;
+  top: -4px;
+  right: -14px;
+  display: flex;
+  gap: 3px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-1);
+}
+.mascot-bubble span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  animation: mascot-dot 1.1s ease-in-out infinite;
+}
+.mascot-bubble span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.mascot-bubble span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes mascot-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 
 /* ── Choix du corpus ───────────────────────────────────────────────────── */
