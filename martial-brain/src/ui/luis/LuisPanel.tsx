@@ -21,6 +21,7 @@ import { modelChain, usableProviders } from '../../ai/router';
 import { ask, type Turn } from '../../rag/luis';
 import { listDocs } from '../../rag/store';
 import { loadSettings } from '../../settings';
+import { ProviderMark } from '../common';
 import { useDb } from '../DbProvider';
 import { Icon } from '../icons';
 import { href, navigate, type Route } from '../router';
@@ -319,94 +320,6 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
           LUIS&nbsp;AI
         </span>
 
-        <button
-          type="button"
-          className={`chip sm${slugs.length ? ' on' : ''}`}
-          onClick={() => setShowCorpus(true)}
-          title="Choisir le pack de connaissances"
-        >
-          <Icon name="resource" size={12} />
-          <span className="t">
-            {slugs.length === 0
-              ? 'Mixte'
-              : slugs.length === 1
-                ? (docs.find((d) => d.slug === slugs[0])?.title.split(' —')[0] ?? '1 pack')
-                : `${slugs.length} packs`}
-          </span>
-        </button>
-
-        <div className="pop-host">
-          <button
-            type="button"
-            className="chip sm"
-            onClick={() => setShowModels((v) => !v)}
-            title="Choisir le modèle"
-          >
-            <Icon name="hypothesis" size={12} />
-            <span className="t">{prefer ? prefer.model.split('/').pop() : 'Auto'}</span>
-          </button>
-          {showModels && (
-            <>
-              <div className="pop-scrim" onClick={() => setShowModels(false)} />
-              <div className="pop" role="dialog" aria-label="Modèle">
-                <h4>Modèle</h4>
-                <button
-                  type="button"
-                  className={`pop-item${prefer ? '' : ' on'}`}
-                  onClick={() => {
-                    setPrefer(null);
-                    setShowModels(false);
-                  }}
-                >
-                  <Icon name="refresh" />
-                  <span>
-                    <b>Automatique</b>
-                    <span className="sub">Suit ton ordre de fournisseurs</span>
-                  </span>
-                </button>
-
-                {providers.length === 0 && (
-                  <p className="sub" style={{ padding: '4px 8px' }}>
-                    Aucune clé configurée.{' '}
-                    <a href={href({ name: 'settings' })} style={{ color: 'var(--accent)' }}>
-                      En ajouter une
-                    </a>
-                    .
-                  </p>
-                )}
-
-                {providers.map((id) => (
-                  <div key={id}>
-                    <h4 style={{ marginTop: 10 }}>{providerDef(id).label}</h4>
-                    {modelChain(settings, id, false).map((model) => (
-                      <button
-                        key={model}
-                        type="button"
-                        className={`pop-item${prefer?.model === model ? ' on' : ''}`}
-                        onClick={() => {
-                          setPrefer({ provider: id, model });
-                          setShowModels(false);
-                        }}
-                      >
-                        <Icon name="check" style={{ opacity: prefer?.model === model ? 1 : 0 }} />
-                        <span>
-                          <b>{model}</b>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ))}
-
-                <p className="sub" style={{ padding: '8px 8px 2px' }}>
-                  Le modèle choisi est celui par lequel on commence. S’il n’a plus
-                  de quota, LUIS passe au suivant de la même clé, puis à la clé
-                  suivante — la réponse dit toujours qui a répondu.
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-
         <button type="button" className="icon-btn" aria-label="Fermer LUIS AI" onClick={onClose}>
           <Icon name="close" size={15} />
         </button>
@@ -449,6 +362,123 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
             <MascotStage mood={mood} size="md" />
           </div>
         )}
+      </div>
+
+      {/* Les deux réglages qui changent la réponse — pas ceux qui la lisent —
+          juste au-dessus du champ où elle se déclenche : le regard n'a plus à
+          remonter en haut du panneau pour savoir qui va répondre et sur quoi. */}
+      <div className="luis-toolbar">
+        <button
+          type="button"
+          className={`luis-tool${slugs.length ? ' on' : ''}`}
+          onClick={() => setShowCorpus(true)}
+          title="Choisir le pack de connaissances"
+        >
+          <span className="luis-tool-icon">
+            <Icon name="resource" size={15} />
+          </span>
+          <span className="luis-tool-text">
+            <span className="luis-tool-kicker">Sensei</span>
+            <span className="luis-tool-value">
+              {slugs.length === 0
+                ? 'Mixte'
+                : slugs.length === 1
+                  ? (docs.find((d) => d.slug === slugs[0])?.title.split(' —')[0] ?? '1 pack')
+                  : `${slugs.length} packs`}
+            </span>
+          </span>
+        </button>
+
+        <div className="pop-host">
+          <button
+            type="button"
+            className={`luis-tool${prefer ? ' on' : ''}`}
+            onClick={() => setShowModels((v) => !v)}
+            title="Choisir le modèle"
+          >
+            <span className="luis-tool-icon">
+              <Icon name="hypothesis" size={15} />
+            </span>
+            <span className="luis-tool-text">
+              <span className="luis-tool-kicker">Modèle</span>
+              <span className="luis-tool-value">
+                {prefer ? prefer.model.split('/').pop() : 'Auto'}
+              </span>
+            </span>
+          </button>
+          {showModels && (
+            <>
+              <div className="pop-scrim" onClick={() => setShowModels(false)} />
+              <div className="pop up" role="dialog" aria-label="Modèle">
+                <h4>Modèle</h4>
+                <button
+                  type="button"
+                  className={`pop-item${prefer ? '' : ' on'}`}
+                  onClick={() => {
+                    setPrefer(null);
+                    setShowModels(false);
+                  }}
+                >
+                  <Icon name="refresh" />
+                  <span>
+                    <b>Automatique</b>
+                    <span className="sub">Suit ton ordre de fournisseurs</span>
+                  </span>
+                </button>
+
+                {providers.length === 0 && (
+                  <p className="sub" style={{ padding: '4px 8px' }}>
+                    Aucune clé configurée.{' '}
+                    <a href={href({ name: 'settings' })} style={{ color: 'var(--accent)' }}>
+                      En ajouter une
+                    </a>
+                    .
+                  </p>
+                )}
+
+                {providers.map((id) => (
+                  <div key={id}>
+                    <h4
+                      style={{
+                        marginTop: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        textTransform: 'none',
+                        fontSize: 12.5,
+                      }}
+                    >
+                      <ProviderMark id={id} size={16} />
+                      {providerDef(id).label}
+                    </h4>
+                    {modelChain(settings, id, false).map((model) => (
+                      <button
+                        key={model}
+                        type="button"
+                        className={`pop-item${prefer?.model === model ? ' on' : ''}`}
+                        onClick={() => {
+                          setPrefer({ provider: id, model });
+                          setShowModels(false);
+                        }}
+                      >
+                        <Icon name="check" style={{ opacity: prefer?.model === model ? 1 : 0 }} />
+                        <span>
+                          <b>{model}</b>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+
+                <p className="sub" style={{ padding: '8px 8px 2px' }}>
+                  Le modèle choisi est celui par lequel on commence. S’il n’a plus
+                  de quota, LUIS passe au suivant de la même clé, puis à la clé
+                  suivante — la réponse dit toujours qui a répondu.
+                </p>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <form

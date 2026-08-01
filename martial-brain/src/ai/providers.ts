@@ -130,6 +130,28 @@ async function readError(res: Response, provider: ProviderId): Promise<never> {
 
 /* ── Model discovery ──────────────────────────────────────────────────────── */
 
+/**
+ * Un identifiant listé n'est pas toujours un modèle de conversation.
+ *
+ * Gemini expose ses produits « Antigravity » et « Deep Research » par le même
+ * point d'entrée que ses modèles, `supportedGenerationMethods` déclarant
+ * `generateContent` alors que l'appel échoue réellement (« this model only
+ * supports Interactions API », constaté en usage). La métadonnée du
+ * fournisseur ment ; le nom, lui, ne changera pas au prochain lancement
+ * produit — tout modèle de conversation Gemini s'appelle `gemini-*`, donc
+ * une liste blanche par préfixe est plus sûre qu'un filtre sur la métadonnée
+ * déclarée.
+ *
+ * Groq et Mistral n'ont pas cette séparation par préfixe : leurs catalogues
+ * mélangent conversation, transcription (whisper), synthèse vocale (tts,
+ * orpheus, playai) et modération (guard) sous des noms sans convention
+ * commune, donc on écarte par catégorie connue plutôt que par famille.
+ */
+function isChatModel(provider: ProviderId, id: string): boolean {
+  if (provider === 'gemini') return /^gemini-/i.test(id);
+  return !/whisper|\btts\b|-tts|orpheus|playai|guard|moderat|rerank|embed/i.test(id);
+}
+
 export async function fetchModels(
   provider: ProviderId,
   apiKey: string,
@@ -147,6 +169,7 @@ export async function fetchModels(
       .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m) => (m.name ?? '').replace(/^models\//, ''))
       .filter(Boolean)
+      .filter((id) => isChatModel('gemini', id))
       .sort();
   }
 
@@ -162,6 +185,7 @@ export async function fetchModels(
   return (body.data ?? [])
     .map((m) => m.id ?? '')
     .filter(Boolean)
+    .filter((id) => isChatModel(provider, id))
     .sort();
 }
 

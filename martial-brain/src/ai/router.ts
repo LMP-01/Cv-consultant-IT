@@ -77,11 +77,16 @@ export function aiConfigured(settings: Settings): boolean {
  * enchaînerait quarante requêtes à chaque quota atteint, ce qui prendrait plus
  * de temps que d'échouer franchement.
  *
- * Les modèles manifestement hors sujet sont écartés : vectoriser, transcrire ou
- * modérer ne répond pas à une question, et essayer `whisper-large` après un
- * quota atteint ne produirait qu'une deuxième erreur, plus lente.
+ * Les modèles manifestement hors sujet sont écartés : vectoriser, transcrire,
+ * synthétiser de la voix ou modérer ne répond pas à une question, et essayer
+ * `whisper-large` après un quota atteint ne produirait qu'une deuxième erreur,
+ * plus lente. `fetchModels` (ai/providers.ts) filtre déjà ces catégories à la
+ * source pour toute liste rafraîchie ; ce filtre reste en second rideau pour
+ * une liste mise en cache avant ce filtre, sans que l'utilisateur ait à
+ * revérifier sa clé.
  */
-const OFF_TOPIC = /embed|whisper|tts|audio|vision|image|guard|moderat|rerank/i;
+const OFF_TOPIC =
+  /embed|whisper|tts|audio|vision|image|guard|moderat|rerank|orpheus|playai|deep-research|antigravity/i;
 
 export function modelChain(settings: Settings, provider: ProviderId, fast: boolean): string[] {
   const chosen = fast

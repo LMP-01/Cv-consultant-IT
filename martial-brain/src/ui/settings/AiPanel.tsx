@@ -13,6 +13,7 @@ import {
   type ProviderId,
 } from '../../ai/providers';
 import { loadSettings, saveSettings } from '../../settings';
+import { ProviderMark } from '../common';
 
 export function AiPanel(): ReactNode {
   const [settings, setSettings] = useState(loadSettings);
@@ -88,6 +89,7 @@ export function AiPanel(): ReactNode {
         return (
           <div className="card" key={id} style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <ProviderMark id={id} size={20} />
               <b>{provider.label}</b>
               <span className="tag">{index + 1}ᵉ</span>
               <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
