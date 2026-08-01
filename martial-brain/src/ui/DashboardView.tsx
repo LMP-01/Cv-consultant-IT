@@ -20,6 +20,7 @@ import {
   objectiveProgress,
   recentBouts,
   trainingTotals,
+  type ObjectiveRow,
 } from '../db/analytics';
 import { listEntities } from '../db/queries';
 import { entityDef, section } from '../domain/schema';
@@ -75,16 +76,7 @@ export function DashboardView(): ReactNode {
               .
             </p>
           ) : (
-            <BarList
-              hue={progressHue}
-              max={100}
-              data={data.objectives.map((o) => ({
-                label: o.title,
-                value: o.progress,
-                display: `${o.progress} %`,
-                href: href({ name: 'detail', id: o.id }),
-              }))}
-            />
+            <ObjectiveMiniList hue={progressHue} objectives={data.objectives} />
           )}
         </div>
 
@@ -264,4 +256,65 @@ export function DashboardView(): ReactNode {
       )}
     </Screen>
   );
+}
+
+/**
+ * Les objectifs, en entier.
+ *
+ * `BarList` sert les classements courts — un nom de technique, une discipline
+ * — dans une colonne de 90 à 190 px. Un objectif est une phrase complète
+ * (« Améliorer la défense en garde basse ») : la forcer dans la même colonne
+ * la tronque au caractère près et, pire, peut faire déborder la ligne — un
+ * conteneur flex dont aucun enfant ne rétrécit impose sa largeur à la carte
+ * qui l'accueille.
+ *
+ * Le titre s'affiche donc en entier, sans troncature ni limite de lignes : la
+ * carte grandit avec lui plutôt que de le couper. Une phrase réellement
+ * démesurée passe par `wordSafeSummary` — jamais par l'ellipsis CSS, qui
+ * coupe au pixel près et donc parfois en plein mot (constaté : « pendant
+ * l… » au milieu de « les »). Le mot entier reste toujours visible ; le
+ * titre complet reste de toute façon lisible au survol.
+ */
+function ObjectiveMiniList({
+  hue,
+  objectives,
+}: {
+  hue: string;
+  objectives: readonly ObjectiveRow[];
+}): ReactNode {
+  return (
+    <div className="obj-list">
+      {objectives.map((o) => (
+        <a key={o.id} className="obj-row" href={href({ name: 'detail', id: o.id })} title={o.title}>
+          <div className="obj-head">
+            <span className="obj-title">{wordSafeSummary(o.title)}</span>
+            <span className="obj-pct">{o.progress} %</span>
+          </div>
+          <div className="bar-track">
+            <span
+              className="bar-fill"
+              style={{ width: `${Math.max(o.progress, o.progress > 0 ? 2 : 0)}%`, background: hue }}
+            />
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Un résumé, seulement si la phrase est vraiment démesurée — au-delà, la
+ * carte Objectifs déborderait le reste du tableau de bord pour une seule
+ * ligne. La coupe se fait au dernier espace avant la limite, jamais entre
+ * deux lettres d'un même mot : c'est la garantie qu'un ellipsis CSS ne donne
+ * pas.
+ */
+function wordSafeSummary(text: string, max = 170): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+
+  const cut = trimmed.slice(0, max);
+  const at = cut.lastIndexOf(' ');
+  // Un seul mot géant sans espace : rien à couper proprement, on tranche.
+  return `${(at > max * 0.4 ? cut.slice(0, at) : cut).replace(/[,.;: ]+$/, '')}…`;
 }

@@ -151,7 +151,7 @@ function Fab({ onClick }: { onClick: () => void }): ReactNode {
       // lui seul sait si le geste était un clic ou un déplacement.
       onClick={(e) => e.preventDefault()}
     >
-      <Icon name="luis" size={20} />
+      AI
     </button>
   );
 }
