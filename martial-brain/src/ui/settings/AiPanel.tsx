@@ -211,7 +211,7 @@ export function AiPanel(): ReactNode {
       <p className="sub">
         {configured.length === 0
           ? 'Aucun fournisseur configuré — les fonctions génératives sont désactivées.'
-          : `${configured.length} fournisseur(s) prêts. En cas de quota atteint, Waza passe automatiquement au suivant dans l’ordre ci-dessus.`}
+          : `${configured.length} fournisseur(s) prêts. En cas de quota atteint, Combat OS passe automatiquement au suivant dans l’ordre ci-dessus.`}
       </p>
     </>
   );

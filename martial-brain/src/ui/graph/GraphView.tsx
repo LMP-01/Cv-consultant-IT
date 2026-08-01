@@ -24,7 +24,7 @@ import {
   type SectionKey,
 } from '../../domain/schema';
 import { useDb } from '../DbProvider';
-import { Dot, sectionHue, useTheme } from '../common';
+import { Dot, Screen, sectionHue, useTheme } from '../common';
 import { navigate } from '../router';
 import { bounds, createNodes, settle, step, type LayoutEdge, type LayoutNode } from './layout';
 
@@ -333,7 +333,7 @@ export function GraphView({ focus }: { focus?: string }): ReactNode {
   const shown = hoveredRecord ?? selectedRecord;
 
   return (
-    <div className="main-inner">
+    <Screen>
       <div className="page-head">
         <div className="grow">
           <p className="sub">Graphe · §2.1</p>
@@ -462,7 +462,7 @@ export function GraphView({ focus }: { focus?: string }): ReactNode {
         {graph.ids.length} fiches · {graph.edges.length} relations · molette ou pincement pour
         zoomer, glisser pour déplacer, toucher un nœud pour le sélectionner.
       </p>
-    </div>
+    </Screen>
   );
 }
 

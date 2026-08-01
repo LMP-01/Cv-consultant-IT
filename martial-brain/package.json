@@ -1,9 +1,9 @@
 {
-  "name": "waza",
+  "name": "combat-os",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Waza — second cerveau martial : graphe de connaissances pour la construction d'un style de combat personnel",
+  "description": "Combat OS — second cerveau martial : graphe de connaissances pour la construction d'un style de combat personnel",
   "scripts": {
     "predev": "node scripts/copy-sqlite.mjs",
     "dev": "vite",

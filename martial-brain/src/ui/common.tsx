@@ -1,7 +1,8 @@
-/** Small shared pieces: theme awareness, code chips, entity chips. */
-import { useEffect, useState, type ReactNode } from 'react';
+/** Petites pièces partagées : thème, identifiants, puces de fiche, écrans. */
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { EntityRecord } from '../db/queries';
 import { entityDef, section, type SectionDef } from '../domain/schema';
+import { Icon, moduleIcon } from './icons';
 import { href, navigate } from './router';
 
 export type Theme = 'light' | 'dark';
@@ -14,27 +15,21 @@ export type Theme = 'light' | 'dark';
  * know which mode it is in rather than letting CSS flip it.
  */
 export function useTheme(): Theme {
-  const [theme, setTheme] = useState<Theme>(() =>
-    typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light',
-  );
+  // `data-theme` est toujours posé — par le script d'amorçage puis par
+  // `applyPrefs`. Le repli sombre ne sert donc qu'au cas où un test monte un
+  // composant sans coquille : il correspond à ce que la feuille de style
+  // peindrait alors.
+  const read = (): Theme =>
+    document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+
+  const [theme, setTheme] = useState<Theme>(read);
 
   useEffect(() => {
-    const mq = matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (): void => {
-      const stamped = document.documentElement.dataset.theme;
-      if (stamped === 'light' || stamped === 'dark') setTheme(stamped);
-      else setTheme(mq.matches ? 'dark' : 'light');
-    };
+    const onChange = (): void => setTheme(read());
     onChange();
-    mq.addEventListener('change', onChange);
     const observer = new MutationObserver(onChange);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => {
-      mq.removeEventListener('change', onChange);
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   return theme;
@@ -55,18 +50,74 @@ export function Dot({ section: s, theme }: { section: SectionDef; theme: Theme }
   );
 }
 
-/** The K001 / PR003 handle, tinted by its section. */
+/**
+ * Le plein cadre d'un écran.
+ *
+ * `screen` rejoue l'animation d'ouverture (glissement + fondu) à chaque
+ * changement de route, `inner` borne la largeur du texte : au-delà d'une
+ * centaine de caractères par ligne, la lecture décroche.
+ */
+export function Screen({ children }: { children: ReactNode }): ReactNode {
+  return (
+    <div className="pane screen">
+      <div className="inner">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * L'identifiant K001 / PR003, teinté par sa section — et copiable d'un clic.
+ *
+ * Le cahier des charges veut que « les IDs ressortent immédiatement » et que
+ * copier un identifiant déclenche une confirmation. Les deux vont ensemble :
+ * un identifiant est fait pour être cité ailleurs, donc pour être pris.
+ */
 export function Code({ record }: { record: EntityRecord }): ReactNode {
   const theme = useTheme();
   const hue = sectionHue(section(entityDef(record.type).section), theme);
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const copy = (event: React.MouseEvent): void => {
+    // Le code est souvent posé dans un lien vers la fiche : copier ne doit pas
+    // aussi naviguer, sinon on ne peut jamais faire l'un sans l'autre.
+    event.preventDefault();
+    event.stopPropagation();
+    void navigator.clipboard?.writeText(record.code).then(
+      () => {
+        setCopied(true);
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => setCopied(false), 1400);
+      },
+      () => undefined,
+    );
+  };
+
+  if (copied) {
+    return (
+      <span className="copied" role="status">
+        <Icon name="check" size={12} />
+        {record.code} copié
+      </span>
+    );
+  }
+
   return (
     <span
       className="code"
+      title={`Copier ${record.code}`}
+      role="button"
+      tabIndex={0}
+      onClick={copy}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') copy(e as unknown as React.MouseEvent);
+      }}
       style={{
         // @ts-expect-error -- CSS custom properties are not in CSSProperties
         '--code-ink': hue,
         '--code-bg': `color-mix(in srgb, ${hue} 14%, transparent)`,
-        '--code-line': `color-mix(in srgb, ${hue} 35%, transparent)`,
       }}
     >
       {record.code}
@@ -86,7 +137,6 @@ export function EntityChip({
     <span className="chip">
       <a
         href={href({ name: 'detail', id: record.id })}
-        className="t"
         style={{ display: 'inline-flex', gap: 6, alignItems: 'center', minWidth: 0 }}
       >
         <Code record={record} />
@@ -95,15 +145,15 @@ export function EntityChip({
       {onRemove && (
         <button
           type="button"
-          className="btn sm"
-          style={{ border: 'none', background: 'none', padding: '0 2px', lineHeight: 1 }}
+          className="icon-btn"
+          style={{ width: 18, height: 18 }}
           onClick={(e) => {
             e.preventDefault();
             onRemove();
           }}
           aria-label={`Retirer ${record.code}`}
         >
-          ×
+          <Icon name="close" size={11} />
         </button>
       )}
     </span>
@@ -154,6 +204,43 @@ export function EntityRow({ record }: { record: EntityRecord }): ReactNode {
         ))}
       </span>
     </div>
+  );
+}
+
+/**
+ * Un statut : couleur ET icône ET libellé.
+ *
+ * Ce n'est pas une précaution de principe. Les couleurs de statut du cahier
+ * des charges — #FFCC00 et #30D158 — ne sont séparées que de ΔE 5,4 sous
+ * protanopie, très en dessous du seuil utilisable. Sans l'icône et le mot,
+ * un daltonien ne distinguerait pas « atteint » de « en retard ». C'est donc
+ * cette fonction, et pas la couleur, qui porte l'information.
+ */
+export function Status({
+  level,
+  children,
+}: {
+  level: 'good' | 'warn' | 'bad' | 'info';
+  children: ReactNode;
+}): ReactNode {
+  const icon = level === 'good' ? 'ok' : level === 'warn' ? 'warn' : level === 'bad' ? 'bad' : 'info';
+  return (
+    <span className={`status ${level}`}>
+      <Icon name={icon} size={13} />
+      {children}
+    </span>
+  );
+}
+
+/** L'icône du module d'une fiche, teintée par sa section. */
+export function TypeIcon({ record, size = 15 }: { record: EntityRecord; size?: number }): ReactNode {
+  const theme = useTheme();
+  return (
+    <Icon
+      name={moduleIcon(record.type)}
+      size={size}
+      style={{ color: sectionHue(section(entityDef(record.type).section), theme) }}
+    />
   );
 }
 

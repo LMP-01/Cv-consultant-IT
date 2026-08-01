@@ -89,8 +89,8 @@ describe('library module (§4.12)', () => {
 
 describe('descriptors', () => {
   it('covers the 15 modules with unique keys and prefixes', () => {
-    expect(ENTITY_DEFS).toHaveLength(15);
-    expect(new Set(ENTITY_DEFS.map((d) => d.key)).size).toBe(15);
+    expect(ENTITY_DEFS).toHaveLength(16);
+    expect(new Set(ENTITY_DEFS.map((d) => d.key)).size).toBe(16);
 
     const prefixes = ENTITY_DEFS.flatMap(prefixesOf);
     expect(new Set(prefixes).size).toBe(prefixes.length);

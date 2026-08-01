@@ -304,6 +304,27 @@ export function seed(db: Db): void {
       tags: ['jambe'],
     });
 
+    /*
+     * Décisions.
+     *
+     * Elle suit son hypothèse : c'est exactement la paire que le module sert à
+     * représenter — la question, puis ce qu'on en a fait.
+     */
+    add('d-trois-armes', 'decision', 'Réduire le plan de combat à trois armes', {
+      date: '2026-11-24',
+      contexte:
+        "Après le championnat régional : sous pression, je suis revenu spontanément à jab, low kick et Mae Geri.",
+      pourquoi:
+        "PR001 dit que la simplicité résiste à la fatigue ; le combat l'a confirmé sans que je l'aie décidé. Autant en faire un choix assumé plutôt qu'un repli.",
+      alternatives:
+        "Élargir le répertoire de compétition à cinq ou six armes. Écarté : chaque arme supplémentaire coûte du temps d'entraînement et n'a jamais survécu au 2e round.",
+      attendu:
+        'Plus de volume sur trois armes, moins de temps dispersé, meilleure lecture des ouvertures.',
+      statut: 'Appliquée',
+      revue: '',
+      tags: ['compétition', 'fondamental'],
+    });
+
     /* ── Sparrings (§4.9) ── */
     add('r-15-10', 'sparring', 'Séance du 15/10', {
       date: '2026-10-15',
@@ -347,7 +368,7 @@ export function seed(db: Db): void {
       tags: ['analyse'],
     });
 
-    /* ── The wiring: this is what makes it a graph rather than 15 lists ── */
+    /* ── The wiring: this is what makes it a graph rather than 16 lists ── */
     wire('k-jab', 'a-jab-low', 'a-jab-cross', 'b-chaine-direct', 'pr-simplicite', 'e-contre-jab', 'r-15-10', 'l-main-basse');
     wire('k-cross', 'a-jab-cross', 'b-chaine-direct', 'l-main-basse');
     wire('k-mae-geri', 'c-check-mae-geri', 's-agressif', 's-grande-distance', 'er-armement-genou', 'h-switch-mae-geri', 't-faire-avancer', 'r-15-10', 'f-regional');
@@ -366,6 +387,7 @@ export function seed(db: Db): void {
     wire('er-armement-genou', 'b-chaine-direct', 'e-contre-jab', 'r-15-10');
     wire('o-garde-basse', 'e-contre-jab', 'r-15-10', 'f-regional');
     wire('h-switch-mae-geri', 'r-15-10', 'f-regional');
+    wire('d-trois-armes', 'pr-simplicite', 'f-regional', 'k-jab', 'k-low-kick', 'k-mae-geri', 'o-garde-basse');
     wire('r-15-10', 'pr-simplicite');
     wire('f-regional', 'pr-simplicite', 'pr-distance');
     wire('l-main-basse', 'f-regional');

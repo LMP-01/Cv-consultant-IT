@@ -1,5 +1,5 @@
 /**
- * Waza server — one deployment serves the app and the sync API.
+ * Combat OS server — one deployment serves the app and the sync API.
  *
  * That is the point: a single free *.deno.dev URL, nothing to configure, no
  * domain, and no second provider involved. Sync is entirely optional; the app

@@ -10,10 +10,19 @@ import type { ProviderId } from './ai/providers';
 
 const KEY = 'waza.settings';
 
-export type ThemePref = 'system' | 'light' | 'dark';
+/**
+ * Le thème ne vit PAS ici — il vit dans `ui/prefs.ts`, avec le contraste et la
+ * taille du texte.
+ *
+ * Il y a eu un temps deux réglages de thème, chacun posant `data-theme` sur
+ * `<html>` de son côté. Deux sources de vérité pour une même question, c'est
+ * une seule chose : un bug qui attend son heure — celui qui écrit en dernier
+ * gagne, et l'autre écran affiche un état qui n'est plus vrai. Les réglages
+ * d'affichage sont regroupés là où le script d'amorçage d'`index.html` les
+ * lit, ce qui est aussi la seule façon de les appliquer sans clignotement.
+ */
 
 export interface Settings {
-  theme: ThemePref;
   /** Provider id → API key. Stays on this device; sent only to that provider. */
   aiKeys: Record<string, string>;
   /** Provider ids in fallback order. */
@@ -27,7 +36,6 @@ export interface Settings {
 }
 
 const DEFAULTS: Settings = {
-  theme: 'system',
   aiKeys: {},
   aiOrder: ['gemini', 'groq', 'mistral'],
   aiModels: {},
@@ -53,13 +61,5 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   } catch {
     // Private browsing with storage disabled: settings simply don't persist.
   }
-  applyTheme(next.theme);
   return next;
-}
-
-/** Stamp the root element so CSS (and the chart palette) follow the choice. */
-export function applyTheme(pref: ThemePref): void {
-  const root = document.documentElement;
-  if (pref === 'system') delete root.dataset.theme;
-  else root.dataset.theme = pref;
 }

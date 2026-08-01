@@ -1,14 +1,15 @@
-# Waza — second cerveau martial
+# Combat OS — second cerveau martial
 
 Un **graphe de connaissances** pour construire et faire évoluer un style de combat
 personnel. Pas un carnet d'entraînement : chaque technique, combinaison, contre,
-tactique, situation, sparring, hypothèse et principe est une fiche, et les fiches
-sont reliées entre elles. Saisir un sparring enrichit automatiquement toutes les
-fiches qu'il mentionne.
+tactique, situation, sparring, hypothèse, décision et principe est une fiche, et
+les fiches sont reliées entre elles. Saisir un sparring enrichit automatiquement
+toutes les fiches qu'il mentionne.
 
 Application web installable (PWA), utilisable **hors-ligne**, sur téléphone comme
-sur ordinateur. Implémente le cahier des charges *Système de Gestion des
-Connaissances Martial*.
+sur ordinateur. Implémente deux cahiers des charges : *Système de Gestion des
+Connaissances Martial* pour le fond, et *UI/UX & Direction Artistique de Combat
+OS* pour la forme.
 
 ---
 
@@ -39,15 +40,24 @@ Après le premier chargement, tout fonctionne sans réseau.
 
 ## Ce que fait l'application
 
-### Les 15 modules (§4)
+### Les 16 modules (§4 + Décisions)
 
 | | Module | Préfixe |
 |---|---|---|
 | **Bibliothèque de combat** | Techniques · Combinaisons · Contres · Biomécanique | `K` `A` `C` `B` |
 | **Stratégie** | Tactiques · Situations · Lecture adverse · Principes | `T` `S` `L` `PR` |
-| **Journal** | Sparrings · Combats officiels · Hypothèses · Erreurs | `R` `F` `H` `ER` |
+| **Journal** | Sparrings · Combats officiels · Hypothèses · **Décisions** · Erreurs | `R` `F` `H` `D` `ER` |
 | **Progression** | Objectifs · Exercices | `O` `E` |
 | **Ressources** | Bibliothèque | `AR` `BK` `V` `ST` `PD` `JV` |
+
+**Décisions** ne figure pas dans les quinze modules du premier cahier des
+charges ; le cahier des charges de direction artistique le fait apparaître dans
+la barre latérale, et il comble un vrai trou. Une hypothèse est une question
+ouverte, une décision est l'acte qui la referme — « H004 confirmée, je range le
+crochet gauche en garde fermée ». Sans elle, la conclusion d'une hypothèse
+n'existe nulle part comme objet reliable, alors que c'est précisément ce qu'on
+veut retrouver deux ans plus tard. D'où le champ **Revue** : une décision se
+relit.
 
 ### Le graphe
 
@@ -66,6 +76,41 @@ section, et mode voisinage à 1–3 sauts autour d'une fiche.
 Armes principales, techniques oubliées, taux de réussite des combinaisons et des
 contres, situations récurrentes, fréquence des erreurs, temps par discipline,
 répartition par garde et par distance.
+
+### Timeline et calendrier
+
+Deux relectures des fiches datées — sparrings, combats, hypothèses, décisions,
+échéances d'objectifs. La **timeline** répond à « qu'est-ce qui s'est passé »,
+année par année ; le **calendrier** répond à « à quel rythme », mois par mois.
+Rien n'y est saisi : une case vide est une semaine sans séance, et c'est une
+information.
+
+---
+
+## L'interface
+
+Un poste de pilotage, pas un carnet. Trois colonnes permanentes, barre supérieure
+toujours présente, fil d'Ariane toujours visible.
+
+- **`Ctrl`/`⌘` + `K`** — recherche globale et barre de commandes dans la même
+  fenêtre : taper `K003` ouvre la fiche, taper `créer hypothèse` ouvre le
+  formulaire, taper `importer une vidéo` ouvre le formulaire Ressource **déjà
+  réglé sur Vidéo**. Navigation au clavier, `Entrée` ouvre.
+- **Onglets** façon VS Code — plusieurs fiches ouvertes en même temps, l'onglet
+  s'ouvre à côté de celui d'où l'on vient, le clic milieu ferme.
+- **Fiche en trois colonnes** — médias à gauche (images incorporées, vidéos et
+  PDF référencés), prose au centre, propriétés et relations à droite, notes en
+  pleine largeur en bas.
+- **Notifications** — pas un ornement : les dettes que le graphe connaît de
+  lui-même, fiches isolées, hypothèses ouvertes depuis plus de 45 jours,
+  échéances dépassées, décisions à revoir.
+- **Accessibilité** — mode clair / sombre / auto, contraste élevé qui s'empile
+  par-dessus le thème plutôt que de le remplacer, quatre tailles de texte,
+  navigation clavier complète. Les réglages sont posés avant le premier pixel
+  par un script d'amorçage, donc sans clignotement.
+- **Typographie** — Inter et JetBrains Mono, servies depuis le dépôt en
+  sous-ensemble latin (84 Ko au total), jamais depuis un CDN : l'application
+  doit démarrer hors-ligne.
 
 ---
 
@@ -114,7 +159,7 @@ Trois fournisseurs à palier gratuit, configurés dans **Réglages** :
   fournisseur choisi. Aucun compte, aucun stockage serveur.
 - **Pas de liste de modèles en dur** : l'app interroge chaque fournisseur et
   propose ce à quoi ta clé donne réellement droit.
-- **Chaîne de repli** : sur quota atteint (429), Waza passe au fournisseur
+- **Chaîne de repli** : sur quota atteint (429), Combat OS passe au fournisseur
   suivant dans l'ordre que tu as défini, et le dit dans l'interface.
 - Les suggestions de liens ne sont **jamais appliquées automatiquement** : elles
   arrivent sous forme de boutons.
@@ -142,7 +187,7 @@ après chaque enregistrement, et toutes les cinq minutes. Aucun bouton à presse
 
 > Limite honnête : une PWA ne peut pas se synchroniser **en arrière-plan**.
 > L'API existe mais n'est pas supportée sur iOS, donc rien ne se passe tant que
-> l'application est fermée. Ce n'est pas une limite de Waza, c'est le navigateur.
+> l'application est fermée. Ce n'est pas une limite de Combat OS, c'est le navigateur.
 
 ### Un seul déploiement pour tout
 
@@ -263,19 +308,23 @@ autres, donc appairer un second appareil fusionne deux jeux. Réglages →
 ```
 martial-brain/
   src/
-    domain/schema.ts     Les 15 descripteurs — la pièce maîtresse
+    domain/schema.ts     Les 16 descripteurs — la pièce maîtresse
     domain/links.ts      Relations bidirectionnelles, identifiants dérivés
     domain/ids.ts        Codes K001/PR003, désambiguïsation E/ER, A/AR…
     db/                  SQLite WASM, migrations, CRUD générique, analytics
     sync/                Fusion LWW (pure, testable), curseur, transport, auto-sync
     ai/                  Adaptateurs fournisseurs, routeur, filtre validé
-    ui/                  Liste / fiche / formulaire génériques, graphe, écrans
+    ui/                  Coquille, palette de commandes, écrans génériques, graphe
+    ui/icons.tsx         Tracés au style Lucide, recopiés plutôt qu'importés
+    ui/prefs.ts          Thème, contraste, taille du texte
+    ui/tabs.ts           Onglets — identifiés par leur URL, donc sans état dupliqué
+  public/fonts/          Inter + JetBrains Mono, sous-ensemble latin
   server/                Serveur Deno : sert l'app + l'API de synchro (Deno KV)
-  tests/                 89 tests unitaires
-  e2e/                   16 parcours navigateur
+  tests/                 99 tests unitaires
+  e2e/                   32 parcours navigateur (bureau + mobile)
 ```
 
-**Le moteur générique.** Les 15 modules partagent la même forme : des champs, des
+**Le moteur générique.** Les 16 modules partagent la même forme : des champs, des
 relations, des médias. Un descripteur par module dans `domain/schema.ts`, et
 `EntityList` / `EntityDetail` / `EntityForm` se rendent seuls à partir de lui.
 Ajouter un module futur du §6 — préparation physique, nutrition, blessures — est
@@ -289,10 +338,18 @@ dont les analytics se servent.
 n'importe quels deux nœuds peuvent se toucher. Le validateur de palette a été
 exécuté sur toutes les combinaisons de 5, 4 et 3 teintes dans les deux thèmes :
 **aucun quintuplet ne passe** (magenta↔orange tombe à ΔE 12.9, sous le plancher
-de 15), **deux quadruplets passent**. D'où : couleur par **section** (4 teintes +
-un neutre pour les ressources), **forme** distincte par section, et le **code**
-en étiquette sur chaque nœud. L'identité est encodée trois fois — c'est ce qui
-rend la palette accessible, pas une décoration.
+de 15), **deux quadruplets passent**. Une fois imposé l'accent `#4F8CFF` du
+cahier des charges de direction artistique, **un seul quadruplet** passe en clair
+et en sombre. D'où : couleur par **section** (4 teintes + un neutre pour les
+ressources), **forme** distincte par section, et le **code** en étiquette sur
+chaque nœud. L'identité est encodée trois fois — c'est ce qui rend la palette
+accessible, pas une décoration.
+
+Même méthode pour les couleurs de statut du cahier des charges : `#FFCC00` et
+`#30D158` ne sont séparées que de **ΔE 5,4 en protanopie**, très en dessous du
+seuil utilisable. Elles sont conservées telles quelles, mais **jamais seules** —
+un statut porte toujours couleur **+** icône **+** libellé. C'est le composant
+`Status` qui porte l'information, pas la couleur.
 
 ---
 
@@ -303,3 +360,14 @@ fréquentes · `Decisions arbitrales` → Décisions · `Graph de connaissances`
 Graphe. Les `\downarrow` des exemples `A001` et `C001` sont des artefacts de
 copier-coller, lus comme des flèches `→`. L'arborescence du §3, absente du
 document, a été définie : cinq sections, reprises dans la navigation.
+
+Côté direction artistique : la barre latérale du document liste treize modules,
+dont **Décisions** qui n'existait pas, et omet Principes, Erreurs et Exercices
+qui existent. Elle a été lue comme une illustration, pas comme un inventaire —
+les seize modules sont donc tous présents, Décisions compris. Le **profil
+utilisateur** de la barre supérieure a été rempli par ce qui a un sens dans une
+application locale à un seul utilisateur : les réglages d'affichage. Un écran de
+compte aurait été un décor. Les **vidéos ne sont pas incorporées** aux fiches,
+seulement référencées : quelques dizaines de mégaoctets par vidéo rendraient la
+base insynchronisable. Les images, elles, sont incorporées et recompressées,
+parce qu'un schéma doit rester lisible au dojo sans réseau.

@@ -49,7 +49,7 @@ export function SyncPanel(): ReactNode {
     <>
       <h2>Synchronisation</h2>
       <p className="sub" style={{ marginBottom: 10 }}>
-        Optionnelle. Sans elle, Waza fonctionne entièrement hors-ligne et l’export
+        Optionnelle. Sans elle, Combat OS fonctionne entièrement hors-ligne et l’export
         <code> .sqlite3</code> suffit à transporter ton graphe. Une fois l’appareil appairé,
         la synchronisation se fait toute seule : à l’ouverture, au retour sur l’app, au
         retour du réseau, après chaque enregistrement, et toutes les cinq minutes.
