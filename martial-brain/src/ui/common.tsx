@@ -1,5 +1,6 @@
 /** Petites pièces partagées : thème, identifiants, puces de fiche, écrans. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { ProviderId } from '../ai/providers';
 import type { EntityRecord } from '../db/queries';
 import { entityDef, section, type SectionDef } from '../domain/schema';
 import { Icon, moduleIcon } from './icons';
@@ -47,6 +48,79 @@ export function Dot({ section: s, theme }: { section: SectionDef; theme: Theme }
       style={{ color: sectionHue(s, theme) }}
       aria-hidden="true"
     />
+  );
+}
+
+/**
+ * Un repère par fournisseur — pas le logo protégé de chacun, un badge
+ * original dans sa teinte de marque. Trois clés valent la peine d'être
+ * distinguées d'un coup d'œil dans les réglages et le sélecteur de modèle ;
+ * reproduire les marques exactes d'entreprises tierces dans un dépôt public
+ * demanderait des fichiers sous licence que ce projet n'a pas, alors que la
+ * couleur seule identifie déjà sans ambiguïté.
+ */
+export function ProviderMark({ id, size = 18 }: { id: ProviderId; size?: number }): ReactNode {
+  const style = { width: size, height: size, flex: 'none' } as const;
+
+  if (id === 'gemini') {
+    return (
+      <svg viewBox="0 0 24 24" style={style} aria-hidden="true">
+        <defs>
+          <linearGradient id="pm-gemini" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#4F8CFF" />
+            <stop offset="55%" stopColor="#9B6BFF" />
+            <stop offset="100%" stopColor="#FF6BB0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 2c0 4.5 2.9 8.5 8 9-5.1.5-8 4.5-8 9-.6-4.5-3.4-8.5-8-9 4.6-.5 7.4-4.5 8-9Z"
+          fill="url(#pm-gemini)"
+        />
+      </svg>
+    );
+  }
+
+  if (id === 'groq') {
+    return (
+      <svg viewBox="0 0 24 24" style={style} aria-hidden="true">
+        <rect x="1" y="1" width="22" height="22" rx="6" fill="#F55036" />
+        <text
+          x="12"
+          y="16.5"
+          textAnchor="middle"
+          fontSize="13"
+          fontWeight="800"
+          fontFamily="var(--sans)"
+          fill="#0f1115"
+        >
+          Q
+        </text>
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" style={style} aria-hidden="true">
+      <defs>
+        <linearGradient id="pm-mistral" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFC53D" />
+          <stop offset="55%" stopColor="#FF8A3D" />
+          <stop offset="100%" stopColor="#E4442E" />
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="url(#pm-mistral)" />
+      <text
+        x="12"
+        y="16.5"
+        textAnchor="middle"
+        fontSize="13"
+        fontWeight="800"
+        fontFamily="var(--sans)"
+        fill="#20130a"
+      >
+        M
+      </text>
+    </svg>
   );
 }
 

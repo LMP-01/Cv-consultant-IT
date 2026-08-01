@@ -177,7 +177,7 @@ test.describe('LUIS AI', () => {
 
     // Le pack de méthode est installé au premier démarrage, sinon LUIS
     // démarrerait sans rien d'autre que des fiches vides.
-    await page.locator('.luis-head .chip', { hasText: 'Mixte' }).click();
+    await page.locator('.luis-toolbar .luis-tool', { hasText: 'Mixte' }).click();
     await expect(page.locator('.corpus-row', { hasText: 'Fondamentaux' })).toContainText('passage');
     await page.locator('.corpus-head .icon-btn').click();
 

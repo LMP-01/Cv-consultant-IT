@@ -341,11 +341,20 @@ textarea {
   right: 0;
   z-index: 46;
   width: min(320px, calc(100vw - 24px));
+  max-height: min(70vh, 480px);
+  overflow-y: auto;
   background: var(--raised);
   border-radius: var(--r-2);
   box-shadow: var(--shadow-3);
   padding: 10px;
   animation: rise var(--t) var(--ease);
+}
+/* Ancré près du bas du panneau (barre d'outils LUIS), le menu n'a de place
+   que vers le haut — l'ouvrir vers le bas le pousserait sous le champ de
+   saisie, hors de vue. */
+.pop.up {
+  top: auto;
+  bottom: calc(100% + 7px);
 }
 .pop h4 {
   margin: 2px 4px 8px;
@@ -1669,14 +1678,6 @@ textarea {
   height: 20px;
   flex: none;
 }
-.luis-head .chip.sm {
-  padding: 3px 7px;
-  font-size: 11.5px;
-  min-width: 0;
-}
-.luis-head .chip.sm .t {
-  max-width: 96px;
-}
 .luis-head .icon-btn {
   margin-left: auto;
   flex: none;
@@ -1760,6 +1761,81 @@ textarea {
   line-height: 1.4;
   padding: 5px 9px;
   border-radius: var(--r-1);
+}
+
+/* Pack de connaissances et modèle : les deux réglages qui changent la
+   réponse, juste au-dessus d'où elle se déclenche plutôt que loin en haut du
+   panneau — et assez grands pour se lire d'un coup d'œil, pas devinés à la
+   taille d'une puce. */
+.luis-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 10px 0;
+}
+.luis-toolbar .pop-host {
+  flex: 1;
+  min-width: 0;
+}
+.luis-tool {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 12px 8px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+.luis-tool:hover {
+  background: var(--card-hover);
+  border-color: var(--line-strong);
+}
+.luis-tool:active {
+  transform: scale(0.98);
+}
+.luis-tool.on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+.luis-tool-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-1);
+  background: var(--plane);
+  color: var(--accent);
+}
+.luis-tool.on .luis-tool-icon {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.luis-tool-text {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.luis-tool-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.luis-tool-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .luis-compose {

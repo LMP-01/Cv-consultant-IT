@@ -104,6 +104,42 @@ describe('provider wire formats', () => {
     expect(groq).toEqual(['llama-3.1-8b-instant', 'llama-3.3-70b']);
   });
 
+  it('rejects a listed model that declares generateContent but does not actually answer one', async () => {
+    // Constaté en usage : Gemini liste ses produits Antigravity et Deep
+    // Research au même point d'entrée que ses modèles, `generateContent`
+    // déclaré supporté — et l'appel échoue quand même avec « this model only
+    // supports Interactions API ». La métadonnée ment, le préfixe ne ment pas.
+    const gemini = await fetchModels('gemini', 'k', async () =>
+      json({
+        models: [
+          { name: 'models/gemini-2.0-flash-lite', supportedGenerationMethods: ['generateContent'] },
+          {
+            name: 'models/antigravity-preview-05-2026',
+            supportedGenerationMethods: ['generateContent'],
+          },
+          {
+            name: 'models/deep-research-max-preview-04-2026',
+            supportedGenerationMethods: ['generateContent'],
+          },
+        ],
+      }),
+    );
+    expect(gemini).toEqual(['gemini-2.0-flash-lite']);
+
+    // Groq mélange conversation et synthèse vocale (Orpheus/Canopy Labs) sous
+    // le même point d'entrée, sans préfixe distinctif.
+    const groq = await fetchModels('groq', 'k', async () =>
+      json({
+        data: [
+          { id: 'llama-3.1-8b-instant' },
+          { id: 'canopylabs/orpheus-arabic-saudi' },
+          { id: 'canopylabs/orpheus-v1-english' },
+        ],
+      }),
+    );
+    expect(groq).toEqual(['llama-3.1-8b-instant']);
+  });
+
   it('prefers a small fast model when the key offers several', () => {
     expect(suggestModel('groq', ['llama-3.3-70b', 'llama-3.1-8b-instant'])).toBe(
       'llama-3.1-8b-instant',
