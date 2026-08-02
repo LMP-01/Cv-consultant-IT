@@ -356,6 +356,13 @@ textarea {
   top: auto;
   bottom: calc(100% + 7px);
 }
+/* Ancré à gauche de son bouton plutôt qu'à droite : la puce Sensei est la
+   première d'une rangée de deux, et un panneau ancré à droite déborderait du
+   panneau LUIS entier vers la gauche. */
+.pop.left {
+  left: 0;
+  right: auto;
+}
 .pop h4 {
   margin: 2px 4px 8px;
   font-size: 10.5px;
@@ -366,16 +373,23 @@ textarea {
 }
 .pop-item {
   display: flex;
+  width: 100%;
   gap: 9px;
   align-items: flex-start;
   padding: 7px 8px;
+  border: none;
   border-radius: var(--r-1);
+  background: none;
+  text-align: left;
   cursor: pointer;
   font-size: 13px;
   transition: background var(--t-fast) var(--ease);
 }
 .pop-item:hover {
   background: var(--card-hover);
+}
+.pop-item.on {
+  background: var(--accent-wash);
 }
 .pop-item svg {
   flex: none;
@@ -384,6 +398,9 @@ textarea {
 }
 .pop-item svg.warn {
   color: var(--warn);
+}
+.pop-item.on svg:not(.warn) {
+  color: var(--accent);
 }
 .pop-item span {
   min-width: 0;
@@ -394,6 +411,9 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.pop-item.on b {
+  color: var(--accent);
 }
 .pop-item .sub {
   display: block;
@@ -1642,7 +1662,13 @@ textarea {
   position: relative;
   grid-area: luis;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto auto;
+  grid-template-areas:
+    'head'
+    'focus'
+    'list'
+    'toolbar'
+    'compose';
   min-height: 0;
   background: var(--card);
   border-left: 1px solid var(--line);
@@ -1657,6 +1683,7 @@ textarea {
 }
 
 .luis-head {
+  grid-area: head;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1687,6 +1714,7 @@ textarea {
 /* Le rattachement à la fiche ouverte est affiché : sans cela, on ne sait pas
    si « pourquoi ça ne passe plus ? » parle de la fiche ou du carnet entier. */
 .luis-focus {
+  grid-area: focus;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1697,6 +1725,7 @@ textarea {
 }
 
 .luis-list {
+  grid-area: list;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 12px;
@@ -1764,82 +1793,76 @@ textarea {
   border-radius: var(--r-1);
 }
 
-/* Pack de connaissances et modèle : les deux réglages qui changent la
-   réponse, juste au-dessus d'où elle se déclenche plutôt que loin en haut du
-   panneau — et assez grands pour se lire d'un coup d'œil, pas devinés à la
-   taille d'une puce. */
+/* Pack de connaissances et modèle : deux puces de suggestion, pas deux
+   cartes — leur liste s'ouvre vers le haut juste au-dessus d'elles, à la
+   façon d'une barre de suggestions, parce que la place au-dessus est celle
+   qui reste libre une fois le fil de conversation rempli. */
 .luis-toolbar {
+  position: relative;
+  grid-area: toolbar;
   display: flex;
-  gap: 8px;
-  padding: 10px 10px 0;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px 0;
 }
+/* La liste s'ancre à la largeur de la barre d'outils entière, pas à celle,
+   étroite, de la puce qui l'ouvre : les deux puces tiennent côte à côte dans
+   un panneau de 372 px, et une liste large de 320 px ancrée à une puce de
+   120 px déborderait du panneau d'un côté ou de l'autre selon la puce. */
 .luis-toolbar .pop-host {
-  flex: 1;
-  min-width: 0;
+  position: static;
 }
 .luis-tool {
-  width: 100%;
-  flex: 1;
-  display: flex;
+  flex: none;
+  max-width: 100%;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 8px 12px 8px 8px;
-  border-radius: var(--r-2);
+  gap: 6px;
+  padding: 5px 9px 5px 7px;
+  border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--card);
-  color: var(--ink);
+  color: var(--ink-2);
   cursor: pointer;
-  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
   transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease),
-    transform var(--t-fast) var(--ease);
+    color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
 .luis-tool:hover {
   background: var(--card-hover);
   border-color: var(--line-strong);
 }
 .luis-tool:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 .luis-tool.on {
   border-color: var(--accent);
+  color: var(--accent);
   background: var(--accent-wash);
 }
 .luis-tool-icon {
   flex: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--r-1);
-  background: var(--plane);
-  color: var(--accent);
-}
-.luis-tool.on .luis-tool-icon {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-.luis-tool-text {
-  min-width: 0;
-  display: grid;
-  gap: 1px;
-}
-.luis-tool-kicker {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+  width: 16px;
+  height: 16px;
 }
 .luis-tool-value {
-  font-size: 13.5px;
-  font-weight: 600;
+  min-width: 0;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.luis-tool-caret {
+  flex: none;
+  transform: rotate(-90deg);
+  opacity: 0.6;
+}
 
 .luis-compose {
+  grid-area: compose;
   display: grid;
   gap: 7px;
   padding: 10px;

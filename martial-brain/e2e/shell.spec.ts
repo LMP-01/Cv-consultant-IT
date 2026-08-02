@@ -176,8 +176,11 @@ test.describe('LUIS AI', () => {
     await expect(page.locator('html')).toHaveAttribute('data-luis', 'open');
 
     // Le pack de méthode est installé au premier démarrage, sinon LUIS
-    // démarrerait sans rien d'autre que des fiches vides.
+    // démarrerait sans rien d'autre que des fiches vides. La puce ouvre
+    // d'abord la liste rapide ; la gestion complète des packs est un cran
+    // plus loin, derrière « Gérer les packs… ».
     await page.locator('.luis-toolbar .luis-tool', { hasText: 'Mixte' }).click();
+    await page.locator('.pop-item', { hasText: 'Gérer les packs' }).click();
     await expect(page.locator('.corpus-row', { hasText: 'Fondamentaux' })).toContainText('passage');
     await page.locator('.corpus-head .icon-btn').click();
 
