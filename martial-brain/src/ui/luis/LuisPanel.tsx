@@ -278,6 +278,7 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [showCorpus, setShowCorpus] = useState(false);
+  const [showSensei, setShowSensei] = useState(false);
   const [showModels, setShowModels] = useState(false);
   const [prefer, setPrefer] = useState<{ provider: ProviderId; model: string } | null>(null);
   const [slugs, setSlugs] = useState<string[]>([]);
@@ -591,28 +592,88 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
 
       {/* Les deux réglages qui changent la réponse — pas ceux qui la lisent —
           juste au-dessus du champ où elle se déclenche : le regard n'a plus à
-          remonter en haut du panneau pour savoir qui va répondre et sur quoi. */}
+          remonter en haut du panneau pour savoir qui va répondre et sur quoi.
+          Deux puces de suggestion plutôt que deux cartes : leur liste s'ouvre
+          vers le haut, juste au-dessus d'elles. */}
       <div className="luis-toolbar">
-        <button
-          type="button"
-          className={`luis-tool${slugs.length ? ' on' : ''}`}
-          onClick={() => setShowCorpus(true)}
-          title="Choisir le pack de connaissances"
-        >
-          <span className="luis-tool-icon">
-            <Icon name="resource" size={15} />
-          </span>
-          <span className="luis-tool-text">
-            <span className="luis-tool-kicker">Sensei</span>
+        <div className="pop-host">
+          <button
+            type="button"
+            className={`luis-tool${slugs.length ? ' on' : ''}`}
+            onClick={() => setShowSensei((v) => !v)}
+            title="Choisir le pack de connaissances"
+          >
+            <span className="luis-tool-icon">
+              <Icon name="resource" size={13} />
+            </span>
             <span className="luis-tool-value">
               {slugs.length === 0
-                ? 'Mixte'
+                ? 'Sensei · Mixte'
                 : slugs.length === 1
                   ? (docs.find((d) => d.slug === slugs[0])?.title.split(' —')[0] ?? '1 pack')
                   : `${slugs.length} packs`}
             </span>
-          </span>
-        </button>
+            <Icon name="chevron" size={11} className="luis-tool-caret" />
+          </button>
+          {showSensei && (
+            <>
+              <div className="pop-scrim" onClick={() => setShowSensei(false)} />
+              <div className="pop up left" role="dialog" aria-label="Pack de connaissances">
+                <h4>Pack de connaissances</h4>
+                <button
+                  type="button"
+                  className={`pop-item${slugs.length === 0 ? ' on' : ''}`}
+                  onClick={() => setSlugs([])}
+                >
+                  <Icon name="graph" />
+                  <span>
+                    <b>Mixte</b>
+                    <span className="sub">Tous les packs installés et tes fiches</span>
+                  </span>
+                </button>
+
+                {docs.length === 0 ? (
+                  <p className="sub" style={{ padding: '4px 8px' }}>
+                    Aucun pack installé pour l’instant.
+                  </p>
+                ) : (
+                  docs.map((d) => {
+                    const on = slugs.includes(d.slug);
+                    return (
+                      <button
+                        key={d.slug}
+                        type="button"
+                        className={`pop-item${on ? ' on' : ''}`}
+                        onClick={() => setSlugs((prev) => (on ? prev.filter((s) => s !== d.slug) : [...prev, d.slug]))}
+                      >
+                        <Icon name="check" style={{ opacity: on ? 1 : 0 }} />
+                        <span>
+                          <b>{d.title.split(' —')[0]}</b>
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+
+                <button
+                  type="button"
+                  className="pop-item"
+                  style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 9 }}
+                  onClick={() => {
+                    setShowSensei(false);
+                    setShowCorpus(true);
+                  }}
+                >
+                  <Icon name="settings" size={14} />
+                  <span>
+                    <b>Gérer les packs…</b>
+                    <span className="sub">Installer, vectoriser, importer un document</span>
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="pop-host">
           <button
@@ -622,19 +683,17 @@ function Conversation({ route, onClose }: { route: Route; onClose: () => void })
             title="Choisir le modèle"
           >
             <span className="luis-tool-icon">
-              <Icon name="hypothesis" size={15} />
+              <Icon name="hypothesis" size={13} />
             </span>
-            <span className="luis-tool-text">
-              <span className="luis-tool-kicker">Modèle</span>
-              <span className="luis-tool-value">
-                {prefer ? prefer.model.split('/').pop() : 'Auto'}
-              </span>
+            <span className="luis-tool-value">
+              Modèle · {prefer ? prefer.model.split('/').pop() : 'Auto'}
             </span>
+            <Icon name="chevron" size={11} className="luis-tool-caret" />
           </button>
           {showModels && (
             <>
               <div className="pop-scrim" onClick={() => setShowModels(false)} />
-              <div className="pop up" role="dialog" aria-label="Modèle">
+              <div className="pop up left" role="dialog" aria-label="Modèle">
                 <h4>Modèle</h4>
                 <button
                   type="button"
