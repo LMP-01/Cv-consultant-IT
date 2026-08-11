@@ -3,7 +3,7 @@ import { t } from './i18n';
 // Clé d'accès Web3Forms (https://web3forms.com — gratuit).
 // À créer avec l'adresse theo.mansopro@gmail.com puis coller ici.
 // Tant que la clé est le placeholder, le formulaire bascule en mailto:.
-const WEB3FORMS_ACCESS_KEY = 'REMPLACER_PAR_VOTRE_CLE_WEB3FORMS';
+const WEB3FORMS_ACCESS_KEY = '0f86820b-6cbf-42b8-b5f6-a3283a7c3f40';
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 const FALLBACK_EMAIL = 'theo.mansopro@gmail.com';
 
