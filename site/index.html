@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Théo Manso Pinto — Consultant IA & Data. Agents IA, pipelines de données, automatisation. Envoyez votre demande de mission (TJM, forfait, régie)." />
+    <meta name="theme-color" content="#05060f" />
+    <title>Théo Manso Pinto — Consultant IA & Data | Demande de mission</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+
+    <header class="nav">
+      <a class="nav-brand" href="#top">TMP<span class="accent">_</span></a>
+      <nav class="nav-links" aria-label="Navigation principale">
+        <a href="#services" data-i18n="nav.services">Prestations</a>
+        <a href="#work" data-i18n="nav.work">Réalisations</a>
+        <a href="#toolbox" data-i18n="nav.toolbox">Boîte à outils</a>
+      </nav>
+      <div class="nav-actions">
+        <button id="lang-toggle" class="lang-toggle" type="button" aria-label="Switch language">EN</button>
+        <button class="btn btn-primary btn-sm js-open-modal" type="button" data-i18n="nav.mission">Demander une mission</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero">
+        <p class="kicker glitch" data-i18n="hero.kicker">FORWARD DEPLOYED ENGINEER</p>
+        <h1 class="hero-title">
+          <span class="line" data-i18n="hero.title.1">Vos idées.</span>
+          <span class="line accent" data-i18n="hero.title.2">Mes agents IA.</span>
+          <span class="line" data-i18n="hero.title.3">En production.</span>
+        </h1>
+        <p class="hero-subtitle" data-i18n="hero.subtitle"></p>
+        <div class="hero-ctas">
+          <button class="btn btn-primary js-open-modal" type="button" data-i18n="hero.cta">Demander une mission</button>
+          <a class="btn btn-ghost" href="#services" data-i18n="hero.cta2">Voir les prestations</a>
+        </div>
+        <a class="scroll-hint" href="#stats" aria-hidden="true"><span data-i18n="hero.scroll">Défiler</span><span class="scroll-line"></span></a>
+      </section>
+
+      <!-- STATS -->
+      <section id="stats" class="stats reveal">
+        <div class="stat"><span class="stat-num" data-count="20">0</span><span class="stat-plus">+</span><p data-i18n="stats.pipelines"></p></div>
+        <div class="stat"><span class="stat-num" data-count="1000">0</span><span class="stat-plus">+</span><p data-i18n="stats.apis"></p></div>
+        <div class="stat"><span class="stat-num" data-count="500">0</span><span class="stat-plus">+</span><p data-i18n="stats.skills"></p></div>
+        <div class="stat"><span class="stat-num" data-count="8">0</span><span class="stat-plus"></span><p data-i18n="stats.certs"></p></div>
+      </section>
+
+      <!-- SERVICES -->
+      <section id="services" class="section">
+        <p class="kicker" data-i18n="services.kicker">PRESTATIONS</p>
+        <h2 data-i18n="services.title">Ce que je déploie pour vous</h2>
+        <div class="grid grid-3">
+          <article class="card reveal"><span class="card-icon">◇</span><h3 data-i18n="services.1.title"></h3><p data-i18n="services.1.desc"></p></article>
+          <article class="card reveal"><span class="card-icon">⛁</span><h3 data-i18n="services.2.title"></h3><p data-i18n="services.2.desc"></p></article>
+          <article class="card reveal"><span class="card-icon">⟳</span><h3 data-i18n="services.3.title"></h3><p data-i18n="services.3.desc"></p></article>
+          <article class="card reveal"><span class="card-icon">▤</span><h3 data-i18n="services.4.title"></h3><p data-i18n="services.4.desc"></p></article>
+          <article class="card reveal"><span class="card-icon">◎</span><h3 data-i18n="services.5.title"></h3><p data-i18n="services.5.desc"></p></article>
+          <article class="card reveal"><span class="card-icon">⌗</span><h3 data-i18n="services.6.title"></h3><p data-i18n="services.6.desc"></p></article>
+        </div>
+      </section>
+
+      <!-- WORK -->
+      <section id="work" class="section">
+        <p class="kicker" data-i18n="work.kicker">RÉALISATIONS</p>
+        <h2 data-i18n="work.title">Exemples de ce que j'ai déjà construit</h2>
+        <div class="grid grid-3">
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.1.title"></h3><p data-i18n="work.1.desc"></p>
+            <a class="card-link" href="https://www.epta5.com" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.2.title"></h3><p data-i18n="work.2.desc"></p>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.3.title"></h3><p data-i18n="work.3.desc"></p>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.4.title"></h3><p data-i18n="work.4.desc"></p>
+            <a class="card-link" href="https://track-record-lem.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.5.title"></h3><p data-i18n="work.5.desc"></p>
+            <a class="card-link" href="https://seissix-newsletter.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.6.title"></h3><p data-i18n="work.6.desc"></p>
+            <a class="card-link" href="https://guide-investissement-2026.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- TOOLBOX -->
+      <section id="toolbox" class="section">
+        <p class="kicker" data-i18n="toolbox.kicker">BOÎTE À OUTILS</p>
+        <h2 data-i18n="toolbox.title">Mon arsenal open source</h2>
+        <p class="section-desc" data-i18n="toolbox.desc"></p>
+        <div class="toolbox reveal">
+          <div class="tool-cat">
+            <h4 data-i18n="toolbox.cat.video">Création & vidéo IA</h4>
+            <ul>
+              <li><a href="https://github.com/deepbeepmeep/Wan2GP" target="_blank" rel="noopener noreferrer">Wan2GP</a></li>
+              <li><a href="https://github.com/anil-matcha/open-generative-ai" target="_blank" rel="noopener noreferrer">Open Generative AI</a></li>
+              <li><a href="https://github.com/opencut-app/opencut" target="_blank" rel="noopener noreferrer">OpenCut</a></li>
+              <li><a href="https://github.com/sosoj92/reels-vault" target="_blank" rel="noopener noreferrer">Reels Vault</a></li>
+            </ul>
+          </div>
+          <div class="tool-cat">
+            <h4 data-i18n="toolbox.cat.auto">Automatisation & productivité</h4>
+            <ul>
+              <li><a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener noreferrer">n8n</a></li>
+              <li><a href="https://github.com/calcom/cal.diy" target="_blank" rel="noopener noreferrer">cal.diy</a></li>
+              <li><a href="https://github.com/lfnovo/open-notebook" target="_blank" rel="noopener noreferrer">Open Notebook</a></li>
+              <li><a href="https://github.com/anthropics/claude-code" target="_blank" rel="noopener noreferrer">Claude Code</a></li>
+              <li><a href="https://github.com/anthropics/skills" target="_blank" rel="noopener noreferrer">Anthropic Skills</a></li>
+            </ul>
+          </div>
+          <div class="tool-cat">
+            <h4 data-i18n="toolbox.cat.dev">Développement & design</h4>
+            <ul>
+              <li><a href="https://github.com/microsoft/playwright" target="_blank" rel="noopener noreferrer">Playwright</a></li>
+              <li><a href="https://github.com/pbakaus/impeccable" target="_blank" rel="noopener noreferrer">Impeccable</a></li>
+              <li><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank" rel="noopener noreferrer">UI/UX Pro Max</a></li>
+              <li><a href="https://github.com/emilkowalski/skills" target="_blank" rel="noopener noreferrer">Animation Skills</a></li>
+              <li><a href="https://github.com/anthropics/claude-cookbooks" target="_blank" rel="noopener noreferrer">Claude Cookbooks</a></li>
+            </ul>
+          </div>
+          <div class="tool-cat">
+            <h4 data-i18n="toolbox.cat.data">Data, audit & recherche</h4>
+            <ul>
+              <li><a href="https://github.com/plausible/analytics" target="_blank" rel="noopener noreferrer">Plausible Analytics</a></li>
+              <li><a href="https://github.com/usestrix/strix" target="_blank" rel="noopener noreferrer">Strix (audit sécurité)</a></li>
+              <li><a href="https://github.com/MadsLorentzen/ai-job-search" target="_blank" rel="noopener noreferrer">AI Job Search</a></li>
+              <li><a href="https://github.com/virgiliojr94/book-to-skill" target="_blank" rel="noopener noreferrer">Book to Skill</a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- MISSION FORM -->
+      <section id="mission" class="section section-form">
+        <p class="kicker" data-i18n="form.kicker">DEMANDE DE MISSION</p>
+        <h2 data-i18n="form.title">Décrivez votre mission</h2>
+        <p class="section-desc" data-i18n="form.subtitle"></p>
+        <form id="mission-form" class="mission-form reveal" novalidate>
+          <fieldset class="field field-full">
+            <legend data-i18n="form.clientType">Type de client</legend>
+            <div class="seg" role="radiogroup">
+              <label class="seg-opt"><input type="radio" name="client_type" value="B2B" checked /><span data-i18n="form.clientType.b2b">Entreprise (B2B)</span></label>
+              <label class="seg-opt"><input type="radio" name="client_type" value="B2C" /><span data-i18n="form.clientType.b2c">Particulier (B2C)</span></label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="f-name" data-i18n="form.name">Nom / Prénom</label>
+            <input id="f-name" name="name" type="text" required data-i18n-ph="form.name.ph" />
+          </div>
+          <div class="field">
+            <label for="f-email" data-i18n="form.email">Email</label>
+            <input id="f-email" name="email" type="email" required data-i18n-ph="form.email.ph" />
+          </div>
+          <div class="field">
+            <label for="f-company" data-i18n="form.company">Entreprise (si B2B)</label>
+            <input id="f-company" name="company" type="text" data-i18n-ph="form.company.ph" />
+          </div>
+          <div class="field">
+            <label for="f-mission-type" data-i18n="form.missionType">Type de mission</label>
+            <select id="f-mission-type" name="mission_type" required>
+              <option value="" data-i18n="form.missionType.ph">Choisir…</option>
+              <option value="agents" data-i18n="form.missionType.agents">Agents IA / RAG</option>
+              <option value="data" data-i18n="form.missionType.data">Pipelines de données / ETL</option>
+              <option value="automation" data-i18n="form.missionType.auto">Automatisation de workflows</option>
+              <option value="bi" data-i18n="form.missionType.bi">Dashboard / BI</option>
+              <option value="audit" data-i18n="form.missionType.audit">Audit</option>
+              <option value="other" data-i18n="form.missionType.other">Autre</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="f-tools" data-i18n="form.tools">Outils souhaités</label>
+            <input id="f-tools" name="tools" type="text" data-i18n-ph="form.tools.ph" />
+          </div>
+          <div class="field">
+            <label for="f-pay-mode" data-i18n="form.payMode">Mode de rémunération</label>
+            <select id="f-pay-mode" name="pay_mode">
+              <option value="TJM" data-i18n="form.payMode.tjm">TJM (taux journalier)</option>
+              <option value="Forfait" data-i18n="form.payMode.forfait">Forfait (prix fixe)</option>
+              <option value="Régie" data-i18n="form.payMode.regie">Régie</option>
+              <option value="Autre" data-i18n="form.payMode.other">Autre / à discuter</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-budget" data-i18n="form.budget">Budget ou TJM envisagé</label>
+            <input id="f-budget" name="budget" type="text" data-i18n-ph="form.budget.ph" />
+          </div>
+          <div class="field">
+            <label for="f-deadline" data-i18n="form.deadline">Délai souhaité</label>
+            <input id="f-deadline" name="deadline" type="text" data-i18n-ph="form.deadline.ph" />
+          </div>
+          <div class="field field-full">
+            <label for="f-description" data-i18n="form.description">Description de la mission</label>
+            <textarea id="f-description" name="description" rows="5" required data-i18n-ph="form.description.ph"></textarea>
+          </div>
+          <p id="form-msg" class="form-msg" role="status" aria-live="polite"></p>
+          <button class="btn btn-primary btn-submit" type="submit" data-i18n="form.submit">Envoyer la demande</button>
+        </form>
+        <div id="form-success" class="form-success" hidden>
+          <span class="success-icon">✓</span>
+          <h3 data-i18n="form.success.title">Demande transmise !</h3>
+          <p data-i18n="form.success.desc"></p>
+        </div>
+      </section>
+    </main>
+
+    <!-- B2B / B2C MODAL -->
+    <div id="client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-backdrop js-close-modal"></div>
+      <div class="modal-box">
+        <button class="modal-close js-close-modal" type="button" aria-label="Fermer" data-i18n-aria="modal.close">✕</button>
+        <h2 id="modal-title" data-i18n="modal.title">Vous êtes…</h2>
+        <div class="modal-choices">
+          <button class="choice js-choose" data-type="B2B" type="button">
+            <span class="choice-icon">🏢</span>
+            <h3 data-i18n="modal.b2b.title">Une entreprise</h3>
+            <p data-i18n="modal.b2b.desc"></p>
+            <span class="choice-cta" data-i18n="modal.b2b.cta">Mission B2B</span>
+          </button>
+          <button class="choice js-choose" data-type="B2C" type="button">
+            <span class="choice-icon">🧑</span>
+            <h3 data-i18n="modal.b2c.title">Un particulier</h3>
+            <p data-i18n="modal.b2c.desc"></p>
+            <span class="choice-cta" data-i18n="modal.b2c.cta">Mission B2C</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <h2 data-i18n="footer.title">Théo Manso Pinto</h2>
+      <p data-i18n="footer.subtitle"></p>
+      <div class="footer-links">
+        <a href="mailto:theo.mansopro@gmail.com">theo.mansopro@gmail.com</a>
+        <a href="tel:+33630808575">+33 6 30 80 85 75</a>
+        <a href="https://www.linkedin.com/in/th%C3%A9o-manso-pinto" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.epta5.com" target="_blank" rel="noopener noreferrer">epta5.com</a>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/LMP-01/Cv-consultant-IT/raw/main/CV_Theo_Manso_Pinto_FR.pdf" data-i18n="footer.cv.fr">CV Français (PDF)</a>
+        <a href="https://github.com/LMP-01/Cv-consultant-IT/raw/main/CV_Theo_Manso_Pinto_EN.pdf" data-i18n="footer.cv.en">Resume English (PDF)</a>
+      </div>
+      <p class="footer-note" data-i18n="footer.rights"></p>
+    </footer>
+  </body>
+</html>
