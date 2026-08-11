@@ -7,9 +7,11 @@ import './styles.css';
 import { initScene } from './scene';
 import { initI18n } from './i18n';
 import { initForm, prefillClientType } from './form';
+import { initGalleries } from './gallery';
 
 initI18n();
 initForm();
+initGalleries();
 
 const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement | null;
 if (canvas) initScene(canvas);

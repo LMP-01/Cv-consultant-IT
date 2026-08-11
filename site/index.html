@@ -71,7 +71,10 @@
         <div class="grid grid-3">
           <article class="card card-work reveal">
             <h3 data-i18n="work.1.title"></h3><p data-i18n="work.1.desc"></p>
-            <a class="card-link" href="https://www.epta5.com" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            <div class="card-actions">
+              <button class="card-link as-btn" type="button" data-gallery="epta5"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+              <a class="card-link" href="https://www.epta5.com" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            </div>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.2.title"></h3><p data-i18n="work.2.desc"></p>
@@ -81,15 +84,30 @@
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.4.title"></h3><p data-i18n="work.4.desc"></p>
-            <a class="card-link" href="https://track-record-lem.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            <div class="card-actions">
+              <button class="card-link as-btn" type="button" data-gallery="track"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+              <a class="card-link" href="https://track-record-lem.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            </div>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.5.title"></h3><p data-i18n="work.5.desc"></p>
-            <a class="card-link" href="https://seissix-newsletter.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            <div class="card-actions">
+              <button class="card-link as-btn" type="button" data-gallery="seissix"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+              <a class="card-link" href="https://seissix-newsletter.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            </div>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.6.title"></h3><p data-i18n="work.6.desc"></p>
-            <a class="card-link" href="https://guide-investissement-2026.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            <div class="card-actions">
+              <button class="card-link as-btn" type="button" data-gallery="guide"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+              <a class="card-link" href="https://guide-investissement-2026.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+            </div>
+          </article>
+          <article class="card card-work reveal">
+            <h3 data-i18n="work.7.title"></h3><p data-i18n="work.7.desc"></p>
+            <div class="card-actions">
+              <button class="card-link as-btn" type="button" data-gallery="jarvis"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+            </div>
           </article>
         </div>
       </section>
@@ -249,6 +267,19 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- LIGHTBOX GALERIES -->
+    <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Galerie">
+      <div class="lb-backdrop"></div>
+      <div class="lb-frame">
+        <button class="lb-close" type="button" aria-label="Fermer" data-i18n-aria="modal.close">✕</button>
+        <div class="lb-slides"></div>
+        <button class="lb-nav lb-prev" type="button" aria-label="Précédent">‹</button>
+        <button class="lb-nav lb-next" type="button" aria-label="Suivant">›</button>
+      </div>
+      <p class="lb-cap"></p>
+      <div class="lb-dots"></div>
     </div>
 
     <footer class="footer">
