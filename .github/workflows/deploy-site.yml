@@ -6,6 +6,10 @@ on:
     paths:
       - "site/**"
       - ".github/workflows/deploy-site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - ".github/workflows/deploy-site.yml"
   workflow_dispatch:
 
 permissions:
@@ -38,10 +42,12 @@ jobs:
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: site/dist
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:
