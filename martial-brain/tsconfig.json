@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+
+    "types": ["vite/client", "vitest/globals", "node"],
+
+    "baseUrl": ".",
+    "paths": {
+      "#sqlite-loader": ["./src/db/sqliteLoader.ts"]
+    }
+  },
+  // The Worker is checked separately (worker/tsconfig.json): it runs on the
+  // Workers runtime, whose globals and Crypto typings conflict with the DOM +
+  // Node set the app and its tests need.
+  "include": ["src", "tests", "scripts", "vite.config.ts"]
+}
