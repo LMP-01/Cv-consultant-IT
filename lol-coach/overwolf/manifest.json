@@ -1,0 +1,81 @@
+{
+  "manifest_version": 1,
+  "type": "WebApp",
+  "meta": {
+    "name": "LoL Coach IA",
+    "version": "1.2.1",
+    "minimum-overwolf-version": "0.200.0",
+    "author": "LoL Coach",
+    "icon": "icons/icon256.png",
+    "icon_gray": "icons/icon_gray.png",
+    "description": "Coach IA temps réel en overlay (proba de duel, build, objectifs, vision). Réutilise l'UI web locale — une seule source de vérité."
+  },
+  "permissions": [
+    "GameInfo",
+    "Hotkeys",
+    "Extensions"
+  ],
+  "data": {
+    "start_window": "background",
+    "windows": {
+      "background": {
+        "file": "windows/background.html",
+        "is_background_page": true
+      },
+      "ingame": {
+        "file": "windows/ingame.html",
+        "transparent": true,
+        "clickthrough": false,
+        "in_game_only": true,
+        "resizable": true,
+        "topmost": true,
+        "keep_window_location": true,
+        "block_top_window_navigation": false,
+        "allow_local_file_access": true,
+        "size": {
+          "width": 360,
+          "height": 920
+        },
+        "min_size": {
+          "width": 320,
+          "height": 360
+        },
+        "start_position": {
+          "top": 60,
+          "left": 40
+        }
+      }
+    },
+    "game_targeting": {
+      "type": "dedicated",
+      "game_ids": [
+        5426
+      ]
+    },
+    "game_events": [
+      5426
+    ],
+    "hotkeys": {
+      "coach_toggle": {
+        "title": "Afficher / masquer le coach",
+        "action-type": "toggle",
+        "default": "Ctrl+Shift+H"
+      },
+      "coach_clickthrough": {
+        "title": "Basculer le clic-traversant",
+        "action-type": "custom",
+        "default": "Ctrl+Shift+X"
+      },
+      "coach_cycle_next": {
+        "title": "Duel — cible suivante",
+        "action-type": "custom",
+        "default": "Right"
+      },
+      "coach_cycle_prev": {
+        "title": "Duel — cible précédente",
+        "action-type": "custom",
+        "default": "Left"
+      }
+    }
+  }
+}

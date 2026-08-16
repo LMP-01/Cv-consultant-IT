@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>LoL Coach IA — overlay</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: system-ui, sans-serif; }
+    /* Barre pour déplacer la fenêtre Overwolf (l'UI du coach est dans l'iframe). */
+    #dragbar { position: fixed; top: 0; left: 0; right: 0; height: 22px; z-index: 10;
+      display: flex; align-items: center; gap: 8px; padding: 0 8px;
+      background: linear-gradient(90deg, rgba(11,15,26,.85), rgba(11,15,26,.4)); color: #a9b4c9;
+      font-size: 11px; -webkit-app-region: no-drag; cursor: move; }
+    #dragbar b { color: #a855f7; }
+    #dragbar .sp { margin-left: auto; }
+    #coach { position: absolute; top: 22px; left: 0; width: 100%; height: calc(100% - 22px); border: 0; background: transparent; }
+    #err { position: absolute; inset: 22px 0 0 0; display: none; align-items: center; justify-content: center;
+      color: #cbd5e6; background: rgba(6,10,18,.92); font-size: 14px; text-align: center; padding: 24px; line-height: 1.6; }
+    #err code { background: #10182a; padding: 2px 6px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <div id="dragbar"><b>LoL Coach IA</b><span>overlay Overwolf</span><span class="sp"></span><span id="hint">glisse pour déplacer</span></div>
+  <iframe id="coach" src="http://localhost:3000/?overlay=1&hud=1" allow="autoplay; microphone"></iframe>
+  <div id="err">
+    Le serveur du coach ne répond pas.<br />Lance-le d'abord : <code>npm start</code> dans le dossier <code>lol-coach</code>,<br />puis rouvre League. L'overlay se recharge tout seul.
+  </div>
+  <script src="ingame.js"></script>
+</body>
+</html>
