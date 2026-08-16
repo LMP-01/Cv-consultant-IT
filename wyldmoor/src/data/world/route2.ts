@@ -1,0 +1,75 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Route 2: Mossreed Village <-> Harrow Ridge. Terrain warms and dries as it climbs toward the ridge.
+export const ROUTE_2: MapDef = {
+  id: 'route_2',
+  name: 'Route 2',
+  width: 15,
+  height: 16,
+  skyColor: '#cfe0b0',
+  groundColor: '#8a9a4a',
+  tiles: [
+    '###############',
+    '#.....D.......#',
+    '#.....,.......#',
+    '#...,,,,,.....#',
+    '#...,\"\"\",.....#',
+    '#...,\"\"\",..^..#',
+    '#...,,,,,.....#',
+    '#.....,.......#',
+    '#..^..........#',
+    '#.....,.......#',
+    '#...,,,,,.....#',
+    '#...,\"\"\",..^..#',
+    '#...,\"\"\",.....#',
+    '#...,,,,,.....#',
+    '#.....D.......#',
+    '###############',
+  ],
+  warps: [
+    { x: 6, y: 1, toMapId: 'mossreed_village', spawnX: 8, spawnY: 12, spawnFacing: 'down' },
+    { x: 6, y: 14, toMapId: 'harrow_ridge', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 63, minLevel: 10, maxLevel: 13, weight: 3 },
+    { speciesId: 2, minLevel: 10, maxLevel: 13, weight: 3 },
+    { speciesId: 24, minLevel: 10, maxLevel: 13, weight: 2 },
+    { speciesId: 4, minLevel: 10, maxLevel: 13, weight: 2 },
+    { speciesId: 119, minLevel: 11, maxLevel: 14, weight: 2 },
+  ],
+  npcs: [
+    {
+      id: 'route2_hiker_toma',
+      x: 4,
+      y: 8,
+      facing: 'right',
+      name: 'Randonneur Toma',
+      sprite: 'hiker',
+      dialogue: [
+        "Cette route grimpe doucement vers Harrow Ridge. La chaleur devient vite etouffante.",
+        "Voyons si tu tiens la distance !",
+      ],
+      team: [
+        { speciesId: 24, level: 11 },
+        { speciesId: 2, level: 12 },
+      ],
+      postBattleDialogue: ["Pas mal pour un dresseur qui vient a peine de commencer."],
+      setFlagOnComplete: 'route2_toma_defeated',
+    },
+    {
+      id: 'route2_fisher_del',
+      x: 10,
+      y: 10,
+      facing: 'left',
+      name: 'Pecheur Del',
+      sprite: 'fisher',
+      dialogue: [
+        "Pas de riviere par ici, mais j'aime quand meme trainer mon materiel...",
+        "Un petit combat pour passer le temps ?",
+      ],
+      team: [{ speciesId: 4, level: 13 }],
+      postBattleDialogue: ["Ah, tu m'as eu. Fais attention en arrivant a Harrow Ridge !"],
+      setFlagOnComplete: 'route2_del_defeated',
+    },
+  ],
+};

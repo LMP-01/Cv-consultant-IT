@@ -1,0 +1,72 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Route 1: Birchwood Hollow <-> Mossreed Village. Gentle woodland path, first wild encounters.
+export const ROUTE_1: MapDef = {
+  id: 'route_1',
+  name: 'Route 1',
+  width: 12,
+  height: 16,
+  skyColor: '#bcd9e8',
+  groundColor: '#4f9a4a',
+  tiles: [
+    '############',
+    '#....D.....#',
+    '#....,.....#',
+    '#..,,,,,...#',
+    '#..,\"\"\",...#',
+    '#..,\"\"\",.#.#',
+    '#..,,,,,...#',
+    '#....,.....#',
+    '#....,.....#',
+    '#..,,,,,...#',
+    '#..,\"\"\",...#',
+    '#..,\"\"\",...#',
+    '#..,,,,,...#',
+    '#....,.....#',
+    '#....D.....#',
+    '############',
+  ],
+  warps: [
+    { x: 5, y: 1, toMapId: 'birchwood_hollow', spawnX: 8, spawnY: 12, spawnFacing: 'down' },
+    { x: 5, y: 14, toMapId: 'mossreed_village', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 1, minLevel: 3, maxLevel: 5, weight: 4 },
+    { speciesId: 19, minLevel: 3, maxLevel: 5, weight: 3 },
+    { speciesId: 77, minLevel: 3, maxLevel: 6, weight: 3 },
+    { speciesId: 18, minLevel: 4, maxLevel: 6, weight: 2 },
+    { speciesId: 143, minLevel: 3, maxLevel: 5, weight: 2 },
+  ],
+  npcs: [
+    {
+      id: 'route1_youth_ren',
+      x: 3,
+      y: 6,
+      facing: 'right',
+      name: 'Jeune Ren',
+      sprite: 'youth',
+      dialogue: [
+        "Mon premier Wylde ! Je l'ai trouve juste ici, dans les herbes hautes.",
+        "Tu veux voir de quoi il est capable ?",
+      ],
+      team: [{ speciesId: 77, level: 4 }],
+      postBattleDialogue: ["Wouah, on a encore beaucoup a apprendre..."],
+      setFlagOnComplete: 'route1_ren_defeated',
+    },
+    {
+      id: 'route1_lass_mira',
+      x: 8,
+      y: 10,
+      facing: 'left',
+      name: 'Demoiselle Mira',
+      sprite: 'lass',
+      dialogue: [
+        "Les Grubneth adorent se cacher sous les feuilles mortes par ici.",
+        "Allez, montre-moi ce que tu vaux !",
+      ],
+      team: [{ speciesId: 19, level: 5 }],
+      postBattleDialogue: ["Bien joue ! Continue vers Mossreed, le village n'est plus loin."],
+      setFlagOnComplete: 'route1_mira_defeated',
+    },
+  ],
+};
