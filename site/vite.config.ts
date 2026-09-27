@@ -9,7 +9,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        hamed: 'exemples/hamed-coiffeur/index.html'
+        hamed: 'exemples/hamed-coiffeur/index.html',
+        nonna: 'exemples/nonna-rosa/index.html'
       }
     }
   }
