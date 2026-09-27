@@ -199,5 +199,12 @@
   "wizard.m.other.desc": "Tell me about your idea",
   "wizard.deadline.urgent": "Urgent (under a month)",
   "wizard.deadline.soon": "Within 1 to 3 months",
-  "wizard.deadline.flexible": "Flexible"
+  "wizard.deadline.flexible": "Flexible",
+  "offers.site.k1": "One-page site, up to 5 sections",
+  "offers.site.k2": "Contact form sent by email",
+  "offers.site.k3": "Basic SEO & go-live",
+  "offers.site.k4": "Delivered in ~2 weeks",
+  "offers.site.details": "See the full offer",
+  "offers.detail.included": "What’s included",
+  "offers.detail.excluded": "Not included"
 }
