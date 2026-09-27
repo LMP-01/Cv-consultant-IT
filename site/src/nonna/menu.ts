@@ -29,50 +29,68 @@ const total = (): number => [...cart].reduce((sum, [id, q]) => sum + DISHES.get(
 
 // --- Carte ---
 
+const TAG_ICON: Record<Tag, string> = {
+  veg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7" /></svg>',
+  gf: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9M12 9c-3 0-4-3-4-5 2 0 4 1 4 5zm0 0c3 0 4-3 4-5-2 0-4 1-4 5zM12 15c-3 0-4-3-4-5 2 0 4 1 4 5zm0 0c3 0 4-3 4-5-2 0-4 1-4 5zM4 4l16 16" /></svg>'
+};
+
 function tagBadges(tags: Tag[] = []): string {
-  return tags.map((t) => `<span class="tag tag-${t}">${TAG_LABEL[t]}</span>`).join('');
+  return tags.map((t) => `<span class="tag tag-${t}">${TAG_ICON[t]}${TAG_LABEL[t]}</span>`).join('');
 }
 
-function renderMenu(root: HTMLElement): void {
+let activeCat = MENU[0].id;
+let activeFilter = 'all';
+
+const PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>';
+const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>';
+
+function renderMenu(root: HTMLElement, tabs: HTMLElement): void {
+  tabs.innerHTML = MENU.map(
+    (cat) =>
+      `<button type="button" role="tab" id="tab-${cat.id}" aria-controls="cat-${cat.id}" aria-selected="${cat.id === activeCat}" tabindex="${cat.id === activeCat ? 0 : -1}" data-cat="${cat.id}">${cat.name}</button>`
+  ).join('');
   root.innerHTML = MENU.map(
     (cat) => `
-    <section class="menu-cat" id="cat-${cat.id}" aria-labelledby="cat-${cat.id}-title">
-      <h3 id="cat-${cat.id}-title">${cat.name}</h3>
+    <section class="menu-cat" id="cat-${cat.id}" role="tabpanel" aria-labelledby="tab-${cat.id}">
       <ul class="dishes">
         ${cat.dishes
           .map(
             (d) => `
           <li class="dish" data-tags="${(d.tags ?? []).join(' ')}">
-            <div class="dish-line">
-              <h4>${d.name}</h4><span class="dots" aria-hidden="true"></span><p class="dish-price">${eur(d.price)}</p>
-            </div>
-            <div class="dish-meta">
+            <div class="dish-body">
+              <h4>${d.name}</h4>
               <p class="dish-desc">${d.desc}</p>
-              ${tagBadges(d.tags)}
+              <p class="dish-tags">${tagBadges(d.tags)}</p>
             </div>
+            <p class="dish-price">${eur(d.price)}</p>
             ${
               d.takeaway === false
-                ? '<p class="dish-note">Sur place uniquement</p>'
-                : `<button class="add" type="button" data-add="${d.id}" aria-label="Ajouter ${d.name} au panier">+ Ajouter</button>`
+                ? '<p class="dish-note">Sur place</p>'
+                : `<button class="add" type="button" data-add="${d.id}" aria-label="Ajouter ${d.name} au panier">${PLUS}</button>`
             }
           </li>`
           )
           .join('')}
       </ul>
+      <p class="menu-empty" hidden>Aucun plat de cette catégorie ne correspond au filtre.</p>
     </section>`
   ).join('');
 }
 
-function applyFilter(root: HTMLElement, filter: string): void {
-  root.querySelectorAll<HTMLElement>('.dish').forEach((li) => {
-    li.hidden = filter !== 'all' && !li.dataset.tags!.split(' ').includes(filter);
-  });
+function applyView(root: HTMLElement, tabs: HTMLElement): void {
   root.querySelectorAll<HTMLElement>('.menu-cat').forEach((sec) => {
-    sec.hidden = !sec.querySelector('.dish:not([hidden])');
+    sec.hidden = sec.id !== `cat-${activeCat}`;
+    let n = 0;
+    sec.querySelectorAll<HTMLElement>('.dish').forEach((li) => {
+      li.hidden = activeFilter !== 'all' && !li.dataset.tags!.split(' ').includes(activeFilter);
+      if (!li.hidden) n++;
+    });
+    sec.querySelector<HTMLElement>('.menu-empty')!.hidden = n > 0;
   });
-  document.querySelectorAll<HTMLElement>('.cat-tabs a').forEach((a) => {
-    const target = document.querySelector<HTMLElement>(a.getAttribute('href')!);
-    a.hidden = !!target?.hidden;
+  tabs.querySelectorAll<HTMLButtonElement>('[role=tab]').forEach((t) => {
+    const on = t.dataset.cat === activeCat;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
   });
 }
 
@@ -104,10 +122,12 @@ export function pickupSlots(now = new Date()): { label: string; date: Date; time
 let dialog: HTMLDialogElement;
 
 function renderBar(): void {
-  const bar = document.querySelector<HTMLElement>('.cart-bar')!;
+  const fab = document.querySelector<HTMLButtonElement>('.cart-fab')!;
   const n = count();
-  bar.hidden = n === 0;
-  bar.querySelector('.cart-bar-text')!.textContent = `Panier · ${n} article${n > 1 ? 's' : ''} · ${eur(total())}`;
+  fab.hidden = n === 0;
+  fab.querySelector('.cart-fab-count')!.textContent = String(n);
+  fab.querySelector('.cart-fab-total')!.textContent = eur(total());
+  fab.setAttribute('aria-label', `Voir le panier : ${n} article${n > 1 ? 's' : ''}, ${eur(total())}`);
   document.querySelectorAll<HTMLElement>('.js-cart-count').forEach((el) => (el.textContent = String(n)));
 }
 
@@ -152,10 +172,14 @@ function setQty(id: string, q: number): void {
 
 function add(id: string, btn: HTMLButtonElement): void {
   setQty(id, (cart.get(id) ?? 0) + 1);
-  btn.textContent = '✓ Ajouté';
+  btn.innerHTML = CHECK;
   btn.classList.add('is-added');
+  const fab = document.querySelector<HTMLElement>('.cart-fab')!;
+  fab.classList.remove('bump');
+  void fab.offsetWidth;
+  fab.classList.add('bump');
   window.setTimeout(() => {
-    btn.textContent = '+ Ajouter';
+    btn.innerHTML = PLUS;
     btn.classList.remove('is-added');
   }, 1100);
   const live = document.getElementById('cart-live');
@@ -194,14 +218,33 @@ function checkout(e: SubmitEvent): void {
 
 export function initMenu(): void {
   const root = document.querySelector<HTMLElement>('.menu-cats')!;
+  const tabs = document.querySelector<HTMLElement>('.cat-tabs')!;
   dialog = document.querySelector<HTMLDialogElement>('dialog.cart')!;
   loadCart();
-  renderMenu(root);
+  renderMenu(root, tabs);
+  applyView(root, tabs);
+
+  tabs.addEventListener('click', (e) => {
+    const tab = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=tab]');
+    if (!tab) return;
+    activeCat = tab.dataset.cat!;
+    applyView(root, tabs);
+  });
+  // Flèches gauche/droite entre les onglets (motif ARIA « tabs »).
+  tabs.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = MENU.findIndex((c) => c.id === activeCat);
+    const next = MENU[(i + (e.key === 'ArrowRight' ? 1 : MENU.length - 1)) % MENU.length];
+    activeCat = next.id;
+    applyView(root, tabs);
+    tabs.querySelector<HTMLElement>(`[data-cat="${next.id}"]`)!.focus();
+  });
 
   document.querySelectorAll<HTMLButtonElement>('.filters button').forEach((btn) =>
     btn.addEventListener('click', () => {
       document.querySelectorAll('.filters button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-      applyFilter(root, btn.dataset.filter!);
+      activeFilter = btn.dataset.filter!;
+      applyView(root, tabs);
     })
   );
 
