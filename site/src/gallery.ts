@@ -15,10 +15,6 @@ interface Slide {
 }
 
 const GALLERIES: Record<string, Slide[]> = {
-  epta5: [
-    { src: 'assets/epta5-01.png', capKey: 'gal.epta5.1' },
-    { src: 'assets/epta5-02.png', capKey: 'gal.epta5.2' }
-  ],
   jarvis: [{ src: 'assets/jarvis-01.png', capKey: 'gal.jarvis.1' }],
   track: [{ src: 'assets/track-01.png', capKey: 'gal.track.1' }],
   seissix: [
