@@ -103,3 +103,14 @@ export function prefillClientType(type: 'B2B' | 'B2C'): void {
   const input = document.querySelector<HTMLInputElement>(`input[name="client_type"][value="${type}"]`);
   if (input) input.checked = true;
 }
+
+export function prefillOffer(): void {
+  prefillClientType('B2B');
+  const set = (sel: string, value: string): void => {
+    const el = document.querySelector<HTMLInputElement | HTMLSelectElement>(sel);
+    if (el) el.value = value;
+  };
+  set('#f-mission-type', 'site-vitrine');
+  set('#f-pay-mode', 'Forfait');
+  set('#f-budget', t('offers.site.budget'));
+}
