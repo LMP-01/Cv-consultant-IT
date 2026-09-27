@@ -1,8 +1,8 @@
-# Site — Théo Manso Pinto (thème clair)
+# Site — IA & data consulting (thème clair)
 
 Landing page bilingue FR/EN : prestations IA & data, offre **Site vitrine PME à 700 € HT**, réalisations, formulaire de demande de mission envoyé par email (Web3Forms).
 
-En ligne : https://lmp-01.github.io/theo-manso-pinto/
+En ligne : https://lmp-01.github.io/ia-data-consulting/
 
 ## Développement
 
