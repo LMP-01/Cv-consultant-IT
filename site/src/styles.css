@@ -955,6 +955,28 @@ fieldset.field { border: 0; }
 .wizard .form-privacy { margin: -0.2rem 0 0.8rem; }
 .wz-next, .wz-submit { margin-top: 0.2rem; }
 
+/* Prise de rendez-vous visio / téléphone */
+.wz-lead { color: var(--ink-dim); margin: -0.9rem 0 1.4rem; }
+.wz-alt { margin-top: 1.2rem; text-align: center; }
+.wz-alt .text-link { margin-top: 0; }
+.wizard .text-link.as-btn { background: none; border: 0; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.92rem; color: var(--accent-ink); }
+.wz-skip-call { display: block; margin: 1.2rem auto 0; }
+.call-types .choice { text-align: center; }
+.call-types .choice-icon { margin: 0 auto 0.8rem; }
+
+.call-days { display: flex; gap: 0.5rem; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 1.2rem; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.call-day { flex: 0 0 64px; display: grid; justify-items: center; gap: 0.1rem; padding: 0.6rem 0; scroll-snap-align: start; }
+.call-day span { font-size: 0.72rem; text-transform: capitalize; }
+.call-day strong { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.1; }
+
+.call-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-bottom: 1.4rem; }
+.call-slot { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.call-slot:disabled { cursor: not-allowed; color: var(--ink-faint); text-decoration: line-through; border-style: dashed; background: transparent; }
+.call-slot:disabled:hover { border-color: var(--line-strong); color: var(--ink-faint); }
+
+.wz-full { grid-column: 1 / -1; }
+.wz-done-call { color: var(--ink); font-weight: 500; max-width: 46ch; margin: -0.8rem auto 1.5rem; }
+
 .wz-done { text-align: center; padding: 1.5rem 0 0.5rem; }
 .wz-done h2 { margin-bottom: 0.5rem; }
 .wz-done p { color: var(--ink-dim); max-width: 42ch; margin: 0 auto 1.5rem; }
