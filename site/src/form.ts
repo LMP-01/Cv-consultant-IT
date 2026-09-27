@@ -11,7 +11,7 @@ function isKeyConfigured(): boolean {
   return /^[0-9a-f-]{36}$/i.test(WEB3FORMS_ACCESS_KEY);
 }
 
-function collectPayload(form: HTMLFormElement): Record<string, string> {
+function collectPayload(form: HTMLFormElement): MissionPayload {
   const data = new FormData(form);
   const get = (k: string): string => String(data.get(k) ?? '').trim();
   return {
@@ -28,7 +28,7 @@ function collectPayload(form: HTMLFormElement): Record<string, string> {
   };
 }
 
-function buildMailto(p: Record<string, string>): string {
+function buildMailto(p: MissionPayload): string {
   const subject = `[Mission ${p.client_type}] ${p.mission_type} — ${p.name}`;
   const body = [
     `Type de client : ${p.client_type}`,
@@ -47,6 +47,35 @@ function buildMailto(p: Record<string, string>): string {
   return `mailto:${FALLBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+export type MissionPayload = Record<
+  'client_type' | 'name' | 'email' | 'company' | 'mission_type' | 'tools' | 'pay_mode' | 'budget' | 'deadline' | 'description',
+  string
+>;
+
+/**
+ * Envoie une demande de mission (Web3Forms, ou mailto: tant que la clé n'est pas configurée).
+ * Résout 'sent' si l'e-mail est parti, 'mailto' si le client mail a été ouvert ; lève une erreur sinon.
+ */
+export async function sendMission(payload: MissionPayload): Promise<'sent' | 'mailto'> {
+  if (!isKeyConfigured()) {
+    window.location.href = buildMailto(payload);
+    return 'mailto';
+  }
+  const res = await fetch(WEB3FORMS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      access_key: WEB3FORMS_ACCESS_KEY,
+      subject: `[Mission ${payload.client_type}] ${payload.mission_type} — ${payload.name}`,
+      from_name: 'Demande de mission — cv-consultant-it',
+      ...payload
+    })
+  });
+  const json: { success?: boolean } = await res.json();
+  if (!res.ok || !json.success) throw new Error('web3forms error');
+  return 'sent';
+}
+
 export function initForm(): void {
   const form = document.getElementById('mission-form') as HTMLFormElement | null;
   const success = document.getElementById('form-success');
@@ -62,34 +91,16 @@ export function initForm(): void {
       return;
     }
 
-    const payload = collectPayload(form);
-
-    if (!isKeyConfigured()) {
-      // Pas encore de clé Web3Forms : on ouvre le client mail du prospect.
-      window.location.href = buildMailto(payload);
-      return;
-    }
-
     const btn = form.querySelector<HTMLButtonElement>('.btn-submit')!;
     btn.disabled = true;
     btn.textContent = t('form.sending');
 
     try {
-      const res = await fetch(WEB3FORMS_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_ACCESS_KEY,
-          subject: `[Mission ${payload.client_type}] ${payload.mission_type} — ${payload.name}`,
-          from_name: 'Demande de mission — cv-consultant-it',
-          ...payload
-        })
-      });
-      const json: { success?: boolean } = await res.json();
-      if (!res.ok || !json.success) throw new Error('web3forms error');
-      form.hidden = true;
-      success.hidden = false;
-      success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if ((await sendMission(collectPayload(form))) === 'sent') {
+        form.hidden = true;
+        success.hidden = false;
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } catch {
       msg.textContent = t('form.error');
     } finally {

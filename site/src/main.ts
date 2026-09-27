@@ -5,15 +5,17 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/700.css';
 import './styles.css';
 
-import { currentLang, initI18n } from './i18n';
-import { initForm, prefillClientType, prefillOffer } from './form';
+import { currentLang, initI18n, t } from './i18n';
+import { initForm } from './form';
 import { initGalleries } from './gallery';
 import { initMedia } from './media';
+import { chooseClient, focusTarget, initWizard, presetOffer } from './wizard';
 
 initI18n();
 initForm();
 initGalleries();
 initMedia();
+initWizard();
 
 
 function setBackgroundInert(on: boolean): void {
@@ -46,14 +48,13 @@ if (sphere && !reduced && window.matchMedia('(pointer: fine)').matches) {
   );
 }
 
-function goToForm(): void {
-  const form = document.getElementById('mission');
-  form?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-  window.setTimeout(() => document.getElementById('f-name')?.focus({ preventScroll: true }), reduced ? 0 : 600);
-}
-
 // --- Modales (B2B/B2C et mentions légales) ---
-function makeModal(id: string, openSel: string, closeSel: string, focusSel: string): { close: () => void } {
+function makeModal(
+  id: string,
+  openSel: string,
+  closeSel: string,
+  focusSel: string | (() => HTMLElement | null)
+): { open: () => void; close: () => void } {
   const modal = document.getElementById(id)!;
   let lastFocused: HTMLElement | null = null;
   const open = (): void => {
@@ -61,7 +62,7 @@ function makeModal(id: string, openSel: string, closeSel: string, focusSel: stri
     modal.hidden = false;
     setBackgroundInert(true);
     document.body.style.overflow = 'hidden';
-    modal.querySelector<HTMLElement>(focusSel)?.focus();
+    (typeof focusSel === 'string' ? modal.querySelector<HTMLElement>(focusSel) : focusSel())?.focus();
   };
   const close = (): void => {
     modal.hidden = true;
@@ -74,25 +75,22 @@ function makeModal(id: string, openSel: string, closeSel: string, focusSel: stri
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
-  return { close };
+  return { open, close };
 }
 
-const clientModal = makeModal('client-modal', '.js-open-modal', '.js-close-modal', '.js-choose');
+const clientModal = makeModal('client-modal', '.js-open-modal', '.js-close-modal', focusTarget);
 makeModal('legal-modal', '.js-open-legal', '.js-close-legal', '.modal-close');
 
+// Après « Entreprise / Particulier », le parcours continue dans la pop-up (src/wizard.ts).
 document.querySelectorAll<HTMLButtonElement>('.js-choose').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    prefillClientType(btn.dataset.type as 'B2B' | 'B2C');
-    clientModal.close();
-    goToForm();
-  });
+  btn.addEventListener('click', () => chooseClient(btn.dataset.type as 'B2B' | 'B2C'));
 });
 
-// --- Offre « Site vitrine PME » → formulaire pré-rempli ---
+// --- Offre « Site vitrine PME » → même pop-up, type de mission déjà choisi ---
 document.querySelectorAll('.js-offer').forEach((btn) =>
   btn.addEventListener('click', () => {
-    prefillOffer();
-    goToForm();
+    presetOffer({ mission_type: 'site-vitrine', pay_mode: 'Forfait', budget: t('offers.site.budget') });
+    clientModal.open();
   })
 );
 
