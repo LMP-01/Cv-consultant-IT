@@ -50,3 +50,23 @@ La clé d'accès est dans `src/form.ts` (`WEB3FORMS_ACCESS_KEY`). Pour la change
 ## Déploiement
 
 `.github/workflows/deploy-site.yml` compile le site sur chaque PR, et le déploie sur GitHub Pages à chaque push sur `main` qui touche `site/**`.
+
+## Exemples clients
+
+Sites de démonstration à montrer aux prospects. Ils ne sont pas liés depuis la page principale et sont en `noindex`.
+
+### Hamed Coiffeur (salon fictif)
+
+En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/hamed-coiffeur/
+
+- `exemples/hamed-coiffeur/index.html` : la page (tarifs 10 € / 15 €, équipe, réservation, horaires).
+- `src/hamed/data.ts` : coiffeurs, prix, horaires d'ouverture, liens Cal.com.
+- `src/hamed/booking.ts` : widget de réservation. Les RDV déjà pris sont inventés de façon déterministe (plus chargé le midi, le soir et le samedi). Un créneau réservé est gardé dans le navigateur (`localStorage`). Aucun RDV réel n'est envoyé.
+- `public/exemples/hamed-coiffeur/*.jpg` : portraits et salon générés avec Higgsfield Soul 2.0.
+
+**Brancher un vrai Cal.com :**
+1. Créez un compte gratuit sur cal.com.
+2. Créez un type d'événement de 30 min par coiffeur, avec les horaires du salon.
+3. Remplissez `CAL_LINKS` dans `src/hamed/data.ts`, par exemple `{ any: 'hamed-coiffeur/coupe', hamed: 'hamed-coiffeur/hamed' }`.
+
+« Confirmer » ouvre alors la page Cal.com du coiffeur, sur le bon jour.
