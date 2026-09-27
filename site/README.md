@@ -2,7 +2,7 @@
 
 Landing page bilingue FR/EN : prestations IA & data, offre **Site vitrine PME à 700 € HT**, réalisations, formulaire de demande de mission envoyé par email (Web3Forms).
 
-En ligne : https://lmp-01.github.io/Cv-consultant-IT/
+En ligne : https://lmp-01.github.io/theo-manso-pinto/
 
 ## Développement
 
