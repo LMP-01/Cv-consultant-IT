@@ -46,6 +46,7 @@
           <p class="hero-subtitle" data-i18n="hero.subtitle"></p>
           <div class="hero-ctas">
             <button class="btn btn-primary js-open-modal" type="button"><span data-i18n="hero.cta">Demander une mission</span> <span aria-hidden="true">→</span></button>
+            <button class="btn btn-ghost js-open-modal" type="button" data-start="call"><span data-i18n="call.cta">Réserver un appel</span></button>
             <a class="btn btn-ghost" href="#offers" data-i18n="hero.cta2">Voir les offres</a>
           </div>
         </div>
@@ -398,7 +399,7 @@
         </div>
         <div class="wz-bar" hidden><span></span></div>
 
-        <section class="wz-step" data-step="1">
+        <section class="wz-step" data-step="client">
           <h2 id="modal-title" class="wz-title" tabindex="-1" data-i18n="modal.title">Vous êtes…</h2>
           <div class="modal-choices">
             <button class="choice js-choose" data-type="B2B" type="button">
@@ -428,9 +429,10 @@
               <span class="choice-cta" data-i18n="modal.b2c.cta">Mission B2C</span>
             </button>
           </div>
+          <p class="wz-alt"><button class="text-link as-btn js-start-call" type="button"><span data-i18n="call.direct">Ou réservez directement un appel (visio ou téléphone)</span> <span aria-hidden="true">→</span></button></p>
         </section>
 
-        <section class="wz-step" data-step="2" hidden>
+        <section class="wz-step" data-step="mission" hidden>
           <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s2.title">Quel type de mission ?</h2>
           <div class="wz-missions">
             <button class="choice wz-mission" type="button" data-value="site-vitrine" aria-pressed="false">
@@ -464,7 +466,7 @@
           </div>
         </section>
 
-        <form class="wz-step" data-step="3" novalidate hidden>
+        <form class="wz-step" data-step="budget" novalidate hidden>
           <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s3.title">Budget et délai</h2>
           <p class="wz-label" id="wz-pay-label" data-i18n="form.payMode">Mode de rémunération</p>
           <div class="wz-chips" role="group" aria-labelledby="wz-pay-label" data-field="pay_mode">
@@ -486,7 +488,7 @@
           <button class="btn btn-primary wz-next" type="submit"><span data-i18n="wizard.next">Continuer</span> <span aria-hidden="true">→</span></button>
         </form>
 
-        <form class="wz-step" data-step="4" novalidate hidden>
+        <form class="wz-step" data-step="project" novalidate hidden>
           <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s4.title">Votre projet</h2>
           <div class="field">
             <label for="wz-description"><span data-i18n="form.description">Description de la mission</span><span class="req" aria-hidden="true"> *</span></label>
@@ -500,7 +502,7 @@
           <button class="btn btn-primary wz-next" type="submit"><span data-i18n="wizard.next">Continuer</span> <span aria-hidden="true">→</span></button>
         </form>
 
-        <form class="wz-step" data-step="5" novalidate hidden>
+        <form class="wz-step" data-step="contact" novalidate hidden>
           <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s5.title">Vos coordonnées</h2>
           <div class="wz-grid">
             <div class="field">
@@ -518,13 +520,79 @@
           </div>
           <p class="form-privacy" data-i18n="form.privacy"></p>
           <p class="wz-msg" role="status" aria-live="polite"></p>
+          <button class="btn btn-primary wz-next" type="submit"><span data-i18n="wizard.next">Continuer</span> <span aria-hidden="true">→</span></button>
+        </form>
+
+
+        <section class="wz-step" data-step="call" hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="call.title">On en parle de vive voix ?</h2>
+          <p class="wz-lead" data-i18n="call.lead">30 minutes pour cadrer votre besoin, sans engagement.</p>
+          <div class="modal-choices call-types">
+            <button class="choice wz-call" type="button" data-value="visio" aria-pressed="false">
+              <span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="m16 10.5 5-3v9l-5-3" /></svg></span>
+              <h3 data-i18n="call.visio.title">Visio</h3>
+              <p data-i18n="call.visio.desc"></p>
+            </button>
+            <button class="choice wz-call" type="button" data-value="phone" aria-pressed="false">
+              <span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.5 4.5-2 1.5a11 11 0 0 0 6 6l1.5-2 4.5 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></svg></span>
+              <h3 data-i18n="call.phone.title">Téléphone</h3>
+              <p data-i18n="call.phone.desc"></p>
+            </button>
+          </div>
+          <p class="wz-msg" role="status" aria-live="polite"></p>
+          <button class="text-link as-btn wz-skip-call" type="button" data-i18n="call.skip">Pas maintenant, envoyer ma demande</button>
+        </section>
+
+        <form class="wz-step" data-step="slot" novalidate hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="call.slot.title">Choisissez un créneau</h2>
+          <p class="wz-lead"><span data-i18n="call.slot.lead">30 min · heure de Paris</span> · <span class="call-kind"></span></p>
+          <p class="wz-label" id="call-days-label" data-i18n="call.slot.day">Jour</p>
+          <div class="call-days" role="group" aria-labelledby="call-days-label"></div>
+          <p class="wz-label" id="call-slots-label" data-i18n="call.slot.time">Heure</p>
+          <div class="call-slots" role="group" aria-labelledby="call-slots-label"></div>
+          <div class="field call-phone-field">
+            <label for="wz-phone"><span data-i18n="call.phone.label">Téléphone</span><span class="req" aria-hidden="true"> *</span></label>
+            <input id="wz-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" pattern="[0-9 +\(\)\.\-]{10,}" data-i18n-ph="call.phone.ph" />
+          </div>
+          <p class="wz-msg" role="status" aria-live="polite"></p>
           <button class="btn btn-primary wz-submit" type="submit" data-i18n="form.submit">Envoyer la demande</button>
+        </form>
+
+        <form class="wz-step" data-step="callcontact" novalidate hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="call.contact.title">Vos coordonnées</h2>
+          <p class="wz-lead call-recap"></p>
+          <div class="wz-grid">
+            <div class="field">
+              <label for="cc-name"><span data-i18n="form.name">Nom / Prénom</span><span class="req" aria-hidden="true"> *</span></label>
+              <input id="cc-name" name="name" type="text" required autocomplete="name" data-i18n-ph="form.name.ph" />
+            </div>
+            <div class="field">
+              <label for="cc-email"><span data-i18n="form.email">E-mail</span><span class="req" aria-hidden="true"> *</span></label>
+              <input id="cc-email" name="email" type="email" required autocomplete="email" data-i18n-ph="form.email.ph" />
+            </div>
+            <div class="field cc-phone-field">
+              <label for="cc-phone"><span data-i18n="call.phone.label">Téléphone</span><span class="req" aria-hidden="true"> *</span></label>
+              <input id="cc-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" pattern="[0-9 +\(\)\.\-]{10,}" data-i18n-ph="call.phone.ph" />
+            </div>
+            <div class="field">
+              <label for="cc-company"><span data-i18n="wizard.company">Entreprise</span> <span class="wz-opt" data-i18n="wizard.optional">(facultatif)</span></label>
+              <input id="cc-company" name="company" type="text" autocomplete="organization" data-i18n-ph="form.company.ph" />
+            </div>
+            <div class="field wz-full">
+              <label for="cc-topic"><span data-i18n="call.topic">Sujet de l’appel</span> <span class="wz-opt" data-i18n="wizard.optional">(facultatif)</span></label>
+              <input id="cc-topic" name="topic" type="text" data-i18n-ph="call.topic.ph" />
+            </div>
+          </div>
+          <p class="form-privacy" data-i18n="form.privacy"></p>
+          <p class="wz-msg" role="status" aria-live="polite"></p>
+          <button class="btn btn-primary wz-submit" type="submit" data-i18n="call.confirm">Confirmer le rendez-vous</button>
         </form>
 
         <section class="wz-step wz-done" data-step="done" hidden>
           <span class="success-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7" /></svg></span>
           <h2 class="wz-title" tabindex="-1" data-i18n="form.success.title">Demande transmise !</h2>
-          <p data-i18n="form.success.desc"></p>
+          <p class="wz-done-desc" data-i18n="form.success.desc"></p>
+          <p class="wz-done-call" hidden></p>
           <button class="btn btn-ghost js-close-modal" type="button" data-i18n="modal.close">Fermer</button>
         </section>
       </div>

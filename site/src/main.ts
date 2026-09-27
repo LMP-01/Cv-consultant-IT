@@ -9,7 +9,7 @@ import { currentLang, initI18n, t } from './i18n';
 import { initForm } from './form';
 import { initGalleries } from './gallery';
 import { initMedia } from './media';
-import { chooseClient, focusTarget, initWizard, presetOffer } from './wizard';
+import { chooseClient, focusTarget, initWizard, presetOffer, startCall, startMission } from './wizard';
 
 initI18n();
 initForm();
@@ -78,6 +78,10 @@ function makeModal(
   return { open, close };
 }
 
+// Choisit le parcours avant l'ouverture : « Réserver un appel » (data-start="call") ou demande de mission.
+document.querySelectorAll<HTMLElement>('.js-open-modal').forEach((el) =>
+  el.addEventListener('click', () => (el.dataset.start === 'call' ? startCall() : startMission()))
+);
 const clientModal = makeModal('client-modal', '.js-open-modal', '.js-close-modal', focusTarget);
 makeModal('legal-modal', '.js-open-legal', '.js-close-legal', '.modal-close');
 const offerModal = makeModal('offer-modal', '.js-offer-details', '.js-close-offer', '.modal-close');

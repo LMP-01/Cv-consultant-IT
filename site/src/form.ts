@@ -28,8 +28,7 @@ function collectPayload(form: HTMLFormElement): MissionPayload {
   };
 }
 
-function buildMailto(p: MissionPayload): string {
-  const subject = `[Mission ${p.client_type}] ${p.mission_type} — ${p.name}`;
+function buildMailto(p: MissionPayload & Record<string, string>, subject: string): string {
   const body = [
     `Type de client : ${p.client_type}`,
     `Nom : ${p.name}`,
@@ -40,6 +39,7 @@ function buildMailto(p: MissionPayload): string {
     `Rémunération : ${p.pay_mode}`,
     `Budget / TJM : ${p.budget || '—'}`,
     `Délai : ${p.deadline || '—'}`,
+    ...(p.call_type ? [`Rendez-vous : ${p.call_type}, ${p.call_date} à ${p.call_time}`, `Téléphone : ${p.phone || '—'}`] : []),
     '',
     'Description :',
     p.description
@@ -56,9 +56,12 @@ export type MissionPayload = Record<
  * Envoie une demande de mission (Web3Forms, ou mailto: tant que la clé n'est pas configurée).
  * Résout 'sent' si l'e-mail est parti, 'mailto' si le client mail a été ouvert ; lève une erreur sinon.
  */
-export async function sendMission(payload: MissionPayload): Promise<'sent' | 'mailto'> {
+export async function sendMission(
+  payload: MissionPayload & Record<string, string>,
+  subject = `[Mission ${payload.client_type}] ${payload.mission_type} — ${payload.name}`
+): Promise<'sent' | 'mailto'> {
   if (!isKeyConfigured()) {
-    window.location.href = buildMailto(payload);
+    window.location.href = buildMailto(payload, subject);
     return 'mailto';
   }
   const res = await fetch(WEB3FORMS_ENDPOINT, {
@@ -66,7 +69,7 @@ export async function sendMission(payload: MissionPayload): Promise<'sent' | 'ma
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
       access_key: WEB3FORMS_ACCESS_KEY,
-      subject: `[Mission ${payload.client_type}] ${payload.mission_type} — ${payload.name}`,
+      subject,
       from_name: 'Demande de mission — cv-consultant-it',
       ...payload
     })
