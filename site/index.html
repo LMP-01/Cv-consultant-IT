@@ -3,24 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Théo Manso Pinto — Consultant IA & Data. Agents IA, pipelines de données, automatisation. Envoyez votre demande de mission (TJM, forfait, régie)." />
-    <meta name="theme-color" content="#05060f" />
+    <meta name="description" content="Théo Manso Pinto — Consultant IA & Data. Agents IA, pipelines de données, automatisation et sites vitrines PME dès 700 € HT." />
+    <meta name="theme-color" content="#F7F7F4" />
+    <meta name="color-scheme" content="light" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Théo Manso Pinto — Agents IA · Data · Sites PME" />
+    <meta property="og:description" content="Consultant IA & Data à Paris. Agents IA en production, pipelines de données, automatisation, et site vitrine PME à 700 € HT." />
+    <meta property="og:url" content="https://lmp-01.github.io/Cv-consultant-IT/" />
+    <meta property="og:image" content="https://lmp-01.github.io/Cv-consultant-IT/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://lmp-01.github.io/Cv-consultant-IT/og.jpg" />
     <title>Théo Manso Pinto — Consultant IA & Data | Demande de mission</title>
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <canvas id="bg-canvas" aria-hidden="true"></canvas>
-    <div class="noise" aria-hidden="true"></div>
-
     <header class="nav">
-      <a class="nav-brand" href="#top">TMP<span class="accent">_</span></a>
+      <a class="nav-brand" href="#top" aria-label="Théo Manso Pinto">TMP</a>
       <nav class="nav-links" aria-label="Navigation principale">
         <a href="#services" data-i18n="nav.services">Prestations</a>
+        <a href="#offers" data-i18n="nav.offers">Offres</a>
         <a href="#work" data-i18n="nav.work">Réalisations</a>
         <a href="#toolbox" data-i18n="nav.toolbox">Boîte à outils</a>
       </nav>
       <div class="nav-actions">
-        <button id="lang-toggle" class="lang-toggle" type="button" aria-label="Switch language">EN</button>
+        <button id="lang-toggle" class="lang-toggle" type="button" lang="en">EN</button>
         <button class="btn btn-primary btn-sm js-open-modal" type="button" data-i18n="nav.mission">Demander une mission</button>
       </div>
     </header>
@@ -28,46 +36,141 @@
     <main id="top">
       <!-- HERO -->
       <section class="hero">
-        <p class="kicker glitch" data-i18n="hero.kicker">FORWARD DEPLOYED ENGINEER</p>
-        <h1 class="hero-title">
-          <span class="line" data-i18n="hero.title.1">Vos idées.</span>
-          <span class="line accent" data-i18n="hero.title.2">Mes agents IA.</span>
-          <span class="line" data-i18n="hero.title.3">En production.</span>
-        </h1>
-        <p class="hero-subtitle" data-i18n="hero.subtitle"></p>
-        <div class="hero-ctas">
-          <button class="btn btn-primary js-open-modal" type="button" data-i18n="hero.cta">Demander une mission</button>
-          <a class="btn btn-ghost" href="#services" data-i18n="hero.cta2">Voir les prestations</a>
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="hero.kicker">FORWARD DEPLOYED ENGINEER</p>
+          <h1 class="hero-title">
+            <span class="line" data-i18n="hero.title.1">Vos idées.</span>
+            <span class="line grad" data-i18n="hero.title.2">Mes agents IA.</span>
+            <span class="line" data-i18n="hero.title.3">En production.</span>
+          </h1>
+          <p class="hero-subtitle" data-i18n="hero.subtitle"></p>
+          <div class="hero-ctas">
+            <button class="btn btn-primary js-open-modal" type="button"><span data-i18n="hero.cta">Demander une mission</span> <span aria-hidden="true">→</span></button>
+            <a class="btn btn-ghost" href="#offers" data-i18n="hero.cta2">Voir les offres</a>
+          </div>
         </div>
-        <a class="scroll-hint" href="#stats" aria-hidden="true"><span data-i18n="hero.scroll">Défiler</span><span class="scroll-line"></span></a>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-glow"></div>
+          <canvas id="bg-canvas" data-scene="none"></canvas>
+        </div>
       </section>
 
       <!-- STATS -->
-      <section id="stats" class="stats reveal">
-        <div class="stat"><span class="stat-num" data-count="20">0</span><span class="stat-plus">+</span><p data-i18n="stats.pipelines"></p></div>
-        <div class="stat"><span class="stat-num" data-count="1000">0</span><span class="stat-plus">+</span><p data-i18n="stats.apis"></p></div>
-        <div class="stat"><span class="stat-num" data-count="500">0</span><span class="stat-plus">+</span><p data-i18n="stats.skills"></p></div>
-        <div class="stat"><span class="stat-num" data-count="8">0</span><span class="stat-plus"></span><p data-i18n="stats.certs"></p></div>
+      <section id="stats" class="stats" aria-label="Chiffres clés">
+        <div class="stat reveal">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></span>
+          <div><p class="stat-value"><span class="stat-num" data-count="20">20</span>+</p><p class="stat-label" data-i18n="stats.pipelines"></p></div>
+        </div>
+        <div class="stat reveal">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></svg></span>
+          <div><p class="stat-value"><span class="stat-num" data-count="1000">1000</span>+</p><p class="stat-label" data-i18n="stats.apis"></p></div>
+        </div>
+        <div class="stat reveal">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3a3 3 0 0 0-3 3v1a3 3 0 0 0-2 5 3 3 0 0 0 2 5v1a3 3 0 0 0 6 0V3z" /><path d="M15 3a3 3 0 0 1 3 3v1a3 3 0 0 1 2 5 3 3 0 0 1-2 5v1a3 3 0 0 1-6 0" /></svg></span>
+          <div><p class="stat-value"><span class="stat-num" data-count="500">500</span>+</p><p class="stat-label" data-i18n="stats.skills"></p></div>
+        </div>
+        <div class="stat reveal">
+          <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" /><path d="m9 12 2 2 4-4" /></svg></span>
+          <div><p class="stat-value"><span class="stat-num" data-count="8">8</span></p><p class="stat-label" data-i18n="stats.certs"></p></div>
+        </div>
+      </section>
+
+      <!-- SHOWREEL -->
+      <section class="reel reveal" aria-labelledby="reel-title">
+        <div class="media media-reel" data-video="media/hero.mp4">
+          <img class="media-poster" src="/media/hero.jpg" alt="" loading="lazy" width="1280" height="716" />
+        </div>
+        <div class="reel-caption">
+          <p class="eyebrow" data-i18n="reel.kicker">DE L'IDÉE À LA PRODUCTION</p>
+          <h2 id="reel-title" data-i18n="reel.title">Des systèmes qui tournent pour vous, jour et nuit.</h2>
+        </div>
       </section>
 
       <!-- SERVICES -->
       <section id="services" class="section">
-        <p class="kicker" data-i18n="services.kicker">PRESTATIONS</p>
-        <h2 data-i18n="services.title">Ce que je déploie pour vous</h2>
+        <p class="eyebrow" data-i18n="services.kicker">PRESTATIONS</p>
+        <h2 class="section-title" data-i18n="services.title">Ce que je déploie pour vous</h2>
         <div class="grid grid-3">
-          <article class="card reveal"><span class="card-icon">◇</span><h3 data-i18n="services.1.title"></h3><p data-i18n="services.1.desc"></p></article>
-          <article class="card reveal"><span class="card-icon">⛁</span><h3 data-i18n="services.2.title"></h3><p data-i18n="services.2.desc"></p></article>
-          <article class="card reveal"><span class="card-icon">⟳</span><h3 data-i18n="services.3.title"></h3><p data-i18n="services.3.desc"></p></article>
-          <article class="card reveal"><span class="card-icon">▤</span><h3 data-i18n="services.4.title"></h3><p data-i18n="services.4.desc"></p></article>
-          <article class="card reveal"><span class="card-icon">◎</span><h3 data-i18n="services.5.title"></h3><p data-i18n="services.5.desc"></p></article>
-          <article class="card reveal"><span class="card-icon">⌗</span><h3 data-i18n="services.6.title"></h3><p data-i18n="services.6.desc"></p></article>
+          <article class="card card-service reveal">
+            <div class="media" data-video="media/agents.mp4"><img class="media-poster" src="/media/agents.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.1.title"></h3><p data-i18n="services.1.desc"></p></div>
+          </article>
+          <article class="card card-service reveal">
+            <div class="media" data-video="media/data.mp4"><img class="media-poster" src="/media/data.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.2.title"></h3><p data-i18n="services.2.desc"></p></div>
+          </article>
+          <article class="card card-service reveal">
+            <div class="media" data-video="media/auto.mp4"><img class="media-poster" src="/media/auto.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.3.title"></h3><p data-i18n="services.3.desc"></p></div>
+          </article>
+          <article class="card card-service reveal">
+            <div class="media" data-video="media/bi.mp4"><img class="media-poster" src="/media/bi.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.4.title"></h3><p data-i18n="services.4.desc"></p></div>
+          </article>
+          <article class="card card-service reveal">
+            <div class="media"><img class="media-poster" src="/media/delivery.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.5.title"></h3><p data-i18n="services.5.desc"></p></div>
+          </article>
+          <article class="card card-service reveal">
+            <div class="media"><img class="media-poster" src="/media/audit.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="card-body"><h3 data-i18n="services.6.title"></h3><p data-i18n="services.6.desc"></p></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- OFFERS -->
+      <section id="offers" class="section">
+        <p class="eyebrow center" data-i18n="offers.kicker">OFFRES</p>
+        <h2 class="section-title center" data-i18n="offers.title">Des offres claires, sans surprise</h2>
+        <div class="offers">
+          <article class="price-card price-card-featured reveal">
+            <div class="media media-offer" data-video="media/site.mp4"><img class="media-poster" src="/media/site.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+            <div class="price-body">
+              <p class="pill" data-i18n="offers.pro">Réservé aux professionnels</p>
+              <h3 data-i18n="offers.site.title">Site vitrine PME</h3>
+              <p class="price"><span class="price-amount" data-i18n="offers.site.price">700 €</span><span class="price-unit" data-i18n="offers.site.unit">HT</span></p>
+              <p class="price-sub" data-i18n="offers.site.ttc">840 € TTC · TVA 20 %</p>
+              <p class="price-lead" data-i18n="offers.site.lead">Un site one-page pour présenter votre service et recevoir des demandes.</p>
+              <ul class="checklist">
+                <li data-i18n="offers.site.i1"></li>
+                <li data-i18n="offers.site.i2"></li>
+                <li data-i18n="offers.site.i3"></li>
+                <li data-i18n="offers.site.i4"></li>
+                <li data-i18n="offers.site.i5"></li>
+                <li data-i18n="offers.site.i6"></li>
+                <li data-i18n="offers.site.i7"></li>
+              </ul>
+              <p class="price-excl" data-i18n="offers.site.excl"></p>
+              <button class="btn btn-primary btn-block js-offer" type="button"><span data-i18n="offers.site.cta">Demander ce devis</span> <span aria-hidden="true">→</span></button>
+              <a class="text-link" href="devis/Devis_Site_Vitrine_PME_EPTA5.pdf" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M12 12v6m-3-3 3 3 3-3" /></svg>
+                <span data-i18n="offers.site.pdf">Télécharger le devis type (PDF)</span>
+              </a>
+            </div>
+          </article>
+          <article class="price-card reveal">
+            <div class="price-body">
+              <h3 data-i18n="offers.ai.title">Missions IA & automatisation</h3>
+              <p class="price"><span class="price-amount" data-i18n="offers.ai.price">Sur devis</span></p>
+              <p class="price-sub" data-i18n="offers.ai.sub">TJM ou forfait</p>
+              <p class="price-lead" data-i18n="offers.ai.lead">Pour automatiser vos processus et mettre l'IA au travail dans votre entreprise.</p>
+              <ul class="checklist">
+                <li data-i18n="offers.ai.i1"></li>
+                <li data-i18n="offers.ai.i2"></li>
+                <li data-i18n="offers.ai.i3"></li>
+                <li data-i18n="offers.ai.i4"></li>
+                <li data-i18n="offers.ai.i5"></li>
+              </ul>
+              <button class="btn btn-ghost btn-block js-open-modal" type="button"><span data-i18n="offers.ai.cta">Décrire ma mission</span> <span aria-hidden="true">→</span></button>
+            </div>
+          </article>
         </div>
       </section>
 
       <!-- WORK -->
       <section id="work" class="section">
-        <p class="kicker" data-i18n="work.kicker">RÉALISATIONS</p>
-        <h2 data-i18n="work.title">Exemples de ce que j'ai déjà construit</h2>
+        <p class="eyebrow" data-i18n="work.kicker">RÉALISATIONS</p>
+        <h2 class="section-title" data-i18n="work.title">Exemples de ce que j'ai déjà construit</h2>
         <div class="grid grid-3">
           <article class="card card-work card-featured reveal">
             <p class="card-badge"><span class="badge-dot" aria-hidden="true"></span><span data-i18n="work.7.badge">100 % LOCAL</span></p>
@@ -81,15 +184,15 @@
               <li data-i18n="work.7.f4"></li>
             </ul>
             <div class="card-actions">
-              <button class="card-link as-btn" type="button" data-gallery="jarvis"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
+              <button class="card-link as-btn" type="button" data-gallery="jarvis"><span data-i18n="work.gallery">Aperçu en images</span> <span aria-hidden="true">▣</span></button>
             </div>
             <p class="card-note" data-i18n="work.7.note"></p>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.1.title"></h3><p data-i18n="work.1.desc"></p>
             <div class="card-actions">
-              <button class="card-link as-btn" type="button" data-gallery="epta5"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
-              <a class="card-link" href="https://www.epta5.com" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+              <button class="card-link as-btn" type="button" data-gallery="epta5"><span data-i18n="work.gallery">Aperçu en images</span> <span aria-hidden="true">▣</span></button>
+              <a class="card-link" href="https://www.epta5.com" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> <span aria-hidden="true">↗</span></a>
             </div>
           </article>
           <article class="card card-work reveal">
@@ -101,22 +204,22 @@
           <article class="card card-work reveal">
             <h3 data-i18n="work.4.title"></h3><p data-i18n="work.4.desc"></p>
             <div class="card-actions">
-              <button class="card-link as-btn" type="button" data-gallery="track"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
-              <a class="card-link" href="https://track-record-lem.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+              <button class="card-link as-btn" type="button" data-gallery="track"><span data-i18n="work.gallery">Aperçu en images</span> <span aria-hidden="true">▣</span></button>
+              <a class="card-link" href="https://track-record-lem.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> <span aria-hidden="true">↗</span></a>
             </div>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.5.title"></h3><p data-i18n="work.5.desc"></p>
             <div class="card-actions">
-              <button class="card-link as-btn" type="button" data-gallery="seissix"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
-              <a class="card-link" href="https://seissix-newsletter.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+              <button class="card-link as-btn" type="button" data-gallery="seissix"><span data-i18n="work.gallery">Aperçu en images</span> <span aria-hidden="true">▣</span></button>
+              <a class="card-link" href="https://seissix-newsletter.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> <span aria-hidden="true">↗</span></a>
             </div>
           </article>
           <article class="card card-work reveal">
             <h3 data-i18n="work.6.title"></h3><p data-i18n="work.6.desc"></p>
             <div class="card-actions">
-              <button class="card-link as-btn" type="button" data-gallery="guide"><span data-i18n="work.gallery">Aperçu en images</span> ▣</button>
-              <a class="card-link" href="https://guide-investissement-2026.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> ↗</a>
+              <button class="card-link as-btn" type="button" data-gallery="guide"><span data-i18n="work.gallery">Aperçu en images</span> <span aria-hidden="true">▣</span></button>
+              <a class="card-link" href="https://guide-investissement-2026.netlify.app" target="_blank" rel="noopener noreferrer"><span data-i18n="work.visit">Visiter</span> <span aria-hidden="true">↗</span></a>
             </div>
           </article>
         </div>
@@ -124,12 +227,12 @@
 
       <!-- TOOLBOX -->
       <section id="toolbox" class="section">
-        <p class="kicker" data-i18n="toolbox.kicker">BOÎTE À OUTILS</p>
-        <h2 data-i18n="toolbox.title">Mon arsenal open source</h2>
+        <p class="eyebrow" data-i18n="toolbox.kicker">BOÎTE À OUTILS</p>
+        <h2 class="section-title" data-i18n="toolbox.title">Mon arsenal open source</h2>
         <p class="section-desc" data-i18n="toolbox.desc"></p>
-        <div class="toolbox reveal">
-          <div class="tool-cat">
-            <h4 data-i18n="toolbox.cat.video">Création & vidéo IA</h4>
+        <div class="toolbox">
+          <div class="tool-cat reveal">
+            <h3 data-i18n="toolbox.cat.video">Création & vidéo IA</h3>
             <ul>
               <li><a href="https://github.com/deepbeepmeep/Wan2GP" target="_blank" rel="noopener noreferrer">Wan2GP</a></li>
               <li><a href="https://github.com/anil-matcha/open-generative-ai" target="_blank" rel="noopener noreferrer">Open Generative AI</a></li>
@@ -137,8 +240,8 @@
               <li><a href="https://github.com/sosoj92/reels-vault" target="_blank" rel="noopener noreferrer">Reels Vault</a></li>
             </ul>
           </div>
-          <div class="tool-cat">
-            <h4 data-i18n="toolbox.cat.auto">Automatisation & productivité</h4>
+          <div class="tool-cat reveal">
+            <h3 data-i18n="toolbox.cat.auto">Automatisation & productivité</h3>
             <ul>
               <li><a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener noreferrer">n8n</a></li>
               <li><a href="https://github.com/calcom/cal.diy" target="_blank" rel="noopener noreferrer">cal.diy</a></li>
@@ -147,8 +250,8 @@
               <li><a href="https://github.com/anthropics/skills" target="_blank" rel="noopener noreferrer">Anthropic Skills</a></li>
             </ul>
           </div>
-          <div class="tool-cat">
-            <h4 data-i18n="toolbox.cat.dev">Développement & design</h4>
+          <div class="tool-cat reveal">
+            <h3 data-i18n="toolbox.cat.dev">Développement & design</h3>
             <ul>
               <li><a href="https://github.com/microsoft/playwright" target="_blank" rel="noopener noreferrer">Playwright</a></li>
               <li><a href="https://github.com/pbakaus/impeccable" target="_blank" rel="noopener noreferrer">Impeccable</a></li>
@@ -157,11 +260,11 @@
               <li><a href="https://github.com/anthropics/claude-cookbooks" target="_blank" rel="noopener noreferrer">Claude Cookbooks</a></li>
             </ul>
           </div>
-          <div class="tool-cat">
-            <h4 data-i18n="toolbox.cat.data">Data, audit & recherche</h4>
+          <div class="tool-cat reveal">
+            <h3 data-i18n="toolbox.cat.data">Data, audit & recherche</h3>
             <ul>
               <li><a href="https://github.com/plausible/analytics" target="_blank" rel="noopener noreferrer">Plausible Analytics</a></li>
-              <li><a href="https://github.com/usestrix/strix" target="_blank" rel="noopener noreferrer">Strix (audit sécurité)</a></li>
+              <li><a href="https://github.com/usestrix/strix" target="_blank" rel="noopener noreferrer">Strix</a></li>
               <li><a href="https://github.com/MadsLorentzen/ai-job-search" target="_blank" rel="noopener noreferrer">AI Job Search</a></li>
               <li><a href="https://github.com/virgiliojr94/book-to-skill" target="_blank" rel="noopener noreferrer">Book to Skill</a></li>
             </ul>
@@ -171,33 +274,34 @@
 
       <!-- MISSION FORM -->
       <section id="mission" class="section section-form">
-        <p class="kicker" data-i18n="form.kicker">DEMANDE DE MISSION</p>
-        <h2 data-i18n="form.title">Décrivez votre mission</h2>
-        <p class="section-desc" data-i18n="form.subtitle"></p>
+        <p class="eyebrow center" data-i18n="form.kicker">DEMANDE DE MISSION</p>
+        <h2 class="section-title center" data-i18n="form.title">Décrivez votre mission</h2>
+        <p class="section-desc center" data-i18n="form.subtitle"></p>
         <form id="mission-form" class="mission-form reveal" novalidate>
           <fieldset class="field field-full">
-            <legend data-i18n="form.clientType">Type de client</legend>
-            <div class="seg" role="radiogroup">
+            <legend id="ct-legend" data-i18n="form.clientType">Type de client</legend>
+            <div class="seg" role="radiogroup" aria-labelledby="ct-legend">
               <label class="seg-opt"><input type="radio" name="client_type" value="B2B" checked /><span data-i18n="form.clientType.b2b">Entreprise (B2B)</span></label>
               <label class="seg-opt"><input type="radio" name="client_type" value="B2C" /><span data-i18n="form.clientType.b2c">Particulier (B2C)</span></label>
             </div>
           </fieldset>
           <div class="field">
-            <label for="f-name" data-i18n="form.name">Nom / Prénom</label>
-            <input id="f-name" name="name" type="text" required data-i18n-ph="form.name.ph" />
+            <label for="f-name"><span data-i18n="form.name">Nom / Prénom</span><span class="req" aria-hidden="true"> *</span></label>
+            <input id="f-name" name="name" type="text" required autocomplete="name" data-i18n-ph="form.name.ph" />
           </div>
           <div class="field">
-            <label for="f-email" data-i18n="form.email">Email</label>
-            <input id="f-email" name="email" type="email" required data-i18n-ph="form.email.ph" />
+            <label for="f-email"><span data-i18n="form.email">Email</span><span class="req" aria-hidden="true"> *</span></label>
+            <input id="f-email" name="email" type="email" required autocomplete="email" data-i18n-ph="form.email.ph" />
           </div>
           <div class="field">
             <label for="f-company" data-i18n="form.company">Entreprise (si B2B)</label>
-            <input id="f-company" name="company" type="text" data-i18n-ph="form.company.ph" />
+            <input id="f-company" name="company" type="text" autocomplete="organization" data-i18n-ph="form.company.ph" />
           </div>
           <div class="field">
-            <label for="f-mission-type" data-i18n="form.missionType">Type de mission</label>
+            <label for="f-mission-type"><span data-i18n="form.missionType">Type de mission</span><span class="req" aria-hidden="true"> *</span></label>
             <select id="f-mission-type" name="mission_type" required>
               <option value="" data-i18n="form.missionType.ph">Choisir…</option>
+              <option value="site-vitrine" data-i18n="form.missionType.site">Site vitrine PME (700 € HT)</option>
               <option value="agents" data-i18n="form.missionType.agents">Agents IA / RAG</option>
               <option value="data" data-i18n="form.missionType.data">Pipelines de données / ETL</option>
               <option value="automation" data-i18n="form.missionType.auto">Automatisation de workflows</option>
@@ -223,19 +327,20 @@
             <label for="f-budget" data-i18n="form.budget">Budget ou TJM envisagé</label>
             <input id="f-budget" name="budget" type="text" data-i18n-ph="form.budget.ph" />
           </div>
-          <div class="field">
+          <div class="field field-full">
             <label for="f-deadline" data-i18n="form.deadline">Délai souhaité</label>
             <input id="f-deadline" name="deadline" type="text" data-i18n-ph="form.deadline.ph" />
           </div>
           <div class="field field-full">
-            <label for="f-description" data-i18n="form.description">Description de la mission</label>
+            <label for="f-description"><span data-i18n="form.description">Description de la mission</span><span class="req" aria-hidden="true"> *</span></label>
             <textarea id="f-description" name="description" rows="5" required data-i18n-ph="form.description.ph"></textarea>
           </div>
+          <p class="form-privacy field-full"><span data-i18n="form.required.note">* champ obligatoire.</span> <span data-i18n="form.privacy"></span></p>
           <p id="form-msg" class="form-msg" role="status" aria-live="polite"></p>
           <button class="btn btn-primary btn-submit" type="submit" data-i18n="form.submit">Envoyer la demande</button>
         </form>
         <div id="form-success" class="form-success" hidden>
-          <span class="success-icon">✓</span>
+          <span class="success-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7" /></svg></span>
           <h3 data-i18n="form.success.title">Demande transmise !</h3>
           <p data-i18n="form.success.desc"></p>
         </div>
@@ -279,6 +384,29 @@
       </div>
     </div>
 
+    <!-- MENTIONS LÉGALES -->
+    <div id="legal-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="legal-title">
+      <div class="modal-backdrop js-close-legal"></div>
+      <div class="modal-box modal-legal">
+        <button class="modal-close js-close-legal" type="button" aria-label="Fermer" data-i18n-aria="modal.close">✕</button>
+        <h2 id="legal-title" data-i18n="legal.title">Mentions légales</h2>
+        <h3 data-i18n="legal.publisher.title">Éditeur du site</h3>
+        <p>EPTA5 INC — <span data-i18n="legal.publisher.form">SAS au capital de 1 000 €</span><br />
+          <span data-i18n="legal.publisher.hq">Siège : 78 avenue des Champs-Élysées, Bureau 326, 75008 Paris</span><br />
+          SIREN 103 825 956 — RCS Paris — SIRET 103 825 956 00016<br />
+          <span data-i18n="legal.publisher.vat">N° TVA intracommunautaire : FR16103825956</span><br />
+          <a href="mailto:theo.mansopro@gmail.com">theo.mansopro@gmail.com</a> — +33 6 30 80 85 75</p>
+        <h3 data-i18n="legal.director.title">Directeur de la publication</h3>
+        <p data-i18n="legal.director.text">Théo Manso Pinto, Président d'EPTA5 INC.</p>
+        <h3 data-i18n="legal.host.title">Hébergeur</h3>
+        <p>GitHub, Inc. (GitHub Pages) — 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA — +1 877 448 4820</p>
+        <h3 data-i18n="legal.data.title">Données personnelles</h3>
+        <p data-i18n="legal.data.text"></p>
+        <h3 data-i18n="legal.cookies.title">Cookies</h3>
+        <p data-i18n="legal.cookies.text"></p>
+      </div>
+    </div>
+
     <!-- LIGHTBOX GALERIES -->
     <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Galerie">
       <div class="lb-backdrop"></div>
@@ -288,24 +416,29 @@
         <button class="lb-nav lb-prev" type="button" aria-label="Précédent">‹</button>
         <button class="lb-nav lb-next" type="button" aria-label="Suivant">›</button>
       </div>
-      <p class="lb-cap"></p>
+      <p class="lb-cap" aria-live="polite"></p>
       <div class="lb-dots"></div>
     </div>
 
     <footer class="footer">
-      <h2 data-i18n="footer.title">Théo Manso Pinto</h2>
-      <p data-i18n="footer.subtitle"></p>
-      <div class="footer-links">
-        <a href="mailto:theo.mansopro@gmail.com">theo.mansopro@gmail.com</a>
-        <a href="tel:+33630808575">+33 6 30 80 85 75</a>
-        <a href="https://www.linkedin.com/in/th%C3%A9o-manso-pinto" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        <a href="https://www.epta5.com" target="_blank" rel="noopener noreferrer">epta5.com</a>
+      <div class="footer-inner">
+        <div>
+          <p class="footer-brand">Théo Manso Pinto</p>
+          <p class="footer-sub" data-i18n="footer.subtitle"></p>
+        </div>
+        <div class="footer-links">
+          <a href="mailto:theo.mansopro@gmail.com">theo.mansopro@gmail.com</a>
+          <a href="tel:+33630808575">+33 6 30 80 85 75</a>
+          <a href="https://www.linkedin.com/in/th%C3%A9o-manso-pinto" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="https://www.epta5.com" target="_blank" rel="noopener noreferrer">epta5.com</a>
+        </div>
+        <div class="footer-links">
+          <a href="cv/CV_FDE_Theo_Manso_Pinto.pdf" download data-i18n="footer.cv.fr">CV Français (PDF)</a>
+          <a href="cv/Resume_FDE_Theo_Manso_Pinto_EN.pdf" download data-i18n="footer.cv.en">Resume English (PDF)</a>
+          <button class="footer-legal js-open-legal" type="button" data-i18n="footer.legal">Mentions légales</button>
+        </div>
       </div>
-      <div class="footer-links">
-        <a href="cv/CV_FDE_Theo_Manso_Pinto.pdf" download data-i18n="footer.cv.fr">CV Français (PDF)</a>
-        <a href="cv/Resume_FDE_Theo_Manso_Pinto_EN.pdf" download data-i18n="footer.cv.en">Resume English (PDF)</a>
-      </div>
-      <p class="footer-note" data-i18n="footer.rights"></p>
+      <p class="footer-note"><span>© 2026 EPTA5 INC</span> · <span data-i18n="footer.rights"></span></p>
     </footer>
   </body>
 </html>
