@@ -62,7 +62,16 @@ En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/hamed-coiffeur/
 - `exemples/hamed-coiffeur/index.html` : la page (tarifs 10 € / 15 €, équipe, réservation, horaires).
 - `src/hamed/data.ts` : coiffeurs, prix, horaires d'ouverture, liens Cal.com.
 - `src/hamed/booking.ts` : widget de réservation. Les RDV déjà pris sont inventés de façon déterministe (plus chargé le midi, le soir et le samedi). Un créneau réservé est gardé dans le navigateur (`localStorage`). Aucun RDV réel n'est envoyé.
-- `public/exemples/hamed-coiffeur/*.jpg` : portraits et salon générés avec Higgsfield Soul 2.0.
+- Design noir et blanc, mise en page éditoriale (aucune couleur).
+- `public/exemples/hamed-coiffeur/` :
+  - `hamed/sofiane/lucas/ines.jpg` : portraits de l'équipe, générés avec Higgsfield Soul 2.0, passés en N&B. Les prénoms et citations sont fictifs.
+  - `hero.jpg`, `og.jpg`, `g1`–`g5.jpg` : vraies photos Unsplash (licence Unsplash, usage commercial libre), converties en N&B :
+    - hero / og : Obi, https://unsplash.com/photos/-sRVfY0f2d8
+    - g1 : Michael DeMoya, https://unsplash.com/photos/Q82AM6BWBPM
+    - g2 : Gulom Nazarov, https://unsplash.com/photos/DrG4V5skbMY
+    - g3 : Mr Shave, https://unsplash.com/photos/4k60yfGy7fU
+    - g4 : Nathon Oski, https://unsplash.com/photos/EW_rqoSdDes
+    - g5 : Hai Phung, https://unsplash.com/photos/m4Pd_e-4zKs
 
 **Brancher un vrai Cal.com :**
 1. Créez un compte gratuit sur cal.com.
