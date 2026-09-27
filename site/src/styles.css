@@ -258,12 +258,11 @@ img { max-width: 100%; display: block; }
   position: absolute;
   inset: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.22), rgba(47, 91, 255, 0.12) 45%, transparent 70%);
-  filter: blur(30px);
+  /* Dégradé large plutôt qu'un filter: blur() : Safari gère mal les grands calques floutés. */
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.18), rgba(47, 91, 255, 0.1) 40%, rgba(47, 91, 255, 0.04) 58%, transparent 76%);
 }
 
 /* Sphère : boucle Kling fondue dans le fond ivoire (bords masqués) */
-.hero-visual { perspective: 1200px; }
 
 .hero-sphere {
   position: relative;
@@ -274,11 +273,10 @@ img { max-width: 100%; display: block; }
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 71%);
   mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 71%);
   transition: transform 600ms var(--ease-out);
-  will-change: transform;
 }
 
-.hero-sphere .media-poster,
-.hero-sphere video { mix-blend-mode: multiply; }
+/* Pas de mix-blend-mode sur la vidéo : Safari recompose le mélange à chaque image et fige la page.
+   Le fond de la boucle (246, 247, 242) est déjà celui de la page, et le masque radial fond les bords. */
 
 /* ---------- STATS ---------- */
 .stats {

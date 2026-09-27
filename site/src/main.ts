@@ -24,7 +24,7 @@ function setBackgroundInert(on: boolean): void {
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// --- Sphère du hero : léger effet de profondeur qui suit la souris ---
+// --- Sphère du hero : léger décalage qui suit la souris (2D seulement, plus léger pour Safari) ---
 const sphere = document.querySelector<HTMLElement>('.hero-sphere');
 if (sphere && !reduced && window.matchMedia('(pointer: fine)').matches) {
   let tx = 0;
@@ -38,7 +38,7 @@ if (sphere && !reduced && window.matchMedia('(pointer: fine)').matches) {
       if (!frame) {
         frame = requestAnimationFrame(() => {
           frame = 0;
-          sphere.style.transform = `translate3d(${tx * 12}px, ${ty * 10}px, 0) rotateX(${-ty * 6}deg) rotateY(${tx * 8}deg)`;
+          sphere.style.transform = `translate3d(${tx * 12}px, ${ty * 10}px, 0)`;
         });
       }
     },
