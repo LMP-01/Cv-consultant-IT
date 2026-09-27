@@ -98,22 +98,21 @@ function setPressed(group: HTMLElement, btn: HTMLElement | null): void {
 
 function renderCovers(): void {
   const wrap = $('.tb-covers');
-  wrap.innerHTML = '';
-  for (let n = 1; n <= MAX_COVERS; n++) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'tb-cover';
-    btn.textContent = String(n);
-    btn.setAttribute('aria-label', `${n} personne${n > 1 ? 's' : ''}`);
-    btn.setAttribute('aria-pressed', String(state.covers === n));
+  wrap.innerHTML = `
+    <button class="stepper-btn" type="button" data-step="-1" aria-label="Une personne de moins">−</button>
+    <output class="stepper-value" aria-live="polite"><strong>${state.covers}</strong> <span>personne${state.covers > 1 ? 's' : ''}</span></output>
+    <button class="stepper-btn" type="button" data-step="1" aria-label="Une personne de plus">+</button>`;
+  wrap.querySelector<HTMLButtonElement>('[data-step="-1"]')!.disabled = state.covers <= 1;
+  wrap.querySelector<HTMLButtonElement>('[data-step="1"]')!.disabled = state.covers >= MAX_COVERS;
+  wrap.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((btn) =>
     btn.addEventListener('click', () => {
-      state.covers = n;
+      state.covers = Math.min(MAX_COVERS, Math.max(1, state.covers + Number(btn.dataset.step)));
       state.time = null;
-      setPressed(wrap, btn);
+      renderCovers();
+      wrap.querySelector<HTMLButtonElement>(`[data-step="${btn.dataset.step}"]`)!.focus();
       update();
-    });
-    wrap.appendChild(btn);
-  }
+    })
+  );
 }
 
 function renderDays(): void {
