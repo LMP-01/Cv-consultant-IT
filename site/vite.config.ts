@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 
-// Déployé sur GitHub Pages : https://lmp-01.github.io/Cv-consultant-IT/
+// GitHub Pages : le workflow de déploiement fournit BASE_PATH (dérivé du nom du dépôt).
 export default defineConfig({
-  base: '/Cv-consultant-IT/',
+  base: process.env.BASE_PATH || '/theo-manso-pinto/',
   build: {
     target: 'es2020',
     assetsInlineLimit: 0

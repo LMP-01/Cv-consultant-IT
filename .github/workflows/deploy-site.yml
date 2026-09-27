@@ -37,14 +37,19 @@ jobs:
         working-directory: site
         run: npm ci
 
-      - name: Build
-        working-directory: site
-        run: npm run build
-
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
         if: github.event_name != 'pull_request'
         with:
           enablement: true
+
+      - name: Build
+        working-directory: site
+        run: npm run build
+        env:
+          # Chemin et URL réels de GitHub Pages : le site suit le nom du dépôt.
+          BASE_PATH: ${{ steps.pages.outputs.base_path && format('{0}/', steps.pages.outputs.base_path) || '' }}
+          VITE_SITE_URL: ${{ steps.pages.outputs.base_url }}
 
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
