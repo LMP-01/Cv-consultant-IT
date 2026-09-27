@@ -65,7 +65,7 @@ SOLDE_TTC = TOTAL_TTC - ACOMPTE_TTC
 
 
 def eur(amount, decimals=True):
-    """Format FR : 1 234,56 € (espaces insécables U+00A0)."""
+    """Format FR : 1 234,56 € (espaces insécables U+00A0)."""
     q = Decimal(amount).quantize(CENT if decimals else Decimal("1"),
                                  ROUND_HALF_UP)
     sign = "-" if q < 0 else ""
@@ -121,7 +121,7 @@ def box(flowables, width):
 
 
 def fields(labels, widths, gap=7):
-    """Champs à remplir : libellé + ligne de saisie (filet bas)."""
+    """Champs à remplir : libellé + ligne de saisie (filet bas)."""
     t = Table([[Paragraph(l, LBL), ""] for l in labels], colWidths=widths,
               rowHeights=[gap * mm] * len(labels))
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
@@ -195,12 +195,12 @@ def build():
         Paragraph("ÉMETTEUR", BOXH),
         Paragraph("<b>EPTA5 INC</b> — SAS au capital de "
                   f"1{NBSP}000{NBSP}€", VAL),
-        Paragraph("Siège : 78 avenue des Champs-Élysées, Bureau 326, "
+        Paragraph("Siège : 78 avenue des Champs-Élysées, Bureau 326, "
                   "75008 Paris", VAL),
         Paragraph(f"SIREN 103{NBSP}825{NBSP}956 — RCS Paris "
                   f"103{NBSP}825{NBSP}956", VAL),
         Paragraph(f"SIRET 103{NBSP}825{NBSP}956{NBSP}00016", VAL),
-        Paragraph("N° TVA intracommunautaire : FR16103825956", VAL),
+        Paragraph("N° TVA intracommunautaire : FR16103825956", VAL),
         Paragraph("www.epta5.com — theo.mansopro@gmail.com — "
                   f"+33{NBSP}6{NBSP}30{NBSP}80{NBSP}85{NBSP}75", VAL),
         Paragraph("Représentée par Théo Manso Pinto, Président", LBL),
@@ -224,14 +224,14 @@ def build():
     desc = [
         Paragraph("<b>Site vitrine PME — one-page mono-service</b>", TD),
         Paragraph(
-            "<font color='#545B6E'>Inclus : site one-page responsive "
+            "<font color='#545B6E'>Inclus : site one-page responsive "
             "(mobile, tablette, ordinateur) présentant un seul service, "
-            "jusqu'à 5 sections ; formulaire de contact avec envoi par "
-            "email ; page mentions légales et politique de "
-            "confidentialité ; SEO de base (balises title/description, "
-            "sitemap, performance) ; mise en ligne sur un hébergement "
+            "jusqu'à 5 sections ; formulaire de contact avec envoi par "
+            "email ; page mentions légales et politique de "
+            "confidentialité ; SEO de base (balises title/description, "
+            "sitemap, performance) ; mise en ligne sur un hébergement "
             "gratuit (Netlify ou Cloudflare Pages) et branchement du nom de "
-            "domaine du client ; 2 allers-retours de modifications."
+            "domaine du client ; 2 allers-retours de modifications."
             "</font>", SMALL),
     ]
     rows = [
@@ -278,14 +278,18 @@ def build():
         "Rédaction de contenus avancée",
         "Achat du nom de domaine",
         "Maintenance et évolutions après livraison",
-    ]) + [Paragraph("<i>Travaux supplémentaires hors périmètre : devis "
+    ]) + [Paragraph("<i>Travaux supplémentaires hors périmètre : devis "
                     "séparé.</i>", BODY)]
     right = head("Délai") + [Paragraph(
         "Livraison sous environ <b>2 semaines</b> à compter de la réception "
         "de l'acompte <b>et</b> de l'ensemble des contenus (textes, logo, "
         "images).", BODY)] + head("Propriété et hébergement") + bullets([
-            "Cession des droits d'exploitation sur les livrables au client "
-            "après paiement intégral.",
+            "Après paiement intégral, cession au client des droits de "
+            "reproduction, de représentation et d'adaptation sur les livrables "
+            "spécifiquement créés, pour une exploitation en ligne, pour le "
+            "monde entier et pour la durée légale des droits d'auteur. Les "
+            "composants open source et outils tiers restent régis par leurs "
+            "licences respectives.",
             "Nom de domaine et comptes d'hébergement ouverts au nom du "
             "client.",
             "Hébergement gratuit fourni par un tiers, sans garantie de "
@@ -303,11 +307,12 @@ def build():
     s += head("Conditions de paiement")
     s += bullets([
         f"Acompte de <b>{pct(ACOMPTE_RATE)}</b> à la signature, soit "
-        f"<b>{eur(ACOMPTE_HT)} HT</b> ({eur(ACOMPTE_TTC)} TTC) ; solde de "
-        f"<b>{eur(SOLDE_TTC)} TTC</b> à la livraison.",
-        "Règlement à 30 jours à réception de facture ; pas d'escompte pour "
-        "paiement anticipé.",
-        "En cas de retard de paiement : pénalités au taux de la BCE majoré "
+        f"<b>{eur(ACOMPTE_HT)} HT</b> ({eur(ACOMPTE_TTC)} TTC), payable à "
+        "réception de la facture d'acompte.",
+        f"Solde de <b>{eur(SOLDE_TTC)} TTC</b> facturé à la livraison, payable "
+        "à 30 jours à compter de la date d'émission de la facture. Pas "
+        "d'escompte pour paiement anticipé.",
+        "En cas de retard de paiement : pénalités au taux de la BCE majoré "
         "de 10 points et indemnité forfaitaire pour frais de recouvrement de "
         f"{eur(40, decimals=False)} (art. L441-10 et D441-5 du Code de "
         "commerce).",
@@ -320,7 +325,13 @@ def build():
         f"établissement avec une entreprise de 5{NBSP}salariés au plus, dont "
         "l'objet n'entre pas dans son activité principale, un droit de "
         f"rétractation de 14{NBSP}jours s'applique (art. L221-3 du Code de "
-        "la consommation).", BODY))
+        "la consommation). Le délai court à compter de la signature du devis ; "
+        "la rétractation s'exerce par e-mail à theo.mansopro@gmail.com "
+        "(formulaire type disponible sur demande). Si le client demande "
+        "expressément le démarrage de la prestation avant la fin de ce délai, "
+        "il reste redevable du montant correspondant aux travaux réalisés "
+        "jusqu'à sa rétractation. Les conditions générales de vente d'EPTA5 "
+        "INC sont disponibles sur demande.", BODY))
 
     # Signature
     sig_client = [
