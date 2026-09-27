@@ -79,3 +79,23 @@ En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/hamed-coiffeur/
 3. Remplissez `CAL_LINKS` dans `src/hamed/data.ts`, par exemple `{ any: 'hamed-coiffeur/coupe', hamed: 'hamed-coiffeur/hamed' }`.
 
 « Confirmer » ouvre alors la page Cal.com du coiffeur, sur le bon jour.
+
+### Trattoria Nonna Rosa (restaurant fictif)
+
+En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/nonna-rosa/
+
+- `exemples/nonna-rosa/index.html` : la page (histoire, carte, à emporter, réservation, galerie, horaires).
+- `src/nonna/data.ts` : carte (26 plats, tags végétarien / sans gluten), services midi/soir, horaires de retrait, capacité de la salle (40 couverts), `CAL_LINK`.
+- `src/nonna/menu.ts` : rendu de la carte, filtres et panier à emporter. Le panier est gardé dans `localStorage` et s'ouvre dans un tiroir `<dialog>`. Les créneaux de retrait sont proposés par quart d'heure, au plus tôt 30 minutes après l'heure actuelle. Aucune commande réelle n'est envoyée.
+- `src/nonna/booking.ts` : réservation de table.
+  - Les places restantes sont inventées de façon déterministe : plus chargé le soir, presque complet le vendredi et le samedi soir.
+  - Les tables réservées sont déduites grâce à `localStorage`.
+  - Si `CAL_LINK` est renseigné, « Confirmer » ouvre Cal.com.
+- `public/exemples/nonna-rosa/*.jpg` : vraies photos Unsplash (licence Unsplash), avec un léger étalonnage chaud :
+  - hero / og : Liubov Ilchuk, https://unsplash.com/photos/_qZOwG2oaj4
+  - story : Vincent Dörig, https://unsplash.com/photos/mciRIMaxiAM
+  - g1 : Fabrizio Pullara, https://unsplash.com/photos/vHRFraV4U00
+  - g2 : Aurélien Lemasson-Théobald, https://unsplash.com/photos/x00CzBt4Dfk
+  - g3 : Rob Wicks, https://unsplash.com/photos/fDLBn8X_IlU
+  - g4 : Eaters Collective, https://unsplash.com/photos/ddZYOtZUnBk
+  - g5 : Olga Petnyunene, https://unsplash.com/photos/n3GkbNzur3s
