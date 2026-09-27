@@ -879,6 +879,67 @@ fieldset.field { border: 0; }
   color: var(--accent);
 }
 
+/* ---------- PARCOURS MISSION DANS LA POP-UP ---------- */
+.wizard { width: min(760px, 100%); }
+
+.wz-head { display: flex; align-items: center; gap: 1rem; margin: -0.4rem 3rem 0.9rem 0; }
+
+.wz-back {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: none; border: 0; padding: 0.3rem 0; cursor: pointer;
+  font: 600 0.88rem/1 var(--font-body); color: var(--ink-dim);
+  transition: color 160ms var(--ease-out);
+}
+.wz-back:hover { color: var(--accent-ink); }
+
+.wz-progress { margin-left: auto; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+
+.wz-bar { height: 4px; border-radius: 999px; background: var(--accent-soft); overflow: hidden; margin-bottom: 1.6rem; }
+.wz-bar span { display: block; height: 100%; width: 20%; border-radius: inherit; background: var(--grad); transition: width 320ms var(--ease-out); }
+
+.wz-step:not([hidden]) { animation: wz-in 260ms var(--ease-out); }
+@keyframes wz-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+.wz-title:focus { outline: none; }
+
+.wz-missions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.wz-mission { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem 0.8rem 0.8rem; }
+.wz-thumb { width: 96px; height: 54px; border-radius: 10px; object-fit: cover; flex: none; background: var(--surface-2); }
+.wz-mission-text { display: grid; gap: 0.2rem; min-width: 0; }
+.wz-mission-text strong { font-family: var(--font-display); font-size: 1rem; }
+.wz-mission-text small { color: var(--ink-dim); font-size: 0.85rem; line-height: 1.4; }
+.choice[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); }
+
+.wz-label { font-size: 0.85rem; font-weight: 600; margin: 0 0 0.6rem; }
+.wz-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.4rem; }
+.chip {
+  padding: 0.75rem 1.1rem; border-radius: 12px; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--line-strong); color: var(--ink-dim);
+  font: 500 0.92rem/1.2 var(--font-body);
+  transition: border-color 160ms var(--ease-out), color 160ms var(--ease-out), background 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+.chip:active { transform: scale(0.97); }
+.chip[aria-pressed='true'] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); font-weight: 600; }
+
+.wizard .field { margin-bottom: 1.1rem; }
+.wz-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+.wz-grid .wz-company { grid-column: 1 / -1; }
+.wz-opt { font-weight: 400; color: var(--ink-faint); }
+.wz-msg { color: #c0264b; font-size: 0.9rem; min-height: 1.2em; margin-bottom: 0.6rem; }
+.wizard .form-privacy { margin: -0.2rem 0 0.8rem; }
+.wz-next, .wz-submit { margin-top: 0.2rem; }
+
+.wz-done { text-align: center; padding: 1.5rem 0 0.5rem; }
+.wz-done h2 { margin-bottom: 0.5rem; }
+.wz-done p { color: var(--ink-dim); max-width: 42ch; margin: 0 auto 1.5rem; }
+
+@media (max-width: 640px) {
+  .wz-missions, .wz-grid { grid-template-columns: 1fr; }
+  .wz-thumb { width: 72px; height: 44px; }
+  .wz-next, .wz-submit { width: 100%; }
+}
+
 .modal-legal { width: min(680px, 100%); }
 
 .modal-legal h3 {
@@ -1115,6 +1176,8 @@ fieldset.field { border: 0; }
 /* ---------- REDUCED MOTION ---------- */
 @media (prefers-reduced-motion: reduce) {
   .mission-fab { transition: none; }
+  .wz-step:not([hidden]) { animation: none; }
+  .wz-bar span { transition: none; }
   html { scroll-behavior: auto; }
   *,
   *::before,

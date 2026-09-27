@@ -365,37 +365,143 @@
     <!-- B2B / B2C MODAL -->
     <div id="client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-backdrop js-close-modal"></div>
-      <div class="modal-box">
+      <div class="modal-box wizard">
         <button class="modal-close js-close-modal" type="button" aria-label="Fermer" data-i18n-aria="modal.close">✕</button>
-        <h2 id="modal-title" data-i18n="modal.title">Vous êtes…</h2>
-        <div class="modal-choices">
-          <button class="choice js-choose" data-type="B2B" type="button">
-            <span class="choice-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16" />
-                <path d="M15 9h4a1 1 0 0 1 1 1v11" />
-                <path d="M2 21h20" />
-                <path d="M7.5 7.5h1M10.5 7.5h1M7.5 11h1M10.5 11h1M7.5 14.5h1M10.5 14.5h1" />
-                <path d="M17 13h.5M17 16.5h.5" />
-                <path d="M9 21v-3h1.5v3" />
-              </svg>
-            </span>
-            <h3 data-i18n="modal.b2b.title">Une entreprise</h3>
-            <p data-i18n="modal.b2b.desc"></p>
-            <span class="choice-cta" data-i18n="modal.b2b.cta">Mission B2B</span>
-          </button>
-          <button class="choice js-choose" data-type="B2C" type="button">
-            <span class="choice-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M5 20.5a7 7 0 0 1 14 0" />
-              </svg>
-            </span>
-            <h3 data-i18n="modal.b2c.title">Un particulier</h3>
-            <p data-i18n="modal.b2c.desc"></p>
-            <span class="choice-cta" data-i18n="modal.b2c.cta">Mission B2C</span>
-          </button>
+        <div class="wz-head" hidden>
+          <button class="wz-back" type="button"><span aria-hidden="true">←</span> <span data-i18n="wizard.back">Retour</span></button>
+          <p class="wz-progress" aria-live="polite"></p>
         </div>
+        <div class="wz-bar" hidden><span></span></div>
+
+        <section class="wz-step" data-step="1">
+          <h2 id="modal-title" class="wz-title" tabindex="-1" data-i18n="modal.title">Vous êtes…</h2>
+          <div class="modal-choices">
+            <button class="choice js-choose" data-type="B2B" type="button">
+              <span class="choice-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16" />
+                  <path d="M15 9h4a1 1 0 0 1 1 1v11" />
+                  <path d="M2 21h20" />
+                  <path d="M7.5 7.5h1M10.5 7.5h1M7.5 11h1M10.5 11h1M7.5 14.5h1M10.5 14.5h1" />
+                  <path d="M17 13h.5M17 16.5h.5" />
+                  <path d="M9 21v-3h1.5v3" />
+                </svg>
+              </span>
+              <h3 data-i18n="modal.b2b.title">Une entreprise</h3>
+              <p data-i18n="modal.b2b.desc"></p>
+              <span class="choice-cta" data-i18n="modal.b2b.cta">Mission B2B</span>
+            </button>
+            <button class="choice js-choose" data-type="B2C" type="button">
+              <span class="choice-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20.5a7 7 0 0 1 14 0" />
+                </svg>
+              </span>
+              <h3 data-i18n="modal.b2c.title">Un particulier</h3>
+              <p data-i18n="modal.b2c.desc"></p>
+              <span class="choice-cta" data-i18n="modal.b2c.cta">Mission B2C</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="wz-step" data-step="2" hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s2.title">Quel type de mission ?</h2>
+          <div class="wz-missions">
+            <button class="choice wz-mission" type="button" data-value="site-vitrine" aria-pressed="false">
+              <img class="wz-thumb" src="/media/site.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.site.title"></strong><small data-i18n="wizard.m.site.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="agents" aria-pressed="false">
+              <img class="wz-thumb" src="/media/agents.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.agents.title"></strong><small data-i18n="wizard.m.agents.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="data" aria-pressed="false">
+              <img class="wz-thumb" src="/media/data.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.data.title"></strong><small data-i18n="wizard.m.data.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="automation" aria-pressed="false">
+              <img class="wz-thumb" src="/media/auto.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.auto.title"></strong><small data-i18n="wizard.m.auto.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="bi" aria-pressed="false">
+              <img class="wz-thumb" src="/media/bi.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.bi.title"></strong><small data-i18n="wizard.m.bi.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="audit" aria-pressed="false">
+              <img class="wz-thumb" src="/media/audit.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.audit.title"></strong><small data-i18n="wizard.m.audit.desc"></small></span>
+            </button>
+            <button class="choice wz-mission" type="button" data-value="other" aria-pressed="false">
+              <img class="wz-thumb" src="/media/sphere.jpg" alt="" width="96" height="54" loading="lazy" />
+              <span class="wz-mission-text"><strong data-i18n="wizard.m.other.title"></strong><small data-i18n="wizard.m.other.desc"></small></span>
+            </button>
+          </div>
+        </section>
+
+        <form class="wz-step" data-step="3" novalidate hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s3.title">Budget et délai</h2>
+          <p class="wz-label" id="wz-pay-label" data-i18n="form.payMode">Mode de rémunération</p>
+          <div class="wz-chips" role="group" aria-labelledby="wz-pay-label" data-field="pay_mode">
+            <button class="chip" type="button" data-value="Forfait" aria-pressed="false" data-i18n="form.payMode.forfait"></button>
+            <button class="chip" type="button" data-value="TJM" aria-pressed="false" data-i18n="form.payMode.tjm"></button>
+            <button class="chip" type="button" data-value="Régie" aria-pressed="false" data-i18n="form.payMode.regie"></button>
+            <button class="chip" type="button" data-value="Autre" aria-pressed="false" data-i18n="form.payMode.other"></button>
+          </div>
+          <p class="wz-label" id="wz-deadline-label" data-i18n="form.deadline">Délai souhaité</p>
+          <div class="wz-chips" role="group" aria-labelledby="wz-deadline-label" data-field="deadline">
+            <button class="chip" type="button" data-value="urgent" aria-pressed="false" data-i18n="wizard.deadline.urgent"></button>
+            <button class="chip" type="button" data-value="soon" aria-pressed="false" data-i18n="wizard.deadline.soon"></button>
+            <button class="chip" type="button" data-value="flexible" aria-pressed="false" data-i18n="wizard.deadline.flexible"></button>
+          </div>
+          <div class="field">
+            <label for="wz-budget"><span data-i18n="form.budget">Budget ou TJM envisagé</span> <span class="wz-opt" data-i18n="wizard.optional">(facultatif)</span></label>
+            <input id="wz-budget" name="budget" type="text" data-i18n-ph="form.budget.ph" />
+          </div>
+          <button class="btn btn-primary wz-next" type="submit"><span data-i18n="wizard.next">Continuer</span> <span aria-hidden="true">→</span></button>
+        </form>
+
+        <form class="wz-step" data-step="4" novalidate hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s4.title">Votre projet</h2>
+          <div class="field">
+            <label for="wz-description"><span data-i18n="form.description">Description de la mission</span><span class="req" aria-hidden="true"> *</span></label>
+            <textarea id="wz-description" name="description" rows="5" required data-i18n-ph="form.description.ph"></textarea>
+          </div>
+          <div class="field">
+            <label for="wz-tools"><span data-i18n="form.tools">Outils souhaités</span> <span class="wz-opt" data-i18n="wizard.optional">(facultatif)</span></label>
+            <input id="wz-tools" name="tools" type="text" data-i18n-ph="form.tools.ph" />
+          </div>
+          <p class="wz-msg" role="status" aria-live="polite"></p>
+          <button class="btn btn-primary wz-next" type="submit"><span data-i18n="wizard.next">Continuer</span> <span aria-hidden="true">→</span></button>
+        </form>
+
+        <form class="wz-step" data-step="5" novalidate hidden>
+          <h2 class="wz-title" tabindex="-1" data-i18n="wizard.s5.title">Vos coordonnées</h2>
+          <div class="wz-grid">
+            <div class="field">
+              <label for="wz-name"><span data-i18n="form.name">Nom / Prénom</span><span class="req" aria-hidden="true"> *</span></label>
+              <input id="wz-name" name="name" type="text" required autocomplete="name" data-i18n-ph="form.name.ph" />
+            </div>
+            <div class="field">
+              <label for="wz-email"><span data-i18n="form.email">E-mail</span><span class="req" aria-hidden="true"> *</span></label>
+              <input id="wz-email" name="email" type="email" required autocomplete="email" data-i18n-ph="form.email.ph" />
+            </div>
+            <div class="field wz-company">
+              <label for="wz-company" data-i18n="wizard.company">Entreprise</label>
+              <input id="wz-company" name="company" type="text" autocomplete="organization" data-i18n-ph="form.company.ph" />
+            </div>
+          </div>
+          <p class="form-privacy" data-i18n="form.privacy"></p>
+          <p class="wz-msg" role="status" aria-live="polite"></p>
+          <button class="btn btn-primary wz-submit" type="submit" data-i18n="form.submit">Envoyer la demande</button>
+        </form>
+
+        <section class="wz-step wz-done" data-step="done" hidden>
+          <span class="success-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7" /></svg></span>
+          <h2 class="wz-title" tabindex="-1" data-i18n="form.success.title">Demande transmise !</h2>
+          <p data-i18n="form.success.desc"></p>
+          <button class="btn btn-ghost js-close-modal" type="button" data-i18n="modal.close">Fermer</button>
+        </section>
       </div>
     </div>
 
