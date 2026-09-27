@@ -54,13 +54,13 @@
           </div>
         </div>
         <div class="slide-controls">
-          <button class="round-btn slide-prev" type="button" aria-label="Photo précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+          <button class="round-btn slide-prev" type="button" aria-label="Photo précédente"><span aria-hidden="true">‹</span></button>
           <div class="dots" role="group" aria-label="Choisir une photo">
             <button type="button" aria-label="Photo 1" aria-current="true"></button>
             <button type="button" aria-label="Photo 2"></button>
             <button type="button" aria-label="Photo 3"></button>
           </div>
-          <button class="round-btn slide-next" type="button" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+          <button class="round-btn slide-next" type="button" aria-label="Photo suivante"><span aria-hidden="true">›</span></button>
         </div>
       </section>
 
@@ -112,17 +112,20 @@
             <h2>À emporter</h2>
             <p class="ornament" aria-hidden="true"><span></span>✦<span></span></p>
           </header>
+          <figure class="takeaway-anim" data-video="exemples/nonna-rosa/takeaway.mp4">
+            <img class="takeaway-poster" src="/exemples/nonna-rosa/takeaway.jpg" alt="" width="540" height="540" loading="lazy" />
+          </figure>
           <ol class="steps">
             <li>
-              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 12h10l1-12M9 7V5a3 3 0 0 1 6 0v2" /></svg></span>
+              <span class="step-icon"><img src="/exemples/nonna-rosa/icons/bag.webp" alt="" width="112" height="112" loading="lazy" /></span>
               <strong>Composez</strong><span>Ajoutez vos plats depuis la carte.</span>
             </li>
             <li>
-              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg></span>
+              <span class="step-icon"><img src="/exemples/nonna-rosa/icons/clock.webp" alt="" width="112" height="112" loading="lazy" /></span>
               <strong>Choisissez l’heure</strong><span>Retrait par quart d’heure, dès 30 minutes.</span>
             </li>
             <li>
-              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6v10H3zM9 20v-6h6v6" /></svg></span>
+              <span class="step-icon"><img src="/exemples/nonna-rosa/icons/shop.webp" alt="" width="112" height="112" loading="lazy" /></span>
               <strong>Passez prendre</strong><span>Paiement au comptoir, carte ou espèces.</span>
             </li>
           </ol>
@@ -174,7 +177,7 @@
               </aside>
             </div>
             <div class="tb-done" hidden>
-              <p class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></p>
+              <p class="done-icon" aria-hidden="true"><img src="/exemples/nonna-rosa/icons/check.webp" alt="" width="96" height="96" /></p>
               <h3 class="tb-done-title" tabindex="-1"></h3>
               <p class="tb-done-text"></p>
               <p class="demo-note">Démo : aucune réservation réelle n’a été envoyée.</p>
@@ -192,8 +195,8 @@
               <h2 id="gallery-title">Fait maison, chaque jour</h2>
             </div>
             <div class="carousel-nav">
-              <button class="round-btn round-btn-dark carousel-prev" type="button" aria-label="Photos précédentes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
-              <button class="round-btn round-btn-dark carousel-next" type="button" aria-label="Photos suivantes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+              <button class="round-btn round-btn-dark carousel-prev" type="button" aria-label="Photos précédentes"><span aria-hidden="true">‹</span></button>
+              <button class="round-btn round-btn-dark carousel-next" type="button" aria-label="Photos suivantes"><span aria-hidden="true">›</span></button>
             </div>
           </header>
         </div>
@@ -233,7 +236,7 @@
     </main>
 
     <button class="cart-fab js-open-cart" type="button" hidden>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 12h10l1-12M9 7V5a3 3 0 0 1 6 0v2" /></svg>
+      <img src="/exemples/nonna-rosa/icons/bag-96.webp" alt="" width="40" height="40" />
       <span class="cart-fab-count">0</span>
       <span class="cart-fab-total"></span>
     </button>
@@ -242,7 +245,7 @@
       <div class="cart-flow">
         <header class="cart-head">
           <h2 id="cart-title">Votre commande</h2>
-          <button class="round-btn round-btn-dark js-close-cart" type="button" aria-label="Fermer le panier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+          <button class="round-btn round-btn-dark js-close-cart" type="button" aria-label="Fermer le panier"><span aria-hidden="true">✕</span></button>
         </header>
         <p class="cart-empty">Votre panier est vide. Ajoutez des plats depuis la carte.</p>
         <ul class="cart-lines"></ul>
@@ -258,7 +261,7 @@
         </div>
       </div>
       <div class="cart-done" hidden>
-        <p class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></p>
+        <p class="done-icon" aria-hidden="true"><img src="/exemples/nonna-rosa/icons/check.webp" alt="" width="96" height="96" /></p>
         <h2 class="cart-done-title" tabindex="-1"></h2>
         <p class="cart-done-text"></p>
         <p class="demo-note">Démo : aucune commande réelle n’a été envoyée.</p>

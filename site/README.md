@@ -92,6 +92,9 @@ En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/nonna-rosa/
   - carte à onglets (une catégorie à la fois) ;
   - panier en bouton flottant et feuille du bas ;
   - nombre de couverts au compteur − / +.
+- Pas d'icônes SVG :
+  - `public/exemples/nonna-rosa/icons/*.webp` sont des icônes 3D générées avec GPT Image 2.5 (Higgsfield), fond transparent : sac, minuteur, devanture, basilic, sans gluten, validation ;
+  - `takeaway.mp4` est une boucle Kling 3.0 du sac à emporter, avec son fond recalé sur la couleur de la section (pas de `mix-blend-mode`, pour Safari).
 - `src/nonna/data.ts` : carte (26 plats, tags végétarien / sans gluten), services midi/soir, horaires de retrait, capacité de la salle (40 couverts), `CAL_LINK`.
 - `src/nonna/menu.ts` : carte à onglets, filtres et panier à emporter. Le panier est gardé dans `localStorage` et s'ouvre dans un tiroir `<dialog>`. Les créneaux de retrait sont proposés par quart d'heure, au plus tôt 30 minutes après l'heure actuelle. Aucune commande réelle n'est envoyée.
 - `src/nonna/booking.ts` : réservation de table.

@@ -60,6 +60,29 @@ document.querySelector('.carousel-next')!.addEventListener('click', () =>
   carousel.scrollBy({ left: step(), behavior: reduced ? 'auto' : 'smooth' })
 );
 
+// --- Animation Kling du sac à emporter : vidéo créée à l'écran, poster seul en reduced-motion ---
+const anim = document.querySelector<HTMLElement>('.takeaway-anim');
+if (anim && !reduced && 'IntersectionObserver' in window) {
+  let video: HTMLVideoElement | null = null;
+  new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        if (!video) {
+          video = document.createElement('video');
+          video.src = import.meta.env.BASE_URL + anim.dataset.video!;
+          video.muted = true;
+          video.loop = true;
+          video.playsInline = true;
+          video.setAttribute('aria-hidden', 'true');
+          video.addEventListener('playing', () => anim.classList.add('is-playing'), { once: true });
+          anim.appendChild(video);
+        }
+        video.play().catch(() => undefined);
+      } else video?.pause();
+    }
+  }, { threshold: 0.25 }).observe(anim);
+}
+
 // --- Apparition des sections au scroll ---
 const revealObserver = new IntersectionObserver(
   (entries) => {

@@ -29,9 +29,10 @@ const total = (): number => [...cart].reduce((sum, [id, q]) => sum + DISHES.get(
 
 // --- Carte ---
 
+const ICONS = `${import.meta.env.BASE_URL}exemples/nonna-rosa/icons/`;
 const TAG_ICON: Record<Tag, string> = {
-  veg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7" /></svg>',
-  gf: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9M12 9c-3 0-4-3-4-5 2 0 4 1 4 5zm0 0c3 0 4-3 4-5-2 0-4 1-4 5zM12 15c-3 0-4-3-4-5 2 0 4 1 4 5zm0 0c3 0 4-3 4-5-2 0-4 1-4 5zM4 4l16 16" /></svg>'
+  veg: `<img src="${ICONS}veg.webp" alt="" width="18" height="18" loading="lazy" />`,
+  gf: `<img src="${ICONS}gf.webp" alt="" width="18" height="18" loading="lazy" />`
 };
 
 function tagBadges(tags: Tag[] = []): string {
@@ -41,8 +42,8 @@ function tagBadges(tags: Tag[] = []): string {
 let activeCat = MENU[0].id;
 let activeFilter = 'all';
 
-const PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>';
-const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>';
+const PLUS = '<span aria-hidden="true">+</span>';
+const CHECK = '<span aria-hidden="true">✓</span>';
 
 function renderMenu(root: HTMLElement, tabs: HTMLElement): void {
   tabs.innerHTML = MENU.map(
