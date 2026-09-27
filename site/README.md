@@ -43,6 +43,21 @@ python .github/workflows/build_devis_site_pme.py   # depuis la racine du repo
 
 La sortie est reproductible (`invariant=1`). Committez le PDF régénéré : il est servi tel quel par le site.
 
+## Rendez-vous visio / téléphone
+
+Deux façons d'arriver à la prise de rendez-vous dans la pop-up (`src/wizard.ts`) :
+- **À la fin du parcours « Demander une mission » :** étape « On en parle de vive voix ? » (Visio / Téléphone / Pas maintenant), puis le choix du créneau.
+- **Par le bouton « Réserver un appel » :** dans le hero, et le lien sous « Vous êtes… ». Il ouvre directement le choix Visio / Téléphone, puis le créneau, puis les coordonnées.
+
+Réglages dans `src/calls.ts` :
+- `CALL_SLOTS` : les créneaux proposés (13h, 18h, 19h, 20h, 21h, 22h), heure de Paris.
+- `CALL_DAYS` : le calendrier affiché, 14 jours à partir d'aujourd'hui, tous les jours.
+- **Faux rendez-vous :**
+  - 1 à 3 créneaux sont déjà pris chaque jour, calculés à partir de la date : tout le monde voit les mêmes ;
+  - un créneau réservé par le visiteur apparaît ensuite comme pris dans son navigateur.
+- Chaque rendez-vous arrive par e-mail via Web3Forms, avec pour objet `[RDV visio] mer. 30/09 19h — Nom` : type, jour, heure et téléphone.
+- `CAL_LINK` : laissez vide tant qu'il n'y a pas de compte Cal.com. Renseigné (ex. `theo-manso-pinto/30min`), le choix d'un jour ouvre aussi la page Cal.com correspondante.
+
 ## Email (Web3Forms)
 
 La clé d'accès est dans `src/form.ts` (`WEB3FORMS_ACCESS_KEY`). Pour la changer, créez-en une sur https://app.web3forms.com.
