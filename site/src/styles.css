@@ -533,9 +533,9 @@ img { max-width: 100%; display: block; }
 /* ---------- OFFERS ---------- */
 .offers {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.4rem;
-  align-items: start;
+  align-items: stretch;
   max-width: 1040px;
   margin: 0 auto;
 }
@@ -557,7 +557,32 @@ img { max-width: 100%; display: block; }
   box-shadow: var(--shadow-2);
 }
 
-.media-offer { border-bottom: 1px solid var(--line); }
+.media-offer { border-bottom: 1px solid var(--line); aspect-ratio: 3.2 / 1; }
+.price-card .price-body { padding-top: 1.4rem; }
+.price-card .pill { margin-bottom: 0.7rem; }
+.price-card .price-amount { font-size: clamp(2.4rem, 4.4vw, 3rem); }
+.price-card-featured .checklist { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+.price-card .btn-block { margin-top: 1.2rem; }
+.price-card .text-link.as-btn { margin-top: 0.7rem; }
+@media (max-width: 560px) { .price-card-featured .checklist { grid-template-columns: 1fr; } .media-offer { aspect-ratio: 2.4 / 1; } }
+
+/* Cartes d'offres de même hauteur, boutons alignés en bas */
+.price-card { display: flex; flex-direction: column; }
+.price-card .price-body { flex: 1; }
+.price-card .checklist { flex: 1; align-content: start; }
+.price-card .price-lead { margin: 0.8rem 0 1rem; }
+.price-body .text-link.as-btn { background: none; border: 0; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.92rem; color: var(--accent-ink); }
+
+/* Détail de l'offre dans une pop-up */
+.offer-detail { width: min(640px, 100%); }
+.offer-detail .pill { display: inline-block; }
+.offer-detail-media { border-radius: 16px; margin-bottom: 1.2rem; aspect-ratio: 2.2 / 1; }
+.offer-detail h2 { margin-bottom: 0.2rem; }
+.offer-detail h3 { font-family: var(--font-display); font-size: 1.05rem; margin: 1.4rem 0 0.7rem; }
+.offer-detail .price { margin-top: 0.3rem; }
+.offer-detail-excl { color: var(--ink-dim); font-size: 0.92rem; }
+.offer-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.4rem; margin-top: 1.6rem; }
+.offer-detail-actions .text-link { margin-top: 0; }
 
 .price-body { padding: 1.8rem 2rem 2rem; display: flex; flex-direction: column; }
 
