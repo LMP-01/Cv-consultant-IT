@@ -274,6 +274,8 @@ async function send(form: HTMLElement | null): Promise<void> {
         doneCall.textContent = `${t('call.done')} ${callSummary()}. ${t(state.callType === 'phone' ? 'call.done.phone' : 'call.done.visio')}`;
       }
       $('.wz-done-desc').hidden = state.mode === 'call';
+      // Demande de mission envoyée sans appel : on repropose la réservation.
+      $('.wz-done-offer').hidden = hasCall || state.mode === 'call';
       show('done');
     }
   } catch {
@@ -362,6 +364,15 @@ export function initWizard(): void {
       return;
     }
     void send(form);
+  });
+
+  // Après une demande sans appel : réservation avec les coordonnées déjà saisies.
+  $('.wz-call-after').addEventListener('click', () => {
+    const keep = { name: $<HTMLInputElement>('#wz-name').value, email: $<HTMLInputElement>('#wz-email').value, company: $<HTMLInputElement>('#wz-company').value };
+    reset('call');
+    $<HTMLInputElement>('#cc-name').value = keep.name;
+    $<HTMLInputElement>('#cc-email').value = keep.email;
+    $<HTMLInputElement>('#cc-company').value = keep.company;
   });
 
   document.querySelectorAll<HTMLElement>('.js-start-call').forEach((el) => el.addEventListener('click', () => startCall()));

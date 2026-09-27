@@ -975,6 +975,8 @@ fieldset.field { border: 0; }
 .call-slot:disabled:hover { border-color: var(--line-strong); color: var(--ink-faint); }
 
 .wz-full { grid-column: 1 / -1; }
+.wz-done-offer { border-top: 1px solid var(--line); margin: 0.4rem auto 1.4rem; padding-top: 1.4rem; max-width: 46ch; }
+.wz-done-offer p { margin: 0 auto 1rem; }
 .wz-done-call { color: var(--ink); font-weight: 500; max-width: 46ch; margin: -0.8rem auto 1.5rem; }
 
 .wz-done { text-align: center; padding: 1.5rem 0 0.5rem; }

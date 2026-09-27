@@ -230,5 +230,6 @@
   "call.confirm": "Confirm the appointment",
   "call.done": "Appointment requested:",
   "call.done.visio": "I’ll email you the video link.",
-  "call.done.phone": "I’ll call you on the number you gave."
+  "call.done.phone": "I’ll call you on the number you gave.",
+  "call.after": "Would you rather talk it through? Book a 30-minute video or phone call."
 }

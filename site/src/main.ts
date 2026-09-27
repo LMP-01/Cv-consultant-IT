@@ -101,16 +101,11 @@ document.querySelectorAll('.js-offer').forEach((btn) =>
 );
 
 // --- Bouton « Demander une mission » flottant, centré en bas de l'écran ---
-// Visible dès que le bouton du hero sort de l'écran, masqué sur les offres et la section formulaire.
+// Toujours affiché une fois le hero dépassé (le bouton du hero est alors au-dessus de l'écran).
 const fab = document.querySelector<HTMLElement>('.mission-fab');
 const heroCta = document.querySelector('.hero-ctas');
-const missionSection = document.getElementById('mission');
-if (fab && heroCta && missionSection) {
-  let heroVisible = true;
-  let formVisible = false;
-  let offersVisible = false;
-  const sync = (): void => {
-    const show = !heroVisible && !formVisible && !offersVisible;
+if (fab && heroCta) {
+  const sync = (show: boolean): void => {
     if (show) {
       fab.hidden = false;
       requestAnimationFrame(() => fab.classList.add('is-visible'));
@@ -122,21 +117,7 @@ if (fab && heroCta && missionSection) {
   fab.addEventListener('transitionend', () => {
     if (!fab.classList.contains('is-visible')) fab.hidden = true;
   });
-  new IntersectionObserver(([e]) => {
-    heroVisible = e.isIntersecting;
-    sync();
-  }).observe(heroCta);
-  new IntersectionObserver(([e]) => {
-    formVisible = e.isIntersecting;
-    sync();
-  }, { threshold: 0.15 }).observe(missionSection);
-  // Les cartes d'offres ont leurs propres boutons : on évite de les masquer.
-  const offersCards = document.querySelector('#offers .offers');
-  if (offersCards)
-    new IntersectionObserver(([e]) => {
-      offersVisible = e.isIntersecting;
-      sync();
-    }, { rootMargin: '0px 0px -80px 0px' }).observe(offersCards);
+  new IntersectionObserver(([e]) => sync(!e.isIntersecting && e.boundingClientRect.bottom < 0)).observe(heroCta);
 }
 
 // --- Apparition au scroll ---
