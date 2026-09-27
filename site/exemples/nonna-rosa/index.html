@@ -6,86 +6,98 @@
     <meta name="robots" content="noindex" />
     <title>Trattoria Nonna Rosa · Restaurant italien à Paris 10e</title>
     <meta name="description" content="Pâtes fraîches maison, pizzas au four à bois, tiramisù de la Nonna. Réservez une table ou commandez à emporter." />
-    <meta name="theme-color" content="#faf6ef" />
+    <meta name="theme-color" content="#f6efe3" />
     <meta property="og:title" content="Trattoria Nonna Rosa · Restaurant italien à Paris 10e" />
     <meta property="og:description" content="Pâtes fraîches maison, pizzas au four à bois. Réservation et commande à emporter en ligne." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="%VITE_SITE_URL%/exemples/nonna-rosa/og.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%239e3b2c'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='19' text-anchor='middle' fill='%23faf6ef'%3ER%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23b4532f'/%3E%3Ctext x='16' y='22' font-family='Georgia' font-style='italic' font-size='18' text-anchor='middle' fill='%23f6efe3'%3ER%3C/text%3E%3C/svg%3E" />
   </head>
   <body>
     <a class="skip" href="#reserver">Aller à la réservation</a>
 
     <header class="top">
-      <div class="wrap top-inner">
-        <a class="brand" href="#">Nonna Rosa<span>Trattoria</span></a>
-        <nav aria-label="Navigation principale">
+      <nav class="top-inner" aria-label="Navigation principale">
+        <div class="top-links">
           <a href="#carte">La carte</a>
           <a href="#emporter">À emporter</a>
-          <a href="#reserver">Réserver</a>
+        </div>
+        <a class="brand" href="#"><span class="brand-script">Trattoria</span><span class="brand-name">Nonna Rosa</span></a>
+        <div class="top-links top-links-end">
           <a href="#infos">Infos</a>
-        </nav>
-        <a class="btn btn-small" href="#reserver">Réserver une table</a>
-      </div>
+          <a class="pill pill-small" href="#reserver">Réserver</a>
+        </div>
+      </nav>
     </header>
 
     <main>
-      <section class="hero">
-        <div class="hero-text">
-          <p class="eyebrow">Cuisine italienne familiale — Paris 10e — depuis 1998</p>
-          <h1><span>Trattoria</span><span>Nonna Rosa.</span></h1>
-          <p class="lead">Des pâtes fraîches roulées chaque matin, des pizzas cuites au four à bois et le tiramisù de la Nonna. Comme à la maison, en plein Paris.</p>
-          <div class="hero-cta">
-            <a class="btn" href="#reserver">Réserver une table</a>
-            <a class="btn btn-line" href="#carte">Commander à emporter</a>
-          </div>
-          <dl class="hero-facts">
-            <div><dt>Pâtes</dt><dd>Fraîches, maison</dd></div>
-            <div><dt>Pizzas</dt><dd>Four à bois</dd></div>
-            <div><dt>Avis</dt><dd>4,8/5</dd></div>
-          </dl>
+      <section class="hero" aria-roledescription="carrousel" aria-label="Photos du restaurant">
+        <div class="slides">
+          <figure class="slide is-active" aria-roledescription="diapositive" aria-label="1 sur 3">
+            <img src="/exemples/nonna-rosa/slide1.jpg" alt="Une table dressée : linguine aux palourdes, spritz et verres de vin blanc" width="2000" height="1250" fetchpriority="high" />
+          </figure>
+          <figure class="slide" aria-roledescription="diapositive" aria-label="2 sur 3">
+            <img src="/exemples/nonna-rosa/slide2.jpg" alt="Pizza qui cuit dans le four à bois" width="2000" height="1250" loading="lazy" />
+          </figure>
+          <figure class="slide" aria-roledescription="diapositive" aria-label="3 sur 3">
+            <img src="/exemples/nonna-rosa/slide3.jpg" alt="Pappardelle aux champignons et parmesan" width="2000" height="1250" loading="lazy" />
+          </figure>
         </div>
-        <figure class="hero-photo">
-          <img src="/exemples/nonna-rosa/hero.jpg" alt="Une table dressée : linguine aux palourdes, spritz et verres de vin blanc" width="1400" height="1866" fetchpriority="high" />
-        </figure>
+        <div class="hero-content">
+          <p class="hero-kicker">Cucina di famiglia · dal 1998</p>
+          <h1>Nonna Rosa</h1>
+          <p class="hero-lead">Pâtes fraîches roulées chaque matin, pizzas au four à bois et le tiramisù de la Nonna, au cœur du 10e.</p>
+          <div class="hero-cta">
+            <a class="pill" href="#reserver">Réserver une table</a>
+            <a class="pill pill-ghost" href="#carte">Commander à emporter</a>
+          </div>
+        </div>
+        <div class="slide-controls">
+          <button class="round-btn slide-prev" type="button" aria-label="Photo précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+          <div class="dots" role="group" aria-label="Choisir une photo">
+            <button type="button" aria-label="Photo 1" aria-current="true"></button>
+            <button type="button" aria-label="Photo 2"></button>
+            <button type="button" aria-label="Photo 3"></button>
+          </div>
+          <button class="round-btn slide-next" type="button" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+        </div>
       </section>
 
       <section class="story reveal">
         <div class="wrap story-inner">
-          <figure class="story-photo">
+          <figure class="arch">
             <img src="/exemples/nonna-rosa/story.jpg" alt="Des mains passent la pâte fraîche dans une machine à pâtes" width="1000" height="1250" loading="lazy" />
           </figure>
           <div class="story-text">
-            <p class="eyebrow">La maison</p>
-            <p class="story-quote">« Ici, on ne presse personne. On cuisine comme Rosa le faisait à Naples : avec de bons produits, du temps, et beaucoup de monde autour de la table. »</p>
-            <p class="muted">Rosa a ouvert la trattoria en 1998 avec ses deux fils. Les recettes n’ont pas changé : pâte à pizza maturée 48 heures, sauce tomate San Marzano, pâtes fraîches du jour et tiramisù monté à la main.</p>
+            <p class="kicker">La nostra storia</p>
+            <h2>Comme à la maison,<br /><em>en plein Paris.</em></h2>
+            <p>Rosa a ouvert la trattoria en 1998 avec ses deux fils. Les recettes n’ont pas changé : pâte à pizza maturée 48 heures, sauce tomate San Marzano, pâtes fraîches du jour et tiramisù monté à la main.</p>
+            <ul class="badges">
+              <li><strong>48 h</strong><span>de maturation</span></li>
+              <li><strong>4,8</strong><span>sur 5 · 610 avis</span></li>
+              <li><strong>40</strong><span>couverts</span></li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <section id="carte" class="section reveal">
+      <section id="carte" class="section section-menu reveal">
         <div class="wrap">
-          <header class="section-head">
-            <p class="eyebrow">01 — La carte</p>
-            <h2>À table, ou à emporter.</h2>
-            <p class="muted">Ajoutez des plats au panier pour les récupérer au comptoir. Prix nets, service compris.</p>
+          <header class="section-head center">
+            <p class="kicker">Il menù</p>
+            <h2>La carte</h2>
+            <p class="ornament" aria-hidden="true"><span></span>✦<span></span></p>
+            <p class="section-lead">À déguster sur place, ou à emporter : touchez « + » pour ajouter un plat au panier.</p>
           </header>
 
           <div class="menu-tools">
+            <div class="cat-tabs" role="tablist" aria-label="Catégories de la carte"></div>
             <div class="filters" role="group" aria-label="Filtrer la carte">
               <button type="button" data-filter="all" aria-pressed="true">Tout</button>
               <button type="button" data-filter="veg" aria-pressed="false">Végétarien</button>
               <button type="button" data-filter="gf" aria-pressed="false">Sans gluten</button>
             </div>
-            <nav class="cat-tabs" aria-label="Catégories de la carte">
-              <a href="#cat-antipasti">Antipasti</a>
-              <a href="#cat-pizze">Pizze</a>
-              <a href="#cat-pasta">Pasta</a>
-              <a href="#cat-secondi">Secondi</a>
-              <a href="#cat-dolci">Dolci</a>
-              <a href="#cat-vini">Vini</a>
-            </nav>
           </div>
 
           <div class="menu-cats"></div>
@@ -94,55 +106,64 @@
       </section>
 
       <section id="emporter" class="section reveal">
-        <div class="wrap takeaway">
-          <div>
-            <p class="eyebrow">02 — À emporter</p>
-            <h2>Chaud, prêt à l’heure.</h2>
-          </div>
+        <div class="wrap">
+          <header class="section-head center">
+            <p class="kicker">Da asporto</p>
+            <h2>À emporter</h2>
+            <p class="ornament" aria-hidden="true"><span></span>✦<span></span></p>
+          </header>
           <ol class="steps">
-            <li><strong>Choisissez</strong><span>Ajoutez vos plats depuis la carte.</span></li>
-            <li><strong>Réglez l’heure</strong><span>Retrait par quart d’heure, dès 30 minutes.</span></li>
-            <li><strong>Passez prendre</strong><span>Paiement au comptoir, carte ou espèces.</span></li>
+            <li>
+              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 12h10l1-12M9 7V5a3 3 0 0 1 6 0v2" /></svg></span>
+              <strong>Composez</strong><span>Ajoutez vos plats depuis la carte.</span>
+            </li>
+            <li>
+              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg></span>
+              <strong>Choisissez l’heure</strong><span>Retrait par quart d’heure, dès 30 minutes.</span>
+            </li>
+            <li>
+              <span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6v10H3zM9 20v-6h6v6" /></svg></span>
+              <strong>Passez prendre</strong><span>Paiement au comptoir, carte ou espèces.</span>
+            </li>
           </ol>
-          <div class="takeaway-cta">
-            <a class="btn btn-line" href="#carte">Voir la carte</a>
-            <button class="btn js-open-cart" type="button"><span>Mon panier (<span class="js-cart-count">0</span>)</span></button>
-          </div>
+          <p class="center-cta"><button class="pill js-open-cart" type="button">Voir mon panier · <span class="js-cart-count">0</span></button></p>
         </div>
       </section>
 
-      <section id="reserver" class="section reveal">
+      <section id="reserver" class="section section-olive reveal">
         <div class="wrap">
-          <header class="section-head">
-            <p class="eyebrow">03 — Réservation</p>
-            <h2>Réservez votre table.</h2>
-            <p class="muted">Au-delà de 8 personnes, appelez-nous : on s’organise.</p>
+          <header class="section-head center">
+            <p class="kicker">Prenota un tavolo</p>
+            <h2>Réserver une table</h2>
+            <p class="section-lead">Au-delà de 8 personnes, appelez-nous : on s’organise.</p>
           </header>
 
           <div class="table-booking">
             <div class="tb-flow">
               <div class="tb-main">
+                <div class="tb-row">
+                  <fieldset class="tb-step">
+                    <legend>Combien êtes-vous ?</legend>
+                    <div class="tb-covers stepper"></div>
+                  </fieldset>
+                </div>
                 <fieldset class="tb-step">
-                  <legend><span class="tb-num">1</span> Nombre de personnes</legend>
-                  <div class="tb-covers"></div>
-                </fieldset>
-                <fieldset class="tb-step">
-                  <legend><span class="tb-num">2</span> Jour</legend>
+                  <legend>Quel jour ?</legend>
                   <div class="tb-days"></div>
                 </fieldset>
                 <fieldset class="tb-step tb-step-service" hidden>
-                  <legend><span class="tb-num">3</span> Service et heure</legend>
-                  <div class="tb-services"></div>
+                  <legend>À quelle heure ?</legend>
+                  <div class="tb-services segmented"></div>
                   <p class="tb-slots-note"></p>
                   <div class="tb-slots"></div>
                 </fieldset>
                 <div class="tb-step tb-step-form" hidden>
-                  <h3 class="tb-legend"><span class="tb-num">4</span> Vos coordonnées</h3>
+                  <h3 class="tb-legend">Vos coordonnées</h3>
                   <form novalidate>
                     <label>Prénom<input name="prenom" type="text" autocomplete="given-name" required /></label>
                     <label>Téléphone<input name="tel" type="tel" autocomplete="tel" inputmode="tel" required pattern="[0-9 +\(\)\.\-]{10,}" /></label>
                     <label class="full">Une précision ? <span class="opt">(facultatif)</span><input name="note" type="text" placeholder="Allergie, anniversaire, chaise haute…" /></label>
-                    <button class="btn" type="submit">Confirmer la réservation</button>
+                    <button class="pill" type="submit">Confirmer la réservation</button>
                   </form>
                 </div>
               </div>
@@ -153,11 +174,11 @@
               </aside>
             </div>
             <div class="tb-done" hidden>
-              <p class="tb-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></p>
+              <p class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></p>
               <h3 class="tb-done-title" tabindex="-1"></h3>
               <p class="tb-done-text"></p>
               <p class="demo-note">Démo : aucune réservation réelle n’a été envoyée.</p>
-              <button class="btn btn-line tb-again" type="button">Réserver une autre table</button>
+              <button class="pill pill-ghost-dark tb-again" type="button">Réserver une autre table</button>
             </div>
           </div>
         </div>
@@ -165,54 +186,63 @@
 
       <section class="section reveal" aria-labelledby="gallery-title">
         <div class="wrap">
-          <header class="section-head">
-            <p class="eyebrow">04 — En cuisine</p>
-            <h2 id="gallery-title">Fait maison, chaque jour.</h2>
+          <header class="section-head gallery-head">
+            <div>
+              <p class="kicker">In cucina</p>
+              <h2 id="gallery-title">Fait maison, chaque jour</h2>
+            </div>
+            <div class="carousel-nav">
+              <button class="round-btn round-btn-dark carousel-prev" type="button" aria-label="Photos précédentes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+              <button class="round-btn round-btn-dark carousel-next" type="button" aria-label="Photos suivantes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
+            </div>
           </header>
-          <div class="gallery">
-            <figure class="g-a"><img src="/exemples/nonna-rosa/g1.jpg" alt="Pizza qui cuit dans le four à bois, flammes au fond" width="1600" height="1067" loading="lazy" /></figure>
-            <figure class="g-b"><img src="/exemples/nonna-rosa/g2.jpg" alt="Pizza margherita au basilic frais" width="1000" height="1250" loading="lazy" /></figure>
-            <figure class="g-c"><img src="/exemples/nonna-rosa/g3.jpg" alt="Assiette de spaghetti alla carbonara" width="1000" height="1250" loading="lazy" /></figure>
-            <figure class="g-d"><img src="/exemples/nonna-rosa/g4.jpg" alt="Pappardelle aux champignons et parmesan" width="1000" height="1250" loading="lazy" /></figure>
-            <figure class="g-e"><img src="/exemples/nonna-rosa/g5.jpg" alt="Part de tiramisù saupoudrée de cacao" width="1600" height="1067" loading="lazy" /></figure>
-          </div>
         </div>
+        <ul class="carousel" aria-label="Galerie de plats">
+          <li><figure><img src="/exemples/nonna-rosa/g2.jpg" alt="Pizza margherita au basilic frais" width="1000" height="1250" loading="lazy" /><figcaption>Margherita, four à bois</figcaption></figure></li>
+          <li><figure><img src="/exemples/nonna-rosa/g3.jpg" alt="Assiette de spaghetti alla carbonara" width="1000" height="1250" loading="lazy" /><figcaption>Spaghetti alla carbonara</figcaption></figure></li>
+          <li><figure><img src="/exemples/nonna-rosa/g4.jpg" alt="Pappardelle aux champignons et parmesan" width="1000" height="1250" loading="lazy" /><figcaption>Pappardelle ai funghi</figcaption></figure></li>
+          <li><figure><img src="/exemples/nonna-rosa/g5.jpg" alt="Part de tiramisù saupoudrée de cacao" width="1600" height="1067" loading="lazy" /><figcaption>Tiramisù de la Nonna</figcaption></figure></li>
+          <li><figure><img src="/exemples/nonna-rosa/g1.jpg" alt="Pizza qui cuit dans le four à bois, flammes au fond" width="1600" height="1067" loading="lazy" /><figcaption>Le four, 450 °C</figcaption></figure></li>
+        </ul>
       </section>
 
       <section id="infos" class="section reveal">
         <div class="wrap infos">
-          <div>
-            <p class="eyebrow">05 — Horaires</p>
-            <h2>Quand venir.</h2>
+          <div class="info-card">
+            <p class="kicker">Orari</p>
+            <h2>Horaires</h2>
             <table class="hours">
               <tbody>
                 <tr><th scope="row">Lundi</th><td class="closed">Fermé</td></tr>
-                <tr><th scope="row">Mardi – Jeudi</th><td>12h – 14h30 · 19h – 22h30</td></tr>
-                <tr><th scope="row">Vendredi – Samedi</th><td>12h – 14h30 · 19h – 23h</td></tr>
-                <tr><th scope="row">Dimanche</th><td>12h – 14h30 · 19h – 22h30</td></tr>
+                <tr><th scope="row">Mardi – Jeudi</th><td>12h – 14h30<br />19h – 22h30</td></tr>
+                <tr><th scope="row">Vendredi – Samedi</th><td>12h – 14h30<br />19h – 23h</td></tr>
+                <tr><th scope="row">Dimanche</th><td>12h – 14h30<br />19h – 22h30</td></tr>
               </tbody>
             </table>
           </div>
-          <div>
-            <p class="eyebrow">06 — Adresse</p>
-            <h2>Venir nous voir.</h2>
+          <div class="info-card info-card-terra">
+            <p class="kicker">Dove siamo</p>
+            <h2>Nous trouver</h2>
             <address>12 rue des Oliviers<br />75010 Paris</address>
-            <p><a class="phone" href="tel:+33123456789">01 23 45 67 89</a></p>
-            <p class="muted">Métro Jacques Bonsergent (ligne 5), à 3 minutes à pied.<br />Terrasse aux beaux jours, salle privatisable jusqu’à 40 personnes.</p>
+            <p class="info-line">Métro Jacques Bonsergent (ligne 5), à 3 minutes à pied.</p>
+            <p class="info-line">Terrasse aux beaux jours · salle privatisable jusqu’à 40 personnes.</p>
+            <a class="pill pill-light" href="tel:+33123456789">Appeler · 01 23 45 67 89</a>
           </div>
         </div>
       </section>
     </main>
 
-    <div class="cart-bar" hidden>
-      <button class="cart-bar-btn js-open-cart" type="button"><span class="cart-bar-text"></span><span class="cart-bar-cta">Voir le panier →</span></button>
-    </div>
+    <button class="cart-fab js-open-cart" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 12h10l1-12M9 7V5a3 3 0 0 1 6 0v2" /></svg>
+      <span class="cart-fab-count">0</span>
+      <span class="cart-fab-total"></span>
+    </button>
 
     <dialog class="cart" aria-labelledby="cart-title">
       <div class="cart-flow">
         <header class="cart-head">
           <h2 id="cart-title">Votre commande</h2>
-          <button class="cart-close js-close-cart" type="button" aria-label="Fermer le panier">✕</button>
+          <button class="round-btn round-btn-dark js-close-cart" type="button" aria-label="Fermer le panier"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
         </header>
         <p class="cart-empty">Votre panier est vide. Ajoutez des plats depuis la carte.</p>
         <ul class="cart-lines"></ul>
@@ -222,28 +252,26 @@
             <label>Retrait <span class="pickup-day"></span><select name="retrait" required></select></label>
             <label>Prénom<input name="prenom" type="text" autocomplete="given-name" required /></label>
             <label>Téléphone<input name="tel" type="tel" autocomplete="tel" inputmode="tel" required pattern="[0-9 +\(\)\.\-]{10,}" /></label>
-            <button class="btn" type="submit">Valider la commande</button>
+            <button class="pill" type="submit">Valider la commande</button>
             <p class="cart-pay">Paiement au retrait, carte ou espèces.</p>
           </form>
         </div>
       </div>
       <div class="cart-done" hidden>
-        <p class="tb-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></p>
+        <p class="done-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></p>
         <h2 class="cart-done-title" tabindex="-1"></h2>
         <p class="cart-done-text"></p>
         <p class="demo-note">Démo : aucune commande réelle n’a été envoyée.</p>
-        <button class="btn btn-line js-close-cart" type="button">Fermer</button>
+        <button class="pill pill-ghost-dark js-close-cart" type="button">Fermer</button>
       </div>
     </dialog>
 
     <footer class="foot">
-      <div class="wrap">
-        <p class="foot-mark">Nonna Rosa</p>
-        <div class="foot-row">
-          <p>© <span id="year"></span> Trattoria Nonna Rosa · 12 rue des Oliviers, Paris 10e</p>
-          <p>Photos : <a href="https://unsplash.com/fr/s/photos/italian-food" rel="noopener">Unsplash</a></p>
-        </div>
-        <p class="foot-demo">Site de démonstration, restaurant fictif. Réalisé par <a href="%VITE_SITE_URL%/">IA &amp; Data Consulting</a>.</p>
+      <div class="wrap foot-inner">
+        <p class="foot-brand"><span class="brand-script">Trattoria</span><span class="brand-name">Nonna Rosa</span></p>
+        <p>12 rue des Oliviers, 75010 Paris · 01 23 45 67 89</p>
+        <p class="foot-small">© <span id="year"></span> Trattoria Nonna Rosa · Photos : <a href="https://unsplash.com/fr/s/photos/italian-food" rel="noopener">Unsplash</a></p>
+        <p class="foot-small">Site de démonstration, restaurant fictif. Réalisé par <a href="%VITE_SITE_URL%/">IA &amp; Data Consulting</a>.</p>
       </div>
     </footer>
 

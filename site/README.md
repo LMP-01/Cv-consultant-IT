@@ -84,15 +84,24 @@ En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/hamed-coiffeur/
 
 En ligne : https://lmp-01.github.io/ia-data-consulting/exemples/nonna-rosa/
 
-- `exemples/nonna-rosa/index.html` : la page (histoire, carte, à emporter, réservation, galerie, horaires).
+- `exemples/nonna-rosa/index.html` : la page (diaporama, histoire, carte, à emporter, réservation, galerie en carrousel, horaires).
+- Identité volontairement différente du coiffeur :
+  - serif Playfair Display, olive et terracotta ;
+  - boutons pilules et ronds, cartes arrondies, photo en arche ;
+  - diaporama plein écran ;
+  - carte à onglets (une catégorie à la fois) ;
+  - panier en bouton flottant et feuille du bas ;
+  - nombre de couverts au compteur − / +.
 - `src/nonna/data.ts` : carte (26 plats, tags végétarien / sans gluten), services midi/soir, horaires de retrait, capacité de la salle (40 couverts), `CAL_LINK`.
-- `src/nonna/menu.ts` : rendu de la carte, filtres et panier à emporter. Le panier est gardé dans `localStorage` et s'ouvre dans un tiroir `<dialog>`. Les créneaux de retrait sont proposés par quart d'heure, au plus tôt 30 minutes après l'heure actuelle. Aucune commande réelle n'est envoyée.
+- `src/nonna/menu.ts` : carte à onglets, filtres et panier à emporter. Le panier est gardé dans `localStorage` et s'ouvre dans un tiroir `<dialog>`. Les créneaux de retrait sont proposés par quart d'heure, au plus tôt 30 minutes après l'heure actuelle. Aucune commande réelle n'est envoyée.
 - `src/nonna/booking.ts` : réservation de table.
   - Les places restantes sont inventées de façon déterministe : plus chargé le soir, presque complet le vendredi et le samedi soir.
   - Les tables réservées sont déduites grâce à `localStorage`.
   - Si `CAL_LINK` est renseigné, « Confirmer » ouvre Cal.com.
 - `public/exemples/nonna-rosa/*.jpg` : vraies photos Unsplash (licence Unsplash), avec un léger étalonnage chaud :
-  - hero / og : Liubov Ilchuk, https://unsplash.com/photos/_qZOwG2oaj4
+  - slide1 / og : Liubov Ilchuk, https://unsplash.com/photos/_qZOwG2oaj4
+  - slide2 : Fabrizio Pullara, https://unsplash.com/photos/vHRFraV4U00
+  - slide3 : Eaters Collective, https://unsplash.com/photos/ddZYOtZUnBk
   - story : Vincent Dörig, https://unsplash.com/photos/mciRIMaxiAM
   - g1 : Fabrizio Pullara, https://unsplash.com/photos/vHRFraV4U00
   - g2 : Aurélien Lemasson-Théobald, https://unsplash.com/photos/x00CzBt4Dfk
