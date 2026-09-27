@@ -134,20 +134,13 @@
               <p class="price-sub" data-i18n="offers.site.ttc">840 € TTC · TVA 20 %</p>
               <p class="price-lead" data-i18n="offers.site.lead">Un site one-page pour présenter votre service et recevoir des demandes.</p>
               <ul class="checklist">
-                <li data-i18n="offers.site.i1"></li>
-                <li data-i18n="offers.site.i2"></li>
-                <li data-i18n="offers.site.i3"></li>
-                <li data-i18n="offers.site.i4"></li>
-                <li data-i18n="offers.site.i5"></li>
-                <li data-i18n="offers.site.i6"></li>
-                <li data-i18n="offers.site.i7"></li>
+                <li data-i18n="offers.site.k1"></li>
+                <li data-i18n="offers.site.k2"></li>
+                <li data-i18n="offers.site.k3"></li>
+                <li data-i18n="offers.site.k4"></li>
               </ul>
-              <p class="price-excl" data-i18n="offers.site.excl"></p>
               <button class="btn btn-primary btn-block js-offer" type="button"><span data-i18n="offers.site.cta">Demander ce devis</span> <span aria-hidden="true">→</span></button>
-              <a class="text-link" href="devis/Devis_Site_Vitrine_PME_EPTA5.pdf" download>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M12 12v6m-3-3 3 3 3-3" /></svg>
-                <span data-i18n="offers.site.pdf">Télécharger le devis type (PDF)</span>
-              </a>
+              <button class="text-link as-btn js-offer-details" type="button"><span data-i18n="offers.site.details">Voir le détail de l’offre</span> <span aria-hidden="true">→</span></button>
             </div>
           </article>
           <article class="price-card reveal">
@@ -363,6 +356,38 @@
     </main>
 
     <!-- B2B / B2C MODAL -->
+    <div id="offer-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="offer-modal-title">
+      <div class="modal-backdrop js-close-offer"></div>
+      <div class="modal-box offer-detail">
+        <button class="modal-close js-close-offer" type="button" aria-label="Fermer" data-i18n-aria="modal.close">✕</button>
+        <div class="media offer-detail-media" data-video="media/site.mp4"><img class="media-poster" src="/media/site.jpg" alt="" loading="lazy" width="960" height="538" /></div>
+        <p class="pill" data-i18n="offers.pro">Réservé aux professionnels</p>
+        <h2 id="offer-modal-title" data-i18n="offers.site.title">Site vitrine PME</h2>
+        <p class="price"><span class="price-amount" data-i18n="offers.site.price">700 €</span><span class="price-unit" data-i18n="offers.site.unit">HT</span></p>
+        <p class="price-sub" data-i18n="offers.site.ttc">840 € TTC · TVA 20 %</p>
+        <p class="price-lead" data-i18n="offers.site.lead"></p>
+        <h3 data-i18n="offers.detail.included">Ce qui est inclus</h3>
+        <ul class="checklist">
+          <li data-i18n="offers.site.i1"></li>
+          <li data-i18n="offers.site.i2"></li>
+          <li data-i18n="offers.site.i3"></li>
+          <li data-i18n="offers.site.i4"></li>
+          <li data-i18n="offers.site.i5"></li>
+          <li data-i18n="offers.site.i6"></li>
+          <li data-i18n="offers.site.i7"></li>
+        </ul>
+        <h3 data-i18n="offers.detail.excluded">Non inclus</h3>
+        <p class="offer-detail-excl" data-i18n="offers.site.excl"></p>
+        <div class="offer-detail-actions">
+          <button class="btn btn-primary js-offer" type="button"><span data-i18n="offers.site.cta">Demander ce devis</span> <span aria-hidden="true">→</span></button>
+          <a class="text-link" href="devis/Devis_Site_Vitrine_PME_EPTA5.pdf" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M12 12v6m-3-3 3 3 3-3" /></svg>
+                <span data-i18n="offers.site.pdf">Télécharger le devis type (PDF)</span>
+              </a>
+        </div>
+      </div>
+    </div>
+
     <div id="client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-backdrop js-close-modal"></div>
       <div class="modal-box wizard">

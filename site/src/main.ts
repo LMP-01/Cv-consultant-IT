@@ -80,6 +80,7 @@ function makeModal(
 
 const clientModal = makeModal('client-modal', '.js-open-modal', '.js-close-modal', focusTarget);
 makeModal('legal-modal', '.js-open-legal', '.js-close-legal', '.modal-close');
+const offerModal = makeModal('offer-modal', '.js-offer-details', '.js-close-offer', '.modal-close');
 
 // Après « Entreprise / Particulier », le parcours continue dans la pop-up (src/wizard.ts).
 document.querySelectorAll<HTMLButtonElement>('.js-choose').forEach((btn) => {
@@ -90,20 +91,22 @@ document.querySelectorAll<HTMLButtonElement>('.js-choose').forEach((btn) => {
 document.querySelectorAll('.js-offer').forEach((btn) =>
   btn.addEventListener('click', () => {
     presetOffer({ mission_type: 'site-vitrine', pay_mode: 'Forfait', budget: t('offers.site.budget') });
+    if (!document.getElementById('offer-modal')!.hidden) offerModal.close();
     clientModal.open();
   })
 );
 
 // --- Bouton « Demander une mission » flottant, centré en bas de l'écran ---
-// Visible dès que le bouton du hero sort de l'écran, masqué sur la section formulaire.
+// Visible dès que le bouton du hero sort de l'écran, masqué sur les offres et la section formulaire.
 const fab = document.querySelector<HTMLElement>('.mission-fab');
 const heroCta = document.querySelector('.hero-ctas');
 const missionSection = document.getElementById('mission');
 if (fab && heroCta && missionSection) {
   let heroVisible = true;
   let formVisible = false;
+  let offersVisible = false;
   const sync = (): void => {
-    const show = !heroVisible && !formVisible;
+    const show = !heroVisible && !formVisible && !offersVisible;
     if (show) {
       fab.hidden = false;
       requestAnimationFrame(() => fab.classList.add('is-visible'));
@@ -123,6 +126,13 @@ if (fab && heroCta && missionSection) {
     formVisible = e.isIntersecting;
     sync();
   }, { threshold: 0.15 }).observe(missionSection);
+  // Les cartes d'offres ont leurs propres boutons : on évite de les masquer.
+  const offersCards = document.querySelector('#offers .offers');
+  if (offersCards)
+    new IntersectionObserver(([e]) => {
+      offersVisible = e.isIntersecting;
+      sync();
+    }, { rootMargin: '0px 0px -80px 0px' }).observe(offersCards);
 }
 
 // --- Apparition au scroll ---

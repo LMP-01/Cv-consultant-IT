@@ -199,5 +199,12 @@
   "wizard.m.other.desc": "Décrivez-moi votre idée",
   "wizard.deadline.urgent": "Urgent (moins d’un mois)",
   "wizard.deadline.soon": "D’ici 1 à 3 mois",
-  "wizard.deadline.flexible": "Flexible"
+  "wizard.deadline.flexible": "Flexible",
+  "offers.site.k1": "Site one-page, jusqu’à 5 sections",
+  "offers.site.k2": "Formulaire de contact par e-mail",
+  "offers.site.k3": "SEO de base & mise en ligne",
+  "offers.site.k4": "Livré en ~2 semaines",
+  "offers.site.details": "Voir le détail de l’offre",
+  "offers.detail.included": "Ce qui est inclus",
+  "offers.detail.excluded": "Non inclus"
 }
