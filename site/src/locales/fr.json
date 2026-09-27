@@ -230,5 +230,6 @@
   "call.confirm": "Confirmer le rendez-vous",
   "call.done": "Rendez-vous demandé :",
   "call.done.visio": "Je vous envoie le lien de la visio par e-mail.",
-  "call.done.phone": "Je vous appellerai au numéro indiqué."
+  "call.done.phone": "Je vous appellerai au numéro indiqué.",
+  "call.after": "Envie d’en parler de vive voix ? Réservez un créneau de 30 minutes en visio ou par téléphone."
 }
