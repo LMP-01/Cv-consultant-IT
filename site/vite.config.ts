@@ -5,6 +5,12 @@ export default defineConfig({
   base: process.env.BASE_PATH || '/ia-data-consulting/',
   build: {
     target: 'es2020',
-    assetsInlineLimit: 0
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        hamed: 'exemples/hamed-coiffeur/index.html'
+      }
+    }
   }
 });
