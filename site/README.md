@@ -15,9 +15,9 @@ npm run build      # build de production dans site/dist
 
 ## Structure
 
-- `index.html` : toutes les sections (hero 3D, chiffres, bande vidéo, prestations, offres, réalisations, boîte à outils, formulaire, mentions légales).
+- `index.html` : toutes les sections (hero, chiffres, bande vidéo, prestations, offres, réalisations, boîte à outils, formulaire, mentions légales).
 - `src/styles.css` : design system clair. Les tokens sont dans `:root` (ivoire `#F7F7F4`, encre `#0B1020`, bleu `#2F5BFF`, violet `#7C3AED`) ; polices Space Grotesk (titres) et Inter (texte).
-- `src/scene.ts` : hero Three.js. Charge `public/models/core.glb` ; un icosaèdre procédural s'affiche le temps du chargement, ou si le GLB échoue. L'état est exposé dans `#bg-canvas[data-scene]`.
+- Hero : la sphère de la maquette animée par Kling (`public/media/sphere.mp4`, poster `sphere.jpg`), fondue dans le fond par un masque radial, avec un léger effet de profondeur à la souris (`src/main.ts`).
 - `src/media.ts` : boucles vidéo des cartes. La `<video>` n'est créée qu'à l'entrée à l'écran, mise en pause en sortant. Seul le poster s'affiche en reduced-motion ou en mode économie de données.
 - `src/form.ts` : formulaire → Web3Forms. `prefillOffer()` pré-remplit la demande « Site vitrine PME ».
 - `src/i18n.ts` + `src/locales/{fr,en}.json` : tous les textes.
@@ -26,7 +26,6 @@ npm run build      # build de production dans site/dist
 
 | Fichier | Origine |
 |---|---|
-| `public/models/core.glb` | Scène Blender (Higgsfield Scene Builder 3D), treillis céramique + cœur lumineux |
 | `public/media/*.mp4` | Boucles Kling 3.0 (5 s, muettes), encodées en H.264 ≤ 400 Ko |
 | `public/media/*.jpg` | Posters (1ʳᵉ image de chaque clip) et visuels GPT Image 2.5 |
 | `public/og.jpg` | Image de partage social 1200×630 |

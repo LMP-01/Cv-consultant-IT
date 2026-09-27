@@ -5,7 +5,6 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/700.css';
 import './styles.css';
 
-import { initScene } from './scene';
 import { currentLang, initI18n } from './i18n';
 import { initForm, prefillClientType, prefillOffer } from './form';
 import { initGalleries } from './gallery';
@@ -16,8 +15,6 @@ initForm();
 initGalleries();
 initMedia();
 
-const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement | null;
-if (canvas) initScene(canvas);
 
 function setBackgroundInert(on: boolean): void {
   document.querySelectorAll<HTMLElement>('body > header, body > main, body > footer').forEach((el) => {
@@ -26,6 +23,28 @@ function setBackgroundInert(on: boolean): void {
 }
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// --- Sphère du hero : léger effet de profondeur qui suit la souris ---
+const sphere = document.querySelector<HTMLElement>('.hero-sphere');
+if (sphere && !reduced && window.matchMedia('(pointer: fine)').matches) {
+  let tx = 0;
+  let ty = 0;
+  let frame = 0;
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+      if (!frame) {
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          sphere.style.transform = `translate3d(${tx * 12}px, ${ty * 10}px, 0) rotateX(${-ty * 6}deg) rotateY(${tx * 8}deg)`;
+        });
+      }
+    },
+    { passive: true }
+  );
+}
 
 function goToForm(): void {
   const form = document.getElementById('mission');
