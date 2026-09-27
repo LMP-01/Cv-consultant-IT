@@ -17,7 +17,7 @@ initMedia();
 
 
 function setBackgroundInert(on: boolean): void {
-  document.querySelectorAll<HTMLElement>('body > header, body > main, body > footer').forEach((el) => {
+  document.querySelectorAll<HTMLElement>('body > header, body > main, body > footer, body > .mission-fab').forEach((el) => {
     el.inert = on;
   });
 }
@@ -95,6 +95,37 @@ document.querySelectorAll('.js-offer').forEach((btn) =>
     goToForm();
   })
 );
+
+// --- Bouton « Demander une mission » flottant, centré en bas de l'écran ---
+// Visible dès que le bouton du hero sort de l'écran, masqué sur la section formulaire.
+const fab = document.querySelector<HTMLElement>('.mission-fab');
+const heroCta = document.querySelector('.hero-ctas');
+const missionSection = document.getElementById('mission');
+if (fab && heroCta && missionSection) {
+  let heroVisible = true;
+  let formVisible = false;
+  const sync = (): void => {
+    const show = !heroVisible && !formVisible;
+    if (show) {
+      fab.hidden = false;
+      requestAnimationFrame(() => fab.classList.add('is-visible'));
+    } else {
+      fab.classList.remove('is-visible');
+      if (reduced) fab.hidden = true;
+    }
+  };
+  fab.addEventListener('transitionend', () => {
+    if (!fab.classList.contains('is-visible')) fab.hidden = true;
+  });
+  new IntersectionObserver(([e]) => {
+    heroVisible = e.isIntersecting;
+    sync();
+  }).observe(heroCta);
+  new IntersectionObserver(([e]) => {
+    formVisible = e.isIntersecting;
+    sync();
+  }, { threshold: 0.15 }).observe(missionSection);
+}
 
 // --- Apparition au scroll ---
 const revealObserver = new IntersectionObserver(
