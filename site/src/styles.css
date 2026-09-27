@@ -991,7 +991,7 @@ fieldset.field { border: 0; }
 .footer-inner {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 2.8rem clamp(1.2rem, 4vw, 3rem) 1.5rem;
+  padding: 2.8rem clamp(1.2rem, 4vw, 3rem) 6rem; /* place pour le bouton mission flottant */
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;
   gap: 2rem;
@@ -1045,6 +1045,26 @@ fieldset.field { border: 0; }
 .stats > .reveal:nth-child(4),
 .toolbox > .reveal:nth-child(4) { transition-delay: 180ms, 180ms, 0ms, 0ms, 0ms; }
 
+/* ---------- BOUTON MISSION FLOTTANT ---------- */
+.mission-fab {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 45;
+  opacity: 0;
+  transform: translate(-50%, 24px);
+  pointer-events: none;
+  transition: opacity 260ms var(--ease-out), transform 320ms var(--ease-out);
+}
+
+.mission-fab.is-visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+.mission-fab .btn {
+  white-space: nowrap;
+  padding: 1rem 1.7rem;
+  box-shadow: 0 10px 30px rgba(47, 91, 255, 0.35), 0 2px 6px rgba(11, 16, 32, 0.12);
+}
+
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 1024px) {
   .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1094,6 +1114,7 @@ fieldset.field { border: 0; }
 
 /* ---------- REDUCED MOTION ---------- */
 @media (prefers-reduced-motion: reduce) {
+  .mission-fab { transition: none; }
   html { scroll-behavior: auto; }
   *,
   *::before,
