@@ -30,7 +30,6 @@ npm run build      # build de production dans site/dist
 | `public/media/*.jpg` | Posters (1ʳᵉ image de chaque clip) et visuels GPT Image 2.5 |
 | `public/og.jpg` | Image de partage social 1200×630 |
 | `public/devis/Devis_Site_Vitrine_PME_EPTA5.pdf` | Devis type généré par `.github/workflows/build_devis_site_pme.py` |
-| `public/cv/*.pdf` | CV FDE FR et EN |
 
 Réencoder un clip : `ffmpeg -i in.mp4 -vf scale=960:-2 -c:v libx264 -pix_fmt yuv420p -profile:v high -crf 28 -preset slow -an -movflags +faststart out.mp4`
 
