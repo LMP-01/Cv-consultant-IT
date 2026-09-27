@@ -166,5 +166,6 @@
   "legal.data.title": "Personal data",
   "legal.data.text": "Data entered in the form (name, email, company, description of your need) is processed by EPTA5 INC, as data controller, to answer your request (legal basis: pre-contractual steps taken at your request). It is sent through the Web3Forms service and received in a Google mailbox; these providers may process data outside the European Union under the safeguards provided by the GDPR (standard contractual clauses or the Data Privacy Framework). It is kept for up to 3 years from our last contact. You have the right to access, correct, erase, object, restrict and port your data by writing to theo.mansopro@gmail.com, and the right to lodge a complaint with the CNIL (cnil.fr).",
   "legal.cookies.title": "Cookies",
-  "legal.cookies.text": "This site sets no cookies or advertising trackers. Only your language preference is stored locally in your browser."
+  "legal.cookies.text": "This site sets no cookies or advertising trackers. Only your language preference is stored locally in your browser.",
+  "form.required.note": "* required field."
 }

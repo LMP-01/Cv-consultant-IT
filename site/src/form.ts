@@ -112,5 +112,6 @@ export function prefillOffer(): void {
   };
   set('#f-mission-type', 'site-vitrine');
   set('#f-pay-mode', 'Forfait');
-  set('#f-budget', t('offers.site.budget'));
+  const budget = document.querySelector<HTMLInputElement>('#f-budget');
+  if (budget && !budget.value.trim()) budget.value = t('offers.site.budget');
 }

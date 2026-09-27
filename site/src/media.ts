@@ -33,6 +33,7 @@ export function initMedia(): void {
             video.setAttribute('aria-hidden', 'true');
             video.setAttribute('tabindex', '-1');
             video.addEventListener('playing', () => setState(box, 'playing'));
+            video.addEventListener('error', () => setState(box, 'poster'));
             video.src = BASE + box.dataset.video;
             box.appendChild(video);
             setState(box, 'loading');

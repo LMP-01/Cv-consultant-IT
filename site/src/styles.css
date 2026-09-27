@@ -4,7 +4,8 @@
   --surface-2: #f0f1f5;
   --ink: #0b1020;
   --ink-dim: #545b6e;
-  --ink-faint: #8a90a0;
+  --ink-faint: #666c7e;
+  --accent-ink: #2448e6;
   --line: rgba(11, 16, 32, 0.08);
   --line-strong: rgba(11, 16, 32, 0.14);
   --accent: #2f5bff;
@@ -180,6 +181,8 @@ img { max-width: 100%; display: block; }
   margin: -1.6rem 0 2.6rem;
   font-size: 1.05rem;
 }
+
+.section-desc.center { margin-left: auto; margin-right: auto; }
 
 /* ---------- HERO ---------- */
 .hero {
@@ -1095,3 +1098,13 @@ fieldset.field { border: 0; }
   .hero-subtitle,
   .hero-ctas { opacity: 1; translate: none; }
 }
+
+/* Texte d'accent en petite taille : bleu plus sombre pour le contraste AA */
+.eyebrow,
+.pill,
+.card .card-badge,
+.card-link,
+.text-link,
+.choice-cta { color: var(--accent-ink); }
+
+.req { color: var(--accent-ink); }

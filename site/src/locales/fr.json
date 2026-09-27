@@ -166,5 +166,6 @@
   "legal.data.title": "Données personnelles",
   "legal.data.text": "Les données saisies dans le formulaire (nom, e-mail, entreprise, description du besoin) sont traitées par EPTA5 INC, responsable de traitement, pour répondre à votre demande (base légale : mesures précontractuelles prises à votre demande). Elles sont transmises via le service Web3Forms et reçues sur une messagerie Google ; ces prestataires peuvent traiter les données hors de l’Union européenne, dans le cadre des garanties prévues par le RGPD (clauses contractuelles types ou Data Privacy Framework). Elles sont conservées 3 ans au plus à compter du dernier contact. Vous disposez d’un droit d’accès, de rectification, d’effacement, d’opposition, de limitation et de portabilité, à exercer à theo.mansopro@gmail.com, ainsi que du droit d’introduire une réclamation auprès de la CNIL (cnil.fr).",
   "legal.cookies.title": "Cookies",
-  "legal.cookies.text": "Ce site ne dépose aucun cookie ni traceur publicitaire. Seule votre préférence de langue est enregistrée localement dans votre navigateur."
+  "legal.cookies.text": "Ce site ne dépose aucun cookie ni traceur publicitaire. Seule votre préférence de langue est enregistrée localement dans votre navigateur.",
+  "form.required.note": "* champ obligatoire."
 }

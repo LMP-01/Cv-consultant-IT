@@ -109,8 +109,9 @@ export function initScene(canvas: HTMLCanvasElement): void {
   function renderFrame(): void {
     const raw = clock.getDelta();
     const dt = Math.min(raw, 0.05);
-    if (running && raw > 0.045 && pixelRatio > 1) {
-      if (++slowFrames > 20) {
+    if (running && pixelRatio > 1) {
+      slowFrames = raw > 0.045 ? slowFrames + 1 : 0;
+      if (slowFrames > 20) {
         pixelRatio = 1;
         renderer.setPixelRatio(pixelRatio);
         resize();

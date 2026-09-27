@@ -19,6 +19,12 @@ initMedia();
 const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement | null;
 if (canvas) initScene(canvas);
 
+function setBackgroundInert(on: boolean): void {
+  document.querySelectorAll<HTMLElement>('body > header, body > main, body > footer').forEach((el) => {
+    el.inert = on;
+  });
+}
+
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function goToForm(): void {
@@ -34,10 +40,14 @@ function makeModal(id: string, openSel: string, closeSel: string, focusSel: stri
   const open = (): void => {
     lastFocused = document.activeElement as HTMLElement;
     modal.hidden = false;
+    setBackgroundInert(true);
+    document.body.style.overflow = 'hidden';
     modal.querySelector<HTMLElement>(focusSel)?.focus();
   };
   const close = (): void => {
     modal.hidden = true;
+    setBackgroundInert(false);
+    document.body.style.overflow = '';
     lastFocused?.focus();
   };
   document.querySelectorAll(openSel).forEach((el) => el.addEventListener('click', open));
@@ -98,7 +108,7 @@ function animateCount(el: HTMLElement): void {
 }
 
 const counters = document.querySelectorAll<HTMLElement>('.stat-num');
-counters.forEach((el) => (el.textContent = fmt(Number(el.dataset.count ?? '0'))));
+counters.forEach((el) => (el.textContent = fmt(reduced ? Number(el.dataset.count ?? '0') : 0)));
 if (!reduced) {
   const statObserver = new IntersectionObserver(
     (entries) => {

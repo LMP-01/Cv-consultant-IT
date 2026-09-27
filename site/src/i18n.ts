@@ -38,7 +38,11 @@ export function applyLang(lang: Lang): void {
   });
 
   const toggle = document.getElementById('lang-toggle');
-  if (toggle) toggle.textContent = lang === 'fr' ? 'EN' : 'FR';
+  if (toggle) {
+    toggle.textContent = lang === 'fr' ? 'EN' : 'FR';
+    toggle.lang = lang === 'fr' ? 'en' : 'fr';
+    toggle.setAttribute('aria-label', lang === 'fr' ? 'EN – Switch to English' : 'FR – Passer en français');
+  }
 }
 
 export function initI18n(): void {
