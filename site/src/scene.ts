@@ -1,164 +1,221 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-// Scène "flux de données" : particules qui circulent le long de rubans,
-// grille wireframe au sol, cœur icosaèdre, parallax souris.
+// Hero 3D : noyau de données (GLB exporté depuis Blender) sur fond clair.
+// L'icosaèdre procédural s'affiche tout de suite et sert de repli si le GLB échoue.
 
-const CYAN = new THREE.Color('#00f0ff');
-const MAGENTA = new THREE.Color('#ff2d78');
-const VIOLET = new THREE.Color('#7b5bff');
+const BLUE = new THREE.Color('#2f5bff');
+const VIOLET = new THREE.Color('#7c3aed');
 
-const STREAM_COUNT = 14;
-const POINTS_PER_STREAM = 130;
+type SceneState = 'none' | 'fallback' | 'glb';
 
 export function initScene(canvas: HTMLCanvasElement): void {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const setState = (s: SceneState): void => {
+    canvas.dataset.scene = s;
+  };
 
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   } catch {
-    canvas.style.display = 'none';
+    setState('none');
     return;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  let pixelRatio = Math.min(window.devicePixelRatio, 1.75);
+  renderer.setPixelRatio(pixelRatio);
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2('#05060f', 0.028);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
 
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-  camera.position.set(0, 2.2, 16);
+  const key = new THREE.DirectionalLight('#ffffff', 1.6);
+  key.position.set(3, 4, 5);
+  scene.add(key, new THREE.HemisphereLight('#ffffff', '#dfe3f5', 0.6));
 
-  // --- Grille sol, perspective "Tron" ---
-  const grid = new THREE.GridHelper(160, 64, VIOLET, new THREE.Color('#101430'));
-  (grid.material as THREE.Material).transparent = true;
-  (grid.material as THREE.Material).opacity = 0.35;
-  grid.position.y = -4.5;
-  scene.add(grid);
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
+  camera.position.set(0, 0.2, 7.2);
 
-  // --- Cœur : icosaèdre wireframe double couche ---
-  const core = new THREE.Group();
-  const icoOuter = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(2.4, 1),
-    new THREE.MeshBasicMaterial({ color: CYAN, wireframe: true, transparent: true, opacity: 0.28 })
+  const pivot = new THREE.Group();
+  scene.add(pivot);
+
+  // --- Repli procédural, visible immédiatement
+  const fallback = new THREE.Group();
+  const shell = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.3, 1),
+    new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.35, wireframe: true })
   );
-  const icoInner = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1.4, 0),
-    new THREE.MeshBasicMaterial({ color: MAGENTA, wireframe: true, transparent: true, opacity: 0.4 })
+  const inner = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.75, 2),
+    new THREE.MeshStandardMaterial({ color: BLUE, emissive: BLUE, emissiveIntensity: 1.2, roughness: 0.3 })
   );
-  core.add(icoOuter, icoInner);
-  core.position.set(5.5, 1.5, 2);
-  scene.add(core);
+  fallback.add(shell, inner);
+  pivot.add(fallback);
+  setState('fallback');
 
-  // --- Rubans de flux de données : courbes + particules qui les parcourent ---
-  const streams: { curve: THREE.CatmullRomCurve3; points: THREE.Points; offsets: Float32Array; speed: number }[] = [];
-  const streamGroup = new THREE.Group();
-
-  for (let s = 0; s < STREAM_COUNT; s++) {
-    const y = -3 + (s / STREAM_COUNT) * 9 + (s % 3) * 0.4;
-    const z = -6 + (s % 5) * 2.2;
-    const amp = 1 + (s % 4) * 0.7;
-    const ctrl: THREE.Vector3[] = [];
-    for (let i = 0; i <= 6; i++) {
-      const x = -34 + (i / 6) * 68;
-      ctrl.push(new THREE.Vector3(x, y + Math.sin(i * 1.7 + s) * amp * 0.5, z + Math.cos(i * 1.3 + s * 2) * amp));
-    }
-    const curve = new THREE.CatmullRomCurve3(ctrl);
-
-    const positions = new Float32Array(POINTS_PER_STREAM * 3);
-    const colors = new Float32Array(POINTS_PER_STREAM * 3);
-    const offsets = new Float32Array(POINTS_PER_STREAM);
-    const col = s % 3 === 0 ? MAGENTA : s % 3 === 1 ? CYAN : VIOLET;
-    for (let i = 0; i < POINTS_PER_STREAM; i++) {
-      offsets[i] = Math.random();
-      const p = curve.getPoint(offsets[i]);
-      positions.set([p.x, p.y, p.z], i * 3);
-      colors.set([col.r, col.g, col.b], i * 3);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const mat = new THREE.PointsMaterial({
-      size: 0.09,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const points = new THREE.Points(geo, mat);
-    streamGroup.add(points);
-    streams.push({ curve, points, offsets, speed: 0.012 + (s % 5) * 0.006 });
+  // --- Particules en orbite (NormalBlending : l'additif disparaît sur fond blanc)
+  const COUNT = 260;
+  const pos = new Float32Array(COUNT * 3);
+  const col = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    const r = 2.1 + Math.random() * 0.9;
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    pos.set([r * Math.sin(ph) * Math.cos(th), r * Math.cos(ph) * 0.55, r * Math.sin(ph) * Math.sin(th)], i * 3);
+    const c = Math.random() < 0.5 ? BLUE : VIOLET;
+    col.set([c.r, c.g, c.b], i * 3);
   }
-  scene.add(streamGroup);
-
-  // --- Poussière d'étoiles en fond ---
-  const dustCount = 700;
-  const dustPos = new Float32Array(dustCount * 3);
-  for (let i = 0; i < dustCount; i++) {
-    dustPos.set([(Math.random() - 0.5) * 90, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 60 - 10], i * 3);
-  }
-  const dustGeo = new THREE.BufferGeometry();
-  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-  const dust = new THREE.Points(
-    dustGeo,
-    new THREE.PointsMaterial({ size: 0.05, color: '#5a6a9a', transparent: true, opacity: 0.6, depthWrite: false })
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  pGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const particles = new THREE.Points(
+    pGeo,
+    new THREE.PointsMaterial({ size: 0.035, vertexColors: true, transparent: true, opacity: 0.75, depthWrite: false })
   );
-  scene.add(dust);
+  scene.add(particles);
 
-  // --- Parallax souris + scroll ---
-  const target = { x: 0, y: 0 };
-  window.addEventListener('pointermove', (e) => {
-    target.x = (e.clientX / window.innerWidth - 0.5) * 2;
-    target.y = (e.clientY / window.innerHeight - 0.5) * 2;
-  });
+  let ringA: THREE.Object3D | null = null;
+  let ringB: THREE.Object3D | null = null;
+  let running = false;
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+  function resize(): void {
+    const w = canvas.clientWidth || 1;
+    const h = canvas.clientHeight || 1;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  }
+
+  const pointer = { x: 0, y: 0 };
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      pointer.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      pointer.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    },
+    { passive: true }
+  );
 
   const clock = new THREE.Clock();
 
+  // Qualité adaptative : si le GPU peine (appareil modeste, rendu logiciel), on baisse la résolution.
+  let slowFrames = 0;
+
   function renderFrame(): void {
-    const dt = clock.getDelta();
-    const t = clock.elapsedTime;
-
-    for (const s of streams) {
-      const pos = s.points.geometry.getAttribute('position') as THREE.BufferAttribute;
-      for (let i = 0; i < POINTS_PER_STREAM; i++) {
-        s.offsets[i] = (s.offsets[i] + s.speed * dt * 4) % 1;
-        const p = s.curve.getPoint(s.offsets[i]);
-        pos.setXYZ(i, p.x, p.y, p.z);
+    const raw = clock.getDelta();
+    const dt = Math.min(raw, 0.05);
+    if (running && pixelRatio > 1) {
+      slowFrames = raw > 0.045 ? slowFrames + 1 : 0;
+      if (slowFrames > 20) {
+        pixelRatio = 1;
+        renderer.setPixelRatio(pixelRatio);
+        resize();
+        slowFrames = 0;
       }
-      pos.needsUpdate = true;
     }
-
-    core.rotation.y += dt * 0.25;
-    core.rotation.x = Math.sin(t * 0.3) * 0.2;
-    icoInner.rotation.y -= dt * 0.5;
-    dust.rotation.y += dt * 0.008;
-
-    const scrollDepth = window.scrollY / Math.max(1, document.body.scrollHeight - window.innerHeight);
-    camera.position.x += (target.x * 1.6 - camera.position.x) * 0.04;
-    camera.position.y += (2.2 - target.y * 1.2 - scrollDepth * 3 - camera.position.y) * 0.04;
-    camera.lookAt(0, 0.5, 0);
-
+    if (!reduced) {
+      pivot.rotation.y += dt * 0.22;
+      pivot.rotation.x += (pointer.y * 0.25 - pivot.rotation.x) * 0.05;
+      pivot.rotation.z += (-pointer.x * 0.12 - pivot.rotation.z) * 0.05;
+      if (ringA) ringA.rotateY(dt * 0.35);
+      if (ringB) ringB.rotateY(-dt * 0.25);
+      fallback.rotation.x += dt * 0.1;
+      particles.rotation.y -= dt * 0.05;
+    }
     renderer.render(scene, camera);
   }
 
-  if (prefersReducedMotion) {
-    // Une seule frame statique : le décor sans le mouvement.
-    renderFrame();
-    return;
+  function start(): void {
+    if (reduced || running) return;
+    running = true;
+    clock.getDelta();
+    renderer.setAnimationLoop(renderFrame);
   }
 
-  renderer.setAnimationLoop(renderFrame);
+  function stop(): void {
+    running = false;
+    renderer.setAnimationLoop(null);
+  }
 
-  // Pause quand l'onglet est caché (batterie mobile).
-  document.addEventListener('visibilitychange', () => {
-    renderer.setAnimationLoop(document.hidden ? null : renderFrame);
+  resize();
+  window.addEventListener('resize', () => {
+    resize();
+    if (!running) renderFrame();
   });
+
+  // Ne tourner que si le hero est visible et l'onglet actif
+  let inView = true;
+  const sync = (): void => {
+    if (inView && !document.hidden) start();
+    else stop();
+  };
+  new IntersectionObserver(([entry]) => {
+    inView = entry.isIntersecting;
+    sync();
+  }).observe(canvas);
+  // Filet de sécurité : sous forte charge, l'observer peut être retardé ; le scroll coupe la boucle tout de suite.
+  window.addEventListener(
+    'scroll',
+    () => {
+      const r = canvas.getBoundingClientRect();
+      const visible = r.bottom > 0 && r.top < window.innerHeight;
+      if (visible !== inView) {
+        inView = visible;
+        sync();
+      }
+    },
+    { passive: true }
+  );
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop();
+    else if (inView) start();
+  });
+
+  renderFrame();
+  start();
+
+  // --- Chargement du GLB Blender
+  import('three/addons/loaders/GLTFLoader.js')
+    .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/core.glb`))
+    .then((gltf) => {
+      const model = gltf.scene;
+      const lights: THREE.Object3D[] = [];
+      model.traverse((o) => {
+        if ((o as THREE.Light).isLight || (o as THREE.Camera).isCamera) lights.push(o);
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) {
+          const m = mesh.material as THREE.MeshPhysicalMaterial;
+          if ('transmission' in m) m.transmission = 0;
+          if (m.name === 'Ceramic_White') {
+            m.envMapIntensity = 1.1;
+            m.roughness = 0.34;
+          } else if (m.name === 'Core_Glow') {
+            // Émission modérée : la tone map désature les émissions fortes en blanc lavande.
+            m.color.set('#2f5bff');
+            m.emissive.set('#2f4bff');
+            m.emissiveIntensity = 1.5;
+          } else if (m.name === 'Core_Inner') {
+            m.emissive.set('#8b5cf6');
+            m.emissiveIntensity = 2.2;
+          }
+        }
+      });
+      lights.forEach((l) => l.removeFromParent());
+      const root = model.getObjectByName('DataCore') ?? model;
+      root.rotation.set(0, 0, 0);
+      ringA = model.getObjectByName('RingA') ?? null;
+      ringB = model.getObjectByName('RingB') ?? null;
+      pivot.remove(fallback);
+      pivot.add(model);
+      setState('glb');
+      if (!running) renderFrame();
+    })
+    .catch(() => {
+      // Le repli procédural reste affiché.
+    });
 }

@@ -3,6 +3,12 @@ import { t } from './i18n';
 // Galeries « Aperçu en images » : screenshots servis depuis public/assets/.
 const BASE = import.meta.env.BASE_URL;
 
+function setInert(on: boolean): void {
+  document.querySelectorAll<HTMLElement>('body > header, body > main, body > footer').forEach((el) => {
+    el.inert = on;
+  });
+}
+
 interface Slide {
   src: string;
   capKey: string;
@@ -39,7 +45,10 @@ export function initGalleries(): void {
     index = (k + current.length) % current.length;
     slidesWrap.style.transform = `translateX(-${index * 100}%)`;
     capEl.textContent = t(current[index].capKey);
-    dotsWrap.querySelectorAll('button').forEach((d, i) => d.classList.toggle('on', i === index));
+    dotsWrap.querySelectorAll('button').forEach((d, i) => {
+      d.classList.toggle('on', i === index);
+      d.setAttribute('aria-current', i === index ? 'true' : 'false');
+    });
   }
 
   function build(key: string): void {
@@ -80,6 +89,7 @@ export function initGalleries(): void {
     lastFocused = document.activeElement as HTMLElement;
     build(key);
     lb.hidden = false;
+    setInert(true);
     document.body.style.overflow = 'hidden';
     go(0);
     lb.querySelector<HTMLButtonElement>('.lb-close')?.focus();
@@ -87,6 +97,7 @@ export function initGalleries(): void {
 
   function close(): void {
     lb.hidden = true;
+    setInert(false);
     document.body.style.overflow = '';
     lastFocused?.focus();
   }

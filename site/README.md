@@ -1,43 +1,53 @@
-# Site interactif 3D — Demande de mission
+# Site — Théo Manso Pinto (thème clair)
 
-Landing page 3D (Three.js) bilingue FR/EN permettant à un prospect d'envoyer une demande de mission (outils, TJM/forfait/régie, description) par email, avec choix B2B / B2C.
+Landing page bilingue FR/EN : prestations IA & data, offre **Site vitrine PME à 700 € HT**, réalisations, formulaire de demande de mission envoyé par email (Web3Forms).
+
+En ligne : https://lmp-01.github.io/Cv-consultant-IT/
 
 ## Développement
 
 ```bash
 cd site
-npm install
+npm ci
 npm run dev        # http://localhost:5173
 npm run build      # build de production dans site/dist
 ```
 
-## Activer l'envoi d'email (2 minutes, gratuit)
-
-Le formulaire utilise [Web3Forms](https://web3forms.com) — service gratuit, sans backend, qui transforme le POST du formulaire en email dans votre boîte.
-
-1. Allez sur https://web3forms.com et entrez **theo.mansopro@gmail.com**
-2. Vous recevez une **Access Key** (format UUID) par email
-3. Collez-la dans `site/src/form.ts` :
-   ```ts
-   const WEB3FORMS_ACCESS_KEY = 'votre-cle-ici';
-   ```
-4. Commitez et poussez : le site redéploie automatiquement
-
-Tant que la clé n'est pas configurée, le bouton « Envoyer la demande » ouvre le client mail du prospect avec le message pré-rempli (`mailto:`), donc rien n'est perdu.
-
-## Déploiement GitHub Pages
-
-Le workflow `.github/workflows/deploy-site.yml` construit et déploie le site à chaque push sur `main` touchant `site/**`.
-
-**Activation initiale (une seule fois)** : dans les settings GitHub du repo → **Pages** → Source : **GitHub Actions**.
-
-URL : https://lmp-01.github.io/Cv-consultant-IT/
-
 ## Structure
 
-- `src/scene.ts` — scène Three.js : flux de particules « data streams », grille Tron, icosaèdre wireframe, parallax souris
-- `src/form.ts` — formulaire de mission → Web3Forms (fallback mailto)
-- `src/i18n.ts` + `src/locales/{fr,en}.json` — tout le texte de la page
-- `src/styles.css` — design futuriste (néons cyan/magenta, scanlines, animations ease-out < 300 ms)
+- `index.html` : toutes les sections (hero 3D, chiffres, bande vidéo, prestations, offres, réalisations, boîte à outils, formulaire, mentions légales).
+- `src/styles.css` : design system clair. Les tokens sont dans `:root` (ivoire `#F7F7F4`, encre `#0B1020`, bleu `#2F5BFF`, violet `#7C3AED`) ; polices Space Grotesk (titres) et Inter (texte).
+- `src/scene.ts` : hero Three.js. Charge `public/models/core.glb` ; un icosaèdre procédural s'affiche le temps du chargement, ou si le GLB échoue. L'état est exposé dans `#bg-canvas[data-scene]`.
+- `src/media.ts` : boucles vidéo des cartes. La `<video>` n'est créée qu'à l'entrée à l'écran, mise en pause en sortant. Seul le poster s'affiche en reduced-motion ou en mode économie de données.
+- `src/form.ts` : formulaire → Web3Forms. `prefillOffer()` pré-remplit la demande « Site vitrine PME ».
+- `src/i18n.ts` + `src/locales/{fr,en}.json` : tous les textes.
 
-Accessibilité : `prefers-reduced-motion` respecté (scène statique, compteurs instantanés), fallback si WebGL indisponible, navigation clavier du modal (Escape pour fermer).
+## Assets
+
+| Fichier | Origine |
+|---|---|
+| `public/models/core.glb` | Scène Blender (Higgsfield Scene Builder 3D), treillis céramique + cœur lumineux |
+| `public/media/*.mp4` | Boucles Kling 3.0 (5 s, muettes), encodées en H.264 ≤ 400 Ko |
+| `public/media/*.jpg` | Posters (1ʳᵉ image de chaque clip) et visuels GPT Image 2.5 |
+| `public/og.jpg` | Image de partage social 1200×630 |
+| `public/devis/Devis_Site_Vitrine_PME_EPTA5.pdf` | Devis type généré par `.github/workflows/build_devis_site_pme.py` |
+| `public/cv/*.pdf` | CV FDE FR et EN |
+
+Réencoder un clip : `ffmpeg -i in.mp4 -vf scale=960:-2 -c:v libx264 -pix_fmt yuv420p -profile:v high -crf 28 -preset slow -an -movflags +faststart out.mp4`
+
+## Devis PDF
+
+```bash
+pip install reportlab==4.5.0
+python .github/workflows/build_devis_site_pme.py   # depuis la racine du repo
+```
+
+La sortie est reproductible (`invariant=1`). Committez le PDF régénéré : il est servi tel quel par le site.
+
+## Email (Web3Forms)
+
+La clé d'accès est dans `src/form.ts` (`WEB3FORMS_ACCESS_KEY`). Pour la changer, créez-en une sur https://app.web3forms.com.
+
+## Déploiement
+
+`.github/workflows/deploy-site.yml` compile le site sur chaque PR, et le déploie sur GitHub Pages à chaque push sur `main` qui touche `site/**`.
