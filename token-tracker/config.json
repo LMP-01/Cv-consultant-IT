@@ -1,0 +1,11 @@
+{
+  "_comment": "Configuration du suivi pour un abonnement Claude (quota par fenêtre de 5 h). Les budgets sont des ESTIMATIONS en équivalent-$ d'API consommable par fenêtre : Anthropic ne publie pas les plafonds exacts (ils sont dynamiques). Avec auto_calibrate=true, la jauge se cale aussi sur ta fenêtre la plus chargée observée.",
+  "plan": "max_5x",
+  "window_hours": 5,
+  "auto_calibrate": true,
+  "plans": {
+    "pro":     { "label": "Pro",     "window_budget": 10,  "weekly_budget": 120 },
+    "max_5x":  { "label": "Max 5x",  "window_budget": 50,  "weekly_budget": 600 },
+    "max_20x": { "label": "Max 20x", "window_budget": 200, "weekly_budget": 2400 }
+  }
+}
