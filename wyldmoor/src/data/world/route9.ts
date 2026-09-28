@@ -1,0 +1,82 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Route 9: Hollowmere Village <-> Aldenmoor Abbey. Bryn's fourth rematch happens here,
+// once all 8 badges have been earned.
+export const ROUTE_9: MapDef = {
+  id: 'route_9',
+  name: 'Route 9',
+  width: 15,
+  height: 16,
+  skyColor: '#c9c8d8',
+  groundColor: '#7a7a8a',
+  tiles: [
+    '###############',
+    '#.....D.......#',
+    '#.....,.......#',
+    '#...,,,,,.....#',
+    '#...,\"\"\",.....#',
+    '#...,\"\"\",.....#',
+    '#...,,,,,.....#',
+    '#.....,.......#',
+    '#.....,.......#',
+    '#...,,,,,.....#',
+    '#...,\"\"\",.....#',
+    '#...,\"\"\",.....#',
+    '#...,,,,,.....#',
+    '#.....,.......#',
+    '#.....D.......#',
+    '###############',
+  ],
+  warps: [
+    { x: 6, y: 1, toMapId: 'hollowmere_village', spawnX: 9, spawnY: 12, spawnFacing: 'down' },
+    { x: 6, y: 14, toMapId: 'aldenmoor_abbey', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 38, minLevel: 60, maxLevel: 62, weight: 4 },
+    { speciesId: 69, minLevel: 60, maxLevel: 62, weight: 3 },
+    { speciesId: 41, minLevel: 61, maxLevel: 63, weight: 2 },
+    { speciesId: 89, minLevel: 61, maxLevel: 63, weight: 2 },
+    { speciesId: 107, minLevel: 61, maxLevel: 63, weight: 1 },
+  ],
+  npcs: [
+    {
+      id: 'route9_rival_4',
+      x: 4,
+      y: 6,
+      facing: 'right',
+      name: 'Bryn',
+      sprite: 'rival',
+      dialogue: [
+        "Huit badges ! On y est presque, non ? L'Abbaye d'Aldenmoor n'est plus tres loin.",
+        "Un dernier combat avant l'epreuve du Conseil d'Elite, ca te tente ?",
+      ],
+      team: [
+        { speciesId: 3, level: 60 },
+        { speciesId: 100, level: 59 },
+        { speciesId: 64, level: 59 },
+        { speciesId: 30, level: 60 },
+        { speciesId: 25, level: 61 },
+      ],
+      postBattleDialogue: [
+        "Tu es vraiment impressionnant. Je crois que c'est toi qui deviendras Champion.",
+        "Fonce, je te suivrai !",
+      ],
+      setFlagOnComplete: 'bryn_defeated_4',
+      requiresFlag: 'gym8_corwin_defeated',
+    },
+    {
+      id: 'route9_ranger_orin',
+      x: 10,
+      y: 9,
+      facing: 'left',
+      name: 'Garde-foret Orin',
+      sprite: 'ranger',
+      dialogue: [
+        "L'Abbaye d'Aldenmoor abrite des esprits sages. Approche-toi avec respect.",
+      ],
+      team: [{ speciesId: 38, level: 62 }],
+      postBattleDialogue: ["Puisses-tu trouver la clarte au sanctuaire."],
+      setFlagOnComplete: 'route9_orin_defeated',
+    },
+  ],
+};

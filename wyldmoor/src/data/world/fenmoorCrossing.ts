@@ -1,0 +1,130 @@
+import type { MapDef } from '../mapSchema.ts';
+
+// Gym 6: Silas Marrow, Poison specialist, awards the Bog Badge.
+// First appearance of a Team Ashfall grunt, scouting the marsh for latent Wylde energy.
+export const FENMOOR_CROSSING: MapDef = {
+  id: 'fenmoor_crossing',
+  name: 'Fenmoor Crossing',
+  width: 18,
+  height: 14,
+  skyColor: '#7a8a6a',
+  groundColor: '#5a6a4a',
+  tiles: [
+    '##################',
+    '#........D.......#',
+    '#........B.......#',
+    '#.....~~.........#',
+    '#..B..~~,,,...B..#',
+    '#..D..~~,,,...D..#',
+    '#.....~~,,,......#',
+    '#................#',
+    '#....B......G....#',
+    '#....D......G....#',
+    '#..~~............#',
+    '#................#',
+    '#........,.......#',
+    '########..########',
+  ],
+  warps: [
+    { x: 9, y: 0, toMapId: 'route_6', spawnX: 6, spawnY: 13, spawnFacing: 'up' },
+    { x: 9, y: 12, toMapId: 'route_7', spawnX: 8, spawnY: 1, spawnFacing: 'down' },
+  ],
+  encounters: [
+    { speciesId: 22, minLevel: 41, maxLevel: 44, weight: 4 },
+    { speciesId: 36, minLevel: 41, maxLevel: 44, weight: 3 },
+    { speciesId: 52, minLevel: 42, maxLevel: 44, weight: 3 },
+    { speciesId: 83, minLevel: 42, maxLevel: 45, weight: 2 },
+    { speciesId: 106, minLevel: 43, maxLevel: 45, weight: 1 },
+  ],
+  buildings: [
+    { x: 3, y: 4, kind: 'heal' },
+    { x: 14, y: 4, kind: 'shop' },
+  ],
+  npcs: [
+    {
+      id: 'fenmoor_nurse',
+      x: 2,
+      y: 5,
+      facing: 'down',
+      name: 'Infirmier Silas',
+      sprite: 'nurse',
+      dialogue: ['Les marais épuisent les Wyldes. Un soin gratuit avant de repartir ?'],
+      service: 'heal',
+    },
+    {
+      id: 'fenmoor_merchant',
+      x: 15,
+      y: 5,
+      facing: 'down',
+      name: 'Marchande Rosalie',
+      sprite: 'merchant',
+      dialogue: ['Bottes sèches et potions fortes, c’est par ici !'],
+      service: 'shop',
+    },
+    {
+      id: 'fenmoor_elder',
+      x: 4,
+      y: 3,
+      facing: 'down',
+      name: 'Ancienne Fenna',
+      sprite: 'elder',
+      dialogue: [
+        "Le marais est traitre, mais genereux pour qui sait l'ecouter.",
+        "Depuis peu, des inconnus en uniforme sombre rodent pres des tourbieres. Ca m'inquiete.",
+      ],
+    },
+    {
+      id: 'fenmoor_ashfall_grunt_1',
+      x: 13,
+      y: 3,
+      facing: 'down',
+      name: 'Sbire de la Team Braise-Noire',
+      sprite: 'villain',
+      dialogue: [
+        "Degage, gamin ! On mesure l'energie latente de ces Wyldes des marais pour le Directeur.",
+        "Puisque tu insistes... tu vas voir ce que ca fait de nous croiser !",
+      ],
+      team: [
+        { speciesId: 36, level: 43 },
+        { speciesId: 83, level: 44 },
+      ],
+      postBattleDialogue: [
+        "Tch. Le Directeur Corvane n'en a pas fini avec cette region.",
+      ],
+      setFlagOnComplete: 'fenmoor_ashfall_grunt1_defeated',
+    },
+    {
+      id: 'fenmoor_gym_leader_silas',
+      x: 12,
+      y: 9,
+      facing: 'down',
+      name: 'Silas Marrow',
+      sprite: 'gymLeader',
+      dialogue: [
+        "Bienvenue au gymnase de Fenmoor. Je suis Silas, et le poison n'a aucun secret pour moi.",
+        "Voyons si ton sang-froid resiste a mes toxines !",
+      ],
+      team: [
+        { speciesId: 36, level: 44 },
+        { speciesId: 52, level: 45 },
+        { speciesId: 22, level: 47 },
+      ],
+      postBattleDialogue: [
+        "Une victoire nette, sans une seule trace de venin. Bravo !",
+        "Voici le Badge des Tourbieres.",
+      ],
+      setFlagOnComplete: 'gym6_silas_defeated',
+    },
+  ],
+  gym: {
+    leaderName: 'Silas Marrow',
+    leaderNpcId: 'fenmoor_gym_leader_silas',
+    badgeName: 'Badge des Tourbieres',
+    team: [
+      { speciesId: 36, level: 44 },
+      { speciesId: 52, level: 45 },
+      { speciesId: 22, level: 47 },
+    ],
+    flagOnDefeat: 'gym6_silas_defeated',
+  },
+};
