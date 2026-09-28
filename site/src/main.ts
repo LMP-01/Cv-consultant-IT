@@ -8,7 +8,6 @@ import './styles.css';
 import { currentLang, initI18n, t } from './i18n';
 import { initForm } from './form';
 import { initGalleries } from './gallery';
-import { initJourney } from './journey';
 import { initMedia } from './media';
 import { chooseClient, focusTarget, initWizard, presetOffer, startCall, startMission } from './wizard';
 
@@ -17,7 +16,6 @@ initForm();
 initGalleries();
 initMedia();
 initWizard();
-initJourney();
 
 
 function setBackgroundInert(on: boolean): void {
