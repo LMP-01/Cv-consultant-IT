@@ -1,0 +1,8 @@
+{
+  "name": "cv-consultant-it",
+  "private": true,
+  "description": "Dépôt CV. L'application Waza (second cerveau martial) vit dans martial-brain/.",
+  "scripts": {
+    "build": "cd martial-brain && npm install && npm run build"
+  }
+}

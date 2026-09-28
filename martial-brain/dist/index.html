@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="Combat OS — second cerveau martial : graphe de connaissances reliant techniques, combinaisons, contres, sparrings et principes."
+    />
+    <title>Combat OS · Second cerveau martial</title>
+
+    <!--
+      Les polices sont préchargées : elles sont servies depuis le même domaine
+      et le texte est le premier pixel utile de l'application. Sans cela, le
+      navigateur ne les découvre qu'après avoir analysé la feuille de style.
+    -->
+    <link rel="preload" href="/fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Inter-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!--
+      Les préférences d'affichage sont posées AVANT le premier rendu.
+      Les appliquer depuis React ferait clignoter l'écran en clair pendant une
+      frame avant de basculer en sombre — et ce clignotement, sur une
+      application utilisée tous les jours pendant des années, se remarque.
+      Ce script est délibérément minuscule, synchrone et sans dépendance.
+    -->
+    <script>
+      try {
+        var p = JSON.parse(localStorage.getItem('combat-os.prefs') || '{}');
+        var r = document.documentElement;
+        var t = p.theme === 'light' || p.theme === 'dark' ? p.theme : null;
+        if (!t && p.theme === 'system') {
+          t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        r.dataset.theme = t || 'dark';
+        if (p.contrast === 'high') r.dataset.contrast = 'high';
+        if (typeof p.fontScale === 'number') r.style.setProperty('--font-scale', p.fontScale);
+      } catch (e) {
+        /* stockage refusé : les valeurs par défaut conviennent */
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-hpxgd8mB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4O01pn6.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "waza-server",
+  "tasks": {
+    "dev": "deno serve --allow-net --allow-read --allow-write --allow-env --unstable-kv --port 8787 server/main.ts",
+    "check": "deno check server/main.ts"
+  },
+  "compilerOptions": {
+    "strict": true
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src",
+    "tests",
+    "e2e",
+    "scripts"
+  ],
+  "exports": "./server/main.ts"
+}
