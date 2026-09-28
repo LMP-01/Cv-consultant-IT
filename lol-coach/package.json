@@ -1,0 +1,37 @@
+{
+  "name": "lol-coach",
+  "version": "1.2.1",
+  "description": "Coach IA temps réel pour League of Legends : surveille tes parties via les API locales du client Riot, donne des conseils de jeu, et propose picks/builds adaptés à la team adverse. Appli locale HTML + Node.js.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "mock": "node src/server.js --mock",
+    "dev": "node src/server.js",
+    "fetch-counters": "node scripts/fetch-counters.js",
+    "fetch-builds": "node scripts/fetch-builds.js",
+    "overlay": "electron electron/main.js",
+    "sync-overwolf-version": "node scripts/sync-overwolf-version.js",
+    "test": "node test/run.js"
+  },
+  "keywords": [
+    "league-of-legends",
+    "lol",
+    "coaching",
+    "ai",
+    "live-client-data",
+    "lcu"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.65.0"
+  }
+}

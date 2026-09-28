@@ -1,0 +1,28 @@
+{
+  "_comment": "Combos d'engage/trade par champion (repli par classe via byClass). Éditable. Ce ne sont pas des vérités absolues : adapte selon le matchup.",
+  "champions": {
+    "Zoe": "E (bulle de sommeil) à distance max → charge Q pendant l'endormissement → W (Paddle Star) + auto. Ne E jamais à courte portée.",
+    "Ahri": "E (charme) pour engager → Q aller-retour → auto + W → R pour repositionner/finir. N'entre pas sans charme touché.",
+    "Syndra": "E (stun) sur une bille placée → Q + W (jette une bille) → R si le burst tue. Pré-place une bille pour le stun instantané.",
+    "Lux": "Q (bind) d'abord → E (zone) dessus → auto + R. Sans Q touché, ne t'engage pas.",
+    "Orianna": "Ball sur toi ou un allié d'engage → Q+W pour le poke, garde R pour le teamfight (Shockwave sur 2+).",
+    "Viktor": "W (stun) → E (laser) → Q + auto. All-in seulement W disponible.",
+    "Yasuo": "E à travers les sbires → Q3 (tornade) → R sur le knock-up → EQ pour rester dessus. Besoin d'un knock-up allié pour le full combo.",
+    "Zed": "R (ombre) → E (ralentit) → Q + auto + W ombre pour un 2e Q → détonne R. Sur cible squishy isolée.",
+    "Jinx": "Pow-Pow (mini-gun) pour poke, passe Fishbones (roquettes) à distance ; W (ralentit) pour setup, E (pièges) en défensif, R pour finir de loin.",
+    "Caitlyn": "Poke Q à travers la ligne ; pose un piège (W) et Q dessus pour le burst ; E (filet) pour kite ; R pour achever.",
+    "Ezreal": "Poke Q constant (reset sur hit) ; Q sur cible mystiquée (W) pour max dégâts ; E défensif seulement, garde-le pour esquiver l'engage.",
+    "Kai'Sa": "Empile les marques (Q + autos) → E (invisible/vitesse d'attaque) → R pour rentrer sur cible marquée. All-in seulement 2 objets.",
+    "Jhin": "Poke W (root si allié révèle) et Q ; place tes pièges (E) dans les bushes ; R (4 balles) pour achever de loin.",
+    "Miss Fortune": "Poke Q (ricochet) + double-up passif ; E (ralentit) pour setup R (ultimate) dans un choke ou après un CC allié.",
+    "Vayne": "Kite avec Q (tumble) + auto (3e = Silver Bolts) ; E (condemn) sur un mur pour stun ; R en teamfight pour l'invisibilité."
+  },
+  "byClass": {
+    "Assassin": "Attends un CC ou ton gap-close sur une cible ISOLÉE : engage → burst complet → sors avant le retour de leur équipe. Jamais à vue de 2+ ennemis.",
+    "Mage": "Poke à distance max ; n'all-in que si ton skillshot de CC (root/stun) touche → enchaîne ta rotation → auto. Garde toujours un sort d'escape.",
+    "Marksman": "Kite : auto + repositionnement, ne te fais pas toucher. All-in seulement avec CC allié, ou sur un ennemi sans dash/CC, et à 2 objets.",
+    "Fighter": "Rentre quand ton CD principal est up : gap-close → CC → trade prolongé (tu gagnes le duel long). Évite le poke à distance.",
+    "Tank": "Engage sur la bonne cible (carry adverse) quand tes alliés suivent ; sinon zone et absorbe. Ne t'engage pas seul sans follow-up.",
+    "Support": "Setup ton ADC : CC d'engage seulement s'il peut suivre ; en défensif, garde ton peel (CC/bouclier) pour quand l'ennemi rentre."
+  }
+}

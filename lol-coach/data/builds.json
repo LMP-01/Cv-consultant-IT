@@ -1,0 +1,115 @@
+{
+  "_comment": "Builds conseillés + profil pour les champions de ta pool. Les objets (start/core/boots/situational) sont en NOMS ANGLAIS Data Dragon afin d'afficher l'icône de chaque item (résolus à la volée selon le patch). Si un item a été renommé/retiré, il s'affiche en texte. 'difficulty' 1-5. Édite librement.",
+  "builds": {
+    "Katarina": {
+      "profile": { "resource": "Sans ressource", "style": "Assassin AP — snowball / reset", "difficulty": 4, "description": "Assassin de mêlée qui multiplie les reset (passif) ; explose les cibles isolées et roam beaucoup." },
+      "runes": { "keystone": "Électrocution (ou Conquérant en match-up dur)", "secondary": "Domination + Sorcellerie" },
+      "summoners": "Flash + Embrasement",
+      "start": "Doran's Shield",
+      "core": ["Hextech Rocketbelt", "Zhonya's Hourglass", "Rabadon's Deathcap"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Void Staff", "Banshee's Veil"],
+      "note": "Cherche un reset sur un kill avant de t'engager ; gros spike niv 6 + 1er objet. Alt 1er objet : Stormsurge."
+    },
+    "Anivia": {
+      "profile": { "resource": "Mana", "style": "Mage de contrôle — zonage / scaling", "difficulty": 4, "description": "Mage à zonage (mur, stun Q→E) avec un passif œuf qui la rend très dure à tuer. Énorme en late." },
+      "runes": { "keystone": "Comète arcanique (ou Frappe d'abord)", "secondary": "Sorcellerie + Inspiration" },
+      "summoners": "Flash + Téléportation",
+      "start": "Doran's Ring",
+      "core": ["Liandry's Torment", "Rylai's Crystal Scepter", "Rabadon's Deathcap"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Zhonya's Hourglass", "Void Staff"],
+      "note": "Gère ton mana ; combo mur + Q→E. Garde l'œuf pour les timings d'objectif. Alt : Malignance / Cœur de Lich."
+    },
+    "Zoe": {
+      "profile": { "resource": "Mana", "style": "Mage burst — poke / pick", "difficulty": 4, "description": "Burst à très longue portée (E endormissement → Q). Punit les erreurs de positionnement de loin." },
+      "runes": { "keystone": "Comète arcanique", "secondary": "Sorcellerie + Inspiration" },
+      "summoners": "Flash + Embrasement",
+      "start": "Doran's Ring",
+      "core": ["Luden's Companion", "Shadowflame", "Rabadon's Deathcap"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Zhonya's Hourglass", "Void Staff"],
+      "note": "Touche le E à distance puis enchaîne Q. Récupère les sorts d'invoc avec le W (paddle star)."
+    },
+    "Malzahar": {
+      "profile": { "resource": "Mana", "style": "Mage de combat — push / pick fiable", "difficulty": 2, "description": "Wave-clear sûr, ultime point-and-click qui supprime une cible. Très safe, gros pick potentiel." },
+      "runes": { "keystone": "Frappe d'abord (ou Comète)", "secondary": "Inspiration / Sorcellerie" },
+      "summoners": "Flash + Téléportation",
+      "start": "Doran's Ring",
+      "core": ["Malignance", "Blackfire Torch", "Rabadon's Deathcap"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Zhonya's Hourglass", "Banshee's Veil"],
+      "note": "Utilise R sur l'assassin/la carry adverse pour le bloquer. Voidlings + E pour push. Alt : Liandry."
+    },
+    "Veigar": {
+      "profile": { "resource": "Mana", "style": "Mage scaling — cage / one-shot", "difficulty": 3, "description": "Empile de l'AP à l'infini (passif). Cage (E) pour stun, puis R qui one-shot en late." },
+      "runes": { "keystone": "Comète arcanique (ou Électrocution)", "secondary": "Sorcellerie + Inspiration" },
+      "summoners": "Flash + Embrasement",
+      "start": "Doran's Ring",
+      "core": ["Archangel's Staff", "Rabadon's Deathcap", "Void Staff"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Zhonya's Hourglass", "Banshee's Veil"],
+      "note": "Stacke ton Q sur les minions. Place la cage E derrière la cible pour garantir le stun."
+    },
+    "Taliyah": {
+      "profile": { "resource": "Mana", "style": "Mage / roam — waveclear & déplacements", "difficulty": 3, "description": "Waveclear rapide et roams puissants (E + R mur). Bon poke et contrôle de zone." },
+      "runes": { "keystone": "Comète arcanique (ou Frappe d'abord)", "secondary": "Sorcellerie + Inspiration" },
+      "summoners": "Flash + Téléportation",
+      "start": "Doran's Ring",
+      "core": ["Luden's Companion", "Shadowflame", "Rabadon's Deathcap"],
+      "boots": "Sorcerer's Shoes",
+      "situational": ["Zhonya's Hourglass", "Void Staff"],
+      "note": "Pousse et roam avec ta vitesse sur terrain labouré. Le mur R coupe les engages/poursuites."
+    },
+    "Ezreal": {
+      "profile": { "resource": "Mana", "style": "Marksman poke — safe / scaling", "difficulty": 3, "description": "ADC à poke (Q) avec un Flash (E) qui le rend très sûr. Scaling fort, faible early sans procs." },
+      "runes": { "keystone": "Frappe d'abord (ou Conquérant)", "secondary": "Inspiration / Précision" },
+      "summoners": "Flash + Soin",
+      "start": "Tear of the Goddess",
+      "core": ["Manamune", "Essence Reaver", "Trinity Force"],
+      "boots": "Ionian Boots of Lucidity",
+      "situational": ["Blade of the Ruined King", "Mercurial Scimitar"],
+      "note": "Empile Muramana tôt. Poke en sécurité avec Q, garde E pour esquiver l'engage."
+    },
+    "MissFortune": {
+      "profile": { "resource": "Mana", "style": "Marksman — pression de lane & teamfight", "difficulty": 2, "description": "Grosse pression de lane (passif + Q), et un ultime de teamfight dévastateur s'il est bien placé." },
+      "runes": { "keystone": "Coup de grâce (ou Tempête déchaînée)", "secondary": "Précision / Inspiration" },
+      "summoners": "Flash + Soin",
+      "start": "Doran's Blade",
+      "core": ["The Collector", "Infinity Edge", "Rapid Firecannon"],
+      "boots": "Berserker's Greaves",
+      "situational": ["Lord Dominik's Regards", "Bloodthirster"],
+      "note": "Place ton ultime depuis un angle sûr (flanc / au-dessus d'un mur), idéalement après un CC allié."
+    },
+    "Draven": {
+      "profile": { "resource": "Mana", "style": "Hyper-carry early — snowball", "difficulty": 4, "description": "Le plus gros DPS early du jeu s'il enchaîne ses haches. Snowball brutal, punissant s'il rate." },
+      "runes": { "keystone": "Coup de grâce", "secondary": "Précision (Légende: Sang, Coup d'estoc)" },
+      "summoners": "Flash + Embrasement",
+      "start": "Doran's Blade",
+      "core": ["The Collector", "Infinity Edge", "Bloodthirster"],
+      "boots": "Berserker's Greaves",
+      "situational": ["Lord Dominik's Regards", "Death's Dance"],
+      "note": "Attrape tes haches (2 max), convertis ton avance en kills/tours. Évite de tilt si tu rates."
+    },
+    "Caitlyn": {
+      "profile": { "resource": "Mana", "style": "Marksman portée — lane bully", "difficulty": 2, "description": "Plus longue portée des ADC ; domine la lane avec ses pièges (W) et son combo headshot." },
+      "runes": { "keystone": "Coup de grâce (ou Flotte fantôme)", "secondary": "Précision / Inspiration" },
+      "summoners": "Flash + Soin",
+      "start": "Doran's Blade",
+      "core": ["The Collector", "Infinity Edge", "Rapid Firecannon"],
+      "boots": "Berserker's Greaves",
+      "situational": ["Lord Dominik's Regards", "Mercurial Scimitar"],
+      "note": "Pose tes pièges sous tours et dans les bushes ; punis les recalls avec headshot + combo."
+    },
+    "Vayne": {
+      "profile": { "resource": "Mana", "style": "Hyper-carry late — duelliste", "difficulty": 4, "description": "Faible early, monstre en late : dégâts %PV (W) + invisibilité (R) + kite (Q). Tue les tanks." },
+      "runes": { "keystone": "Tempête déchaînée (ou Coup de grâce)", "secondary": "Précision / Résolution" },
+      "summoners": "Flash + Soin",
+      "start": "Doran's Blade",
+      "core": ["Kraken Slayer", "Runaan's Hurricane", "Infinity Edge"],
+      "boots": "Berserker's Greaves",
+      "situational": ["Blade of the Ruined King", "Mercurial Scimitar"],
+      "note": "Kite avec Q pour proc le W (3e coup) et roule le condamné contre les murs. Joue la durée."
+    }
+  }
+}

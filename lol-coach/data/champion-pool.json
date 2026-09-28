@@ -1,0 +1,21 @@
+{
+  "_comment": "Ta pool de champions par rôle. En champ select, si ton rôle assigné a une pool ici, le coach te suggère EN PRIORITÉ tes propres champions, classés selon (1) à quel point ils counterent la team adverse et (2) ta maîtrise. Édite librement. 'champion' = nom Data Dragon (tolérant à la casse), 'mastery' = points de maîtrise (influence le classement à counter égal).",
+  "pool": {
+    "MIDDLE": [
+      { "champion": "Katarina", "mastery": 300000 },
+      { "champion": "Locke", "mastery": 0 },
+      { "champion": "Anivia", "mastery": 700000 },
+      { "champion": "Zoe", "mastery": 100000 },
+      { "champion": "Malzahar", "mastery": 100000 },
+      { "champion": "Veigar", "mastery": 100000 },
+      { "champion": "Taliyah", "mastery": 50000 }
+    ],
+    "BOTTOM": [
+      { "champion": "Ezreal", "mastery": 200000 },
+      { "champion": "MissFortune", "mastery": 200000 },
+      { "champion": "Draven", "mastery": 100000 },
+      { "champion": "Caitlyn", "mastery": 100000 },
+      { "champion": "Vayne", "mastery": 100000 }
+    ]
+  }
+}

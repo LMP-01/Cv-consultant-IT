@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historique — LoL Coach IA</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="brandGrad" x1="6" y1="4" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#818cf8" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+            <path d="M20 3.5 33.4 11v18L20 36.5 6.6 29V11L20 3.5Z" fill="url(#brandGrad)" fill-opacity="0.16" stroke="url(#brandGrad)" stroke-width="1.6" stroke-linejoin="round" />
+            <path d="M21.8 10.5 12.5 22.5H18l-1.3 7.8 9-12.2h-5.6l1.7-7.6Z" fill="url(#brandGrad)" />
+          </svg>
+        </span>
+        <div>
+          <h1>Historique <span class="brand-accent">& bilan</span></h1>
+          <p class="tagline">Tes parties · critique IA · axes d'amélioration</p>
+        </div>
+      </div>
+      <div class="status-row">
+        <span class="badge dim" id="statsBadge">—</span>
+        <a class="nav-link" href="mid.html"><span class="ic" data-ic="book"></span> Mid</a>
+        <a class="nav-link" href="adc.html"><span class="ic" data-ic="book"></span> ADC</a>
+        <a class="nav-link" href="index.html"><span class="ic" data-ic="arrowLeft"></span> Coach en direct</a>
+      </div>
+    </header>
+
+    <main class="pool-main">
+      <div id="riotProfile"></div>
+      <div id="tiltBanner"></div>
+      <div id="histStats" class="hist-stats"></div>
+      <div id="winProfile"></div>
+      <div id="deathHeatmap"></div>
+      <div id="oneTrick"></div>
+      <div class="hist-toolbar">
+        <label class="queue-filter"><span class="ic" data-ic="sliders"></span>
+          <select id="queueFilter" class="tts-select"><option value="all">Toutes les files</option></select>
+        </label>
+        <button id="exportCsv" class="tts-btn ghost" type="button"><span class="ic" data-ic="download"></span> Export CSV</button>
+        <button id="loadRiot" class="tts-btn ghost" type="button"><span class="ic" data-ic="gamepad"></span> Charger mes parties Riot</button>
+        <button id="importRiot" class="tts-btn" type="button"><span class="ic" data-ic="download"></span> Importer mes 20 dernières (Riot) dans l'historique</button>
+      </div>
+      <div id="goalTracker" class="goal-tracker"></div>
+      <div id="histCharts" class="hist-charts"></div>
+      <div class="hist-analyze">
+        <button id="analyzeBtn" class="analyze-btn"><span class="ic" data-ic="search"></span> Analyser mes faiblesses récurrentes</button>
+        <div id="analysisResult" class="analysis-result"></div>
+      </div>
+      <div id="histRoot"><div class="empty">Chargement…</div></div>
+    </main>
+
+    <footer class="footer">
+      <span>Parties sauvegardées localement dans <code>data/history.json</code> · critique générée par Claude en fin de partie.</span>
+    </footer>
+
+    <script src="icons.js"></script>
+
+    <script src="history.js"></script>
+  </body>
+</html>

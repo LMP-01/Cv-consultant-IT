@@ -1,0 +1,20 @@
+{
+  "_comment": "Cooldowns pour le tracker en jeu. 'flashSeconds' = Flash (300s ; 254s avec Insight cosmique). 'ult' = cooldown APPROXIMATIF de l'ultime (rang 1, en secondes) par identifiant Data Dragon — clique quand l'ennemi l'utilise. Approximatif (varie selon le rang/Hâte) : ajuste librement. 0 = ulti sans CD fixe utile à suivre (passif/recharge), bouton masqué.",
+  "flashSeconds": 300,
+  "flashWithInsightSeconds": 254,
+  "ult": {
+    "Zed": 110, "Ahri": 100, "Syndra": 100, "Orianna": 110, "Veigar": 80, "Malzahar": 80,
+    "Anivia": 0, "Katarina": 90, "Zoe": 90, "Taliyah": 110, "Lux": 50, "Yasuo": 50, "Akali": 120,
+    "Fizz": 80, "Kassadin": 0, "Leblanc": 100, "Vex": 130, "Sylas": 70, "Annie": 100, "Viktor": 120,
+    "TwistedFate": 150, "Galio": 130, "Diana": 80, "Qiyana": 120, "Pantheon": 120, "Cassiopeia": 120,
+    "Jhin": 120, "Caitlyn": 90, "Ezreal": 90, "Jinx": 75, "MissFortune": 90, "Draven": 100, "Vayne": 0,
+    "Ashe": 80, "KaiSa": 0, "Lucian": 100, "Aphelios": 0, "Samira": 120, "Tristana": 70, "KogMaw": 0,
+    "Xayah": 130, "Sivir": 0, "Twitch": 0, "Nilah": 100, "Zeri": 120,
+    "Thresh": 140, "Leona": 90, "Nautilus": 130, "Pyke": 110, "Lulu": 90, "Janna": 120, "Morgana": 120,
+    "Rakan": 130, "Braum": 120, "Rell": 110, "Milio": 110, "Karma": 0, "Yuumi": 110, "Senna": 120,
+    "Amumu": 130, "Sejuani": 110, "Malphite": 130, "LeeSin": 90, "KhaZix": 0, "Viego": 120,
+    "Elise": 0, "Hecarim": 120, "Nidalee": 0, "Graves": 0, "Belveth": 0, "Wukong": 120,
+    "Darius": 100, "Garen": 110, "Sett": 120, "Fiora": 0, "Camille": 130, "Jax": 100, "Aatrox": 120,
+    "Renekton": 0, "Gnar": 0, "Gwen": 90, "Riven": 0
+  }
+}
